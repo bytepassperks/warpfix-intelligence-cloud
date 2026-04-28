@@ -24,13 +24,13 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-3">
             <Link
-              href="/api/auth/github"
+              href="https://warpfix-api.onrender.com/auth/github"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               Sign In
             </Link>
             <Link
-              href="/api/auth/github"
+              href="https://warpfix-api.onrender.com/auth/github"
               className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               Get Started Free
@@ -56,7 +56,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
             <Link
-              href="/api/auth/github"
+              href="https://warpfix-api.onrender.com/auth/github"
               className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors text-lg"
             >
               Start Fixing for Free
@@ -265,7 +265,7 @@ export default function LandingPage() {
             Install the Warp extension and start repairing CI failures in seconds.
           </p>
           <Link
-            href="/api/auth/github"
+            href="https://warpfix-api.onrender.com/auth/github"
             className="inline-block px-8 py-4 bg-primary text-primary-foreground rounded-lg font-medium text-lg hover:bg-primary/90 transition-colors"
           >
             Get Started with GitHub

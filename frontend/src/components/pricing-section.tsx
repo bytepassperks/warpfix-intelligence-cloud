@@ -83,7 +83,7 @@ export function PricingSection() {
             </div>
             <p className="text-sm text-muted-foreground mb-6">{plan.description}</p>
             <Link
-              href="/api/auth/github"
+              href="https://warpfix-api.onrender.com/auth/github"
               className={`block text-center py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 plan.highlighted
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
