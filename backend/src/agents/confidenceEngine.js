@@ -1,0 +1,52 @@
+function computeConfidence({ sandboxPassed, patchSize, fingerprintReuse, classification }) {
+  let score = 0;
+
+  // Sandbox result is the strongest signal
+  if (sandboxPassed) {
+    score += 50;
+  }
+
+  // Fingerprint reuse means this fix has worked before
+  if (fingerprintReuse) {
+    score += 25;
+  }
+
+  // Smaller patches are more likely to be correct
+  if (patchSize < 500) {
+    score += 10;
+  } else if (patchSize < 2000) {
+    score += 5;
+  }
+
+  // Classification confidence bonus
+  if (classification.confidence > 0.8) {
+    score += 10;
+  } else if (classification.confidence > 0.5) {
+    score += 5;
+  }
+
+  // Severity adjustment
+  const severityBonus = {
+    low: 5,
+    medium: 0,
+    high: -5,
+    critical: -10,
+  };
+  score += severityBonus[classification.severity] || 0;
+
+  score = Math.max(0, Math.min(100, score));
+
+  return {
+    score,
+    breakdown: {
+      sandbox: sandboxPassed ? 50 : 0,
+      fingerprint: fingerprintReuse ? 25 : 0,
+      patch_size: patchSize < 500 ? 10 : patchSize < 2000 ? 5 : 0,
+      classification: classification.confidence > 0.8 ? 10 : classification.confidence > 0.5 ? 5 : 0,
+      severity: severityBonus[classification.severity] || 0,
+    },
+    recommendation: score >= 70 ? 'auto_merge' : score >= 40 ? 'review_suggested' : 'manual_review_required',
+  };
+}
+
+module.exports = { computeConfidence };
