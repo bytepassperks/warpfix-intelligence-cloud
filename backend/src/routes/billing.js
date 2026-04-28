@@ -47,7 +47,7 @@ router.post('/checkout', requireAuth, async (req, res) => {
       return res.status(503).json({ error: 'Billing service not configured' });
     }
 
-    const response = await fetch('https://api.dodopayments.com/subscriptions', {
+    const response = await fetch('https://live.dodopayments.com/subscriptions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${dodoApiKey}`,
@@ -65,7 +65,9 @@ router.post('/checkout', requireAuth, async (req, res) => {
           email: req.user.email,
           name: req.user.username,
         },
-        product_id: plan === 'pro' ? process.env.DODO_PRO_PRODUCT_ID : process.env.DODO_TEAM_PRODUCT_ID,
+        product_id: plan === 'pro'
+          ? (process.env.DODO_PRO_PRODUCT_ID || 'pdt_0Ndi5McnUkYnmcneC5Lc7')
+          : (process.env.DODO_TEAM_PRODUCT_ID || 'pdt_0Ndi5OJovSYC93Y51BlZ5'),
         quantity: 1,
         payment_link: true,
       }),
