@@ -33,7 +33,7 @@ services:
       - key: PAGEGRID_API_KEY
         sync: false
       - key: PAGEGRID_API_URL
-        value: https://pagegrid.in/api/v1
+        value: https://api.pagegrid.in
       - key: DODO_API_KEY
         sync: false
       - key: DODO_WEBHOOK_SECRET
@@ -81,7 +81,7 @@ services:
       - key: PAGEGRID_API_KEY
         sync: false
       - key: PAGEGRID_API_URL
-        value: https://pagegrid.in/api/v1
+        value: https://api.pagegrid.in
       - key: GITHUB_APP_ID
         sync: false
       - key: GITHUB_PRIVATE_KEY

@@ -2,7 +2,8 @@ const { logger } = require('../utils/logger');
 
 async function callLLM({ system, user, maxTokens = 2000 }) {
   const apiKey = process.env.PAGEGRID_API_KEY;
-  const apiUrl = process.env.PAGEGRID_API_URL || 'https://pagegrid.in/api/v1';
+  const apiUrl = process.env.PAGEGRID_API_URL || 'https://api.pagegrid.in';
+  const model = process.env.PAGEGRID_MODEL || 'claude-sonnet-4-6';
 
   if (!apiKey) {
     logger.warn('PAGEGRID_API_KEY not set, returning mock response');
@@ -18,31 +19,36 @@ async function callLLM({ system, user, maxTokens = 2000 }) {
   }
 
   try {
-    const response = await fetch(`${apiUrl}/chat/completions`, {
+    const response = await fetch(`${apiUrl}/v1/messages`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'x-api-key': apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model,
+        system,
         messages: [
-          { role: 'system', content: system },
           { role: 'user', content: user },
         ],
         max_tokens: maxTokens,
-        temperature: 0.3,
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
       logger.error('LLM API error', { status: response.status, error });
-      throw new Error(`LLM API error: ${response.status}`);
+      throw new Error(`LLM API error: ${response.status} - ${error}`);
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || '';
+    const text = data.content?.[0]?.text || '';
+
+    if (!text) {
+      logger.warn('LLM returned empty response', { data });
+    }
+
+    return text;
   } catch (err) {
     logger.error('LLM call failed', { error: err.message });
     throw err;
