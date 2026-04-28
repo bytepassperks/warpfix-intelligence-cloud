@@ -51,7 +51,7 @@ services:
     name: warpfix-frontend
     runtime: node
     plan: starter
-    buildCommand: cd frontend && npm install --include=dev && npm run build
+    buildCommand: cd frontend && npm install && npm run build
     startCommand: cd frontend && npm start
     envVars:
       - key: NODE_ENV
