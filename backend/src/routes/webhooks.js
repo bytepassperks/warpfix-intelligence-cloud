@@ -1,7 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const { logger } = require('../utils/logger');
-const { enqueueRepairJob } = require('../queue/producer');
+const { enqueueRepairJob, enqueueReviewJob, enqueueChatJob } = require('../queue/producer');
 const { query } = require('../models/database');
 const router = express.Router();
 
@@ -119,9 +119,96 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
         break;
       }
 
+      case 'pull_request': {
+        const pr = payload.pull_request;
+        const repo = payload.repository;
+        const installId = payload.installation?.id;
+
+        if (payload.action === 'opened' || payload.action === 'synchronize') {
+          // Skip warpfix's own PRs
+          if (pr.head?.ref?.startsWith('warpfix/')) {
+            logger.info('Skipping review for warpfix PR', { branch: pr.head.ref });
+            break;
+          }
+
+          logger.info('PR opened/updated — enqueuing review', {
+            repo: repo.full_name, pr: pr.number, action: payload.action,
+          });
+
+          // Look up user_id
+          let userId = null;
+          if (installId) {
+            const instResult = await query(
+              `SELECT u.id FROM installations i
+               JOIN users u ON u.username = i.account_login
+               WHERE i.installation_id = $1`,
+              [installId]
+            );
+            userId = instResult.rows[0]?.id || null;
+          }
+
+          await enqueueReviewJob({
+            type: 'pr_review',
+            repository: {
+              id: repo.id,
+              full_name: repo.full_name,
+              owner: repo.owner.login,
+              name: repo.name,
+              default_branch: repo.default_branch,
+            },
+            pull_request: {
+              number: pr.number,
+              title: pr.title,
+              body: pr.body,
+              head_ref: pr.head?.ref,
+              head_sha: pr.head?.sha,
+              base_ref: pr.base?.ref,
+              user_login: pr.user?.login,
+              html_url: pr.html_url,
+            },
+            installation_id: installId,
+            user_id: userId,
+          });
+        }
+        break;
+      }
+
+      case 'issue_comment': {
+        // Handle @warpfix mentions in PR comments
+        if (payload.action === 'created' && payload.issue?.pull_request) {
+          const body = payload.comment?.body || '';
+          if (/@warpfix/i.test(body)) {
+            const repo = payload.repository;
+            const installId = payload.installation?.id;
+
+            logger.info('@warpfix mention detected', {
+              repo: repo.full_name, pr: payload.issue.number,
+            });
+
+            await enqueueChatJob({
+              type: 'chat_mention',
+              repository: {
+                id: repo.id,
+                full_name: repo.full_name,
+                owner: repo.owner.login,
+                name: repo.name,
+                default_branch: repo.default_branch,
+              },
+              issue_number: payload.issue.number,
+              comment: {
+                id: payload.comment.id,
+                body: payload.comment.body,
+                user_login: payload.comment.user?.login,
+              },
+              installation_id: installId,
+            });
+          }
+        }
+        break;
+      }
+
       case 'push':
-      case 'pull_request':
-        logger.info(`${event} event received`, { repo: payload.repository?.full_name });
+        logger.info('Push event received', { repo: payload.repository?.full_name });
         break;
 
       default:

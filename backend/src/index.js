@@ -15,6 +15,9 @@ const repairRoutes = require('./routes/repairs');
 const dashboardRoutes = require('./routes/dashboard');
 const billingRoutes = require('./routes/billing');
 const healthRoutes = require('./routes/health');
+const reviewRoutes = require('./routes/reviews');
+const learningsRoutes = require('./routes/learnings');
+const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -61,6 +64,9 @@ app.use('/api/repairs', repairRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/health', healthRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/learnings', learningsRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Error handler
 app.use((err, req, res, _next) => {
