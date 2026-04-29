@@ -172,3 +172,42 @@ body {
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Skip-to-content link for keyboard nav */
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  z-index: 100;
+  padding: 8px 16px;
+  background: var(--brand);
+  color: white;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+}
+.skip-to-content:focus {
+  left: 16px;
+  top: 16px;
+}
+
+/* Responsive sidebar override */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+  }
+}
+
+/* Print styles */
+@media print {
+  nav, aside, header { display: none !important; }
+  main { margin: 0 !important; padding: 0 !important; }
+}

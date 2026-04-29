@@ -61,7 +61,7 @@ export function Sidebar() {
     <motion.aside
       animate={{ width: collapsed ? 52 : 256 }}
       transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-      className="border-r border-[var(--border-default)] bg-white flex flex-col h-screen sticky top-0 overflow-hidden z-30"
+      className="border-r border-[var(--border-default)] bg-white flex-col h-screen sticky top-0 overflow-hidden z-30 hidden md:flex"
     >
       {/* Logo */}
       <div className="h-14 flex items-center px-3 border-b border-[var(--border-default)] shrink-0">
@@ -85,7 +85,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2">
+      <nav aria-label="Main navigation" className="flex-1 overflow-y-auto py-3 px-2">
         {NAV_SECTIONS.map((section) => (
           <div key={section.title} className="mb-4">
             <AnimatePresence>
