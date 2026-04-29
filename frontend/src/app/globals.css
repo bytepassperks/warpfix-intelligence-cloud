@@ -100,8 +100,8 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
   --color-border-hover: var(--border-hover);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 html {
@@ -199,159 +199,82 @@ body {
   top: 16px;
 }
 
-/* ─── Landing page — premium backgrounds & animations ─── */
+/* ─── Landing page ─── */
 
-/* Hero: spotlight cone + radial mesh (like Linear/Vercel) */
-.hero-gradient {
-  background:
-    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(99,102,241,0.18), transparent 70%),
-    radial-gradient(ellipse 50% 60% at 80% 20%, rgba(139,92,246,0.10), transparent 60%),
-    radial-gradient(ellipse 40% 50% at 20% 60%, rgba(59,130,246,0.07), transparent 60%),
-    linear-gradient(180deg, #f8f7ff 0%, #ffffff 40%, #ffffff 100%);
+/* Hero — clean white with barely-visible top wash */
+.hero-bg {
+  background: linear-gradient(180deg, #f9fafb 0%, #ffffff 35%);
 }
 
-/* Animated grid lines (CSS only — no JS) */
-.animated-grid {
-  background-image:
-    linear-gradient(rgba(99,102,241,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99,102,241,0.05) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 30%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 30%, transparent 70%);
+/* Alternating section tints */
+.section-tinted {
+  background: #f9fafb;
 }
 
-/* Beam ray from top center (Vercel-style) */
-.hero-beam {
-  position: absolute;
-  top: -120px;
-  left: 50%;
-  width: 600px;
-  height: 500px;
-  transform: translateX(-50%);
-  background: conic-gradient(from 90deg at 50% 0%, transparent 40%, rgba(99,102,241,0.08) 50%, transparent 60%);
-  pointer-events: none;
-}
-
-/* Floating orb base */
-.orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.5;
-  pointer-events: none;
-  will-change: transform;
-}
-
-/* Slow float animation for orbs */
-@keyframes float-slow {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-20px) scale(1.05); }
-}
-.orb-float { animation: float-slow 8s ease-in-out infinite; }
-.orb-float-delay { animation: float-slow 10s ease-in-out 2s infinite; }
-.orb-float-delay2 { animation: float-slow 12s ease-in-out 4s infinite; }
-
-.orb-indigo {
-  background: radial-gradient(circle, rgba(99,102,241,0.35), transparent 70%);
-}
-.orb-violet {
-  background: radial-gradient(circle, rgba(139,92,246,0.28), transparent 70%);
-}
-.orb-blue {
-  background: radial-gradient(circle, rgba(59,130,246,0.22), transparent 70%);
-}
-
-/* Section backgrounds */
-.section-gradient-warm {
-  background: linear-gradient(180deg, #faf9ff 0%, #f0eeff 40%, #f6f5ff 70%, #faf9ff 100%);
-}
-.section-gradient-cool {
-  background: linear-gradient(180deg, #ffffff 0%, #eef2ff 50%, #ffffff 100%);
-}
-
-/* Dot grid overlay (subtle) */
-.bg-grid {
-  background-image: radial-gradient(circle, rgba(99,102,241,0.08) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-/* Feature card: gradient border on hover (like Linear cards) */
+/* Feature card — clean, no colored shadows */
 .feature-card {
-  position: relative;
-  background: rgba(255,255,255,0.7);
-  backdrop-filter: blur(12px);
+  background: #ffffff;
   border: 1px solid var(--border-default);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 .feature-card:hover {
-  border-color: rgba(99,102,241,0.3);
-  background: rgba(255,255,255,0.9);
-  box-shadow:
-    0 0 0 1px rgba(99,102,241,0.1),
-    0 4px 12px rgba(99,102,241,0.08),
-    0 20px 40px -12px rgba(99,102,241,0.12);
-  transform: translateY(-2px);
-}
-.feature-card:hover .feature-icon-box {
-  background: var(--brand-subtle);
-  box-shadow: 0 0 20px rgba(99,102,241,0.15);
+  border-color: var(--border-hover);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 6px 16px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
 }
 
-/* Animated gradient border for terminal demo */
-.terminal-glow {
-  position: relative;
-}
-.terminal-glow::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: 13px;
-  background: linear-gradient(135deg, rgba(99,102,241,0.4), rgba(139,92,246,0.2), rgba(59,130,246,0.3));
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.5s;
-}
-.terminal-glow:hover::before {
-  opacity: 1;
+/* Terminal demo card — neutral elevated shadow */
+.terminal-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 16px 48px rgba(0,0,0,0.12);
+  border-radius: 12px;
 }
 
-/* Shimmer for stat numbers */
-@keyframes count-glow {
-  0%, 100% { text-shadow: none; }
-  50% { text-shadow: 0 0 20px rgba(99,102,241,0.3); }
-}
-.stat-number {
-  animation: count-glow 3s ease-in-out infinite;
-}
-
-/* Comparison WarpFix column highlight */
-.wf-highlight {
-  background: linear-gradient(180deg, rgba(99,102,241,0.04) 0%, rgba(99,102,241,0.08) 100%);
-}
-
-/* CTA section animated glow */
-@keyframes cta-pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.6; }
-}
-.cta-glow {
-  animation: cta-pulse 4s ease-in-out infinite;
-}
-
-/* Gradient text */
+/* Gradient accent text — brand color only, no shimmer */
 .gradient-text {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #6366f1 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--brand);
 }
 
-/* Pricing popular card ring */
+/* Stats — no glow animation, just bold brand color */
+.stat-number {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pricing popular ring — clean 2px border, neutral shadow */
 .pricing-ring {
-  box-shadow:
-    0 0 0 2px var(--brand),
-    0 8px 32px -4px rgba(99,102,241,0.2);
+  border: 2px solid var(--brand);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+/* CTA section — dark navy, no pulsing orbs */
+.cta-section {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+}
+
+/* Step number circle */
+.step-number {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--brand);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Comparison table — clean zebra stripe */
+.comparison-row:nth-child(even) {
+  background: #f9fafb;
+}
+
+/* Subtle horizontal divider between sections */
+.section-divider {
+  height: 1px;
+  background: var(--border-default);
 }
 
 /* Responsive sidebar override */

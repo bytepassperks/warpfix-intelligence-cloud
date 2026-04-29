@@ -213,14 +213,8 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="relative pt-32 pb-24 px-6 hero-gradient overflow-hidden">
-        {/* Beam + grid + orbs */}
-        <div className="hero-beam" />
-        <div className="absolute inset-0 animated-grid" />
-        <div className="orb orb-indigo orb-float w-[600px] h-[600px] -top-64 -right-32" />
-        <div className="orb orb-violet orb-float-delay w-[450px] h-[450px] top-16 -left-40" />
-        <div className="orb orb-blue orb-float-delay2 w-[350px] h-[350px] bottom-0 right-1/4" />
-        <div className="max-w-4xl mx-auto text-center relative z-10">
+      <section className="pt-32 pb-24 px-6 hero-bg">
+        <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -257,7 +251,7 @@ export default function LandingPage() {
           >
             <Link
               href="https://warpfix-api.onrender.com/auth/github"
-              className="flex items-center gap-2 px-6 py-2.5 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand-hover)] transition-colors shadow-md shadow-indigo-200"
+              className="flex items-center gap-2 px-6 py-2.5 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand-hover)] transition-colors"
             >
               Start fixing for free
               <ArrowRight className="w-4 h-4" />
@@ -273,7 +267,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4 }}
-            className="terminal-glow"
+            className="terminal-card overflow-hidden"
           >
             <TerminalDemo />
           </motion.div>
@@ -281,7 +275,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Stats Bar ─── */}
-      <section className="py-12 px-6 border-y border-[var(--border-default)] bg-white/50 backdrop-blur-sm">
+      <section className="py-12 px-6 border-y border-[var(--border-default)] bg-white">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { num: "12", label: "Specialized engines" },
@@ -290,7 +284,7 @@ export default function LandingPage() {
             { num: "37%", label: "Faster with fingerprints" },
           ].map((s) => (
             <div key={s.label}>
-              <div className="stat-number text-3xl font-bold text-[var(--brand)] mb-1">{s.num}</div>
+              <div className="stat-number text-3xl font-bold mb-1">{s.num}</div>
               <div className="text-[13px] text-[var(--text-secondary)]">{s.label}</div>
             </div>
           ))}
@@ -298,9 +292,8 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Features ─── */}
-      <section id="features" className="relative py-24 px-6 section-gradient-warm overflow-hidden">
-        <div className="absolute inset-0 bg-grid opacity-40" />
-        <div className="max-w-6xl mx-auto relative z-10">
+      <section id="features" className="py-24 px-6 section-tinted">
+        <div className="max-w-6xl mx-auto">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -339,11 +332,10 @@ export default function LandingPage() {
       </section>
 
       {/* ─── How It Works ─── */}
-      <section id="how-it-works" className="relative py-24 px-6 overflow-hidden">
-        <div className="orb orb-blue orb-float-delay w-[400px] h-[400px] -bottom-32 -left-20" />
-        <div className="max-w-4xl mx-auto relative z-10">
+      <section id="how-it-works" className="py-24 px-6">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-3">How <span className="gradient-text">WarpFix</span> works</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-3">How WarpFix works</h2>
             <p className="text-[var(--text-secondary)]">From failure to fix in seconds</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
@@ -369,9 +361,8 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Fingerprint Intelligence ─── */}
-      <section className="relative py-24 px-6 section-gradient-cool overflow-hidden">
-        <div className="absolute inset-0 bg-grid opacity-30" />
-        <div className="max-w-5xl mx-auto relative z-10">
+      <section className="py-24 px-6 section-tinted">
+        <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[var(--brand-text)] bg-[var(--brand-muted)] rounded-full mb-4">
@@ -412,10 +403,8 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Comparison ─── */}
-      <section className="relative py-24 px-6 overflow-hidden">
-        <div className="orb orb-indigo orb-float w-[350px] h-[350px] top-10 -right-20" />
-        <div className="orb orb-violet orb-float-delay w-[250px] h-[250px] bottom-10 -left-16" />
-        <div className="max-w-4xl mx-auto relative z-10">
+      <section className="py-24 px-6">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight mb-3">How we compare</h2>
             <p className="text-[var(--text-secondary)]">WarpFix is the only platform that repairs, reviews, and secures — all in one.</p>
@@ -458,9 +447,8 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Pricing ─── */}
-      <section id="pricing" className="relative py-24 px-6 section-gradient-warm overflow-hidden">
-        <div className="absolute inset-0 bg-grid opacity-30" />
-        <div className="max-w-5xl mx-auto relative z-10">
+      <section id="pricing" className="py-24 px-6 section-tinted">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight mb-3">Simple pricing</h2>
             <p className="text-[var(--text-secondary)]">Start free. Scale as you grow.</p>
@@ -509,7 +497,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── FAQ ─── */}
-      <section id="faq" className="relative py-24 px-6 section-gradient-cool overflow-hidden">
+      <section id="faq" className="py-24 px-6">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl font-bold tracking-tight text-center mb-12">Frequently asked questions</h2>
           <div className="space-y-2">
@@ -550,9 +538,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── CTA ─── */}
-      <section className="relative py-28 px-6 bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] text-white overflow-hidden">
-        <div className="orb cta-glow w-[600px] h-[600px] -top-40 -right-40" style={{background: 'radial-gradient(circle, rgba(99,102,241,0.25), transparent 70%)'}} />
-        <div className="orb cta-glow w-[400px] h-[400px] bottom-0 -left-20" style={{background: 'radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%)', animationDelay: '2s'}} />
+      <section className="py-24 px-6 cta-section text-white">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold tracking-tight mb-4">Ready to stop babysitting CI?</h2>
           <p className="text-gray-400 mb-8 max-w-lg mx-auto">
@@ -560,7 +546,7 @@ export default function LandingPage() {
           </p>
           <Link
             href="https://warpfix-api.onrender.com/auth/github"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand-hover)] transition-colors shadow-lg shadow-indigo-900/30"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#0f172a] rounded-lg font-medium hover:bg-gray-100 transition-colors"
           >
             <GitHubIcon className="w-4 h-4" />
             Install WarpFix
