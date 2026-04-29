@@ -33,10 +33,19 @@ async function createPullRequest({ patch, repository, installation_id, classific
 
     // Parse diff and apply changes via API
     const files = parsePatchFiles(patch);
-    const committableFiles = files.filter(f => !f.path.startsWith('.github/workflows/'));
+    const committableFiles = files.filter(f =>
+      !f.path.startsWith('.github/workflows/') &&
+      !f.path.startsWith('test/') &&
+      !f.path.startsWith('tests/') &&
+      !f.path.startsWith('__tests__/') &&
+      !f.path.endsWith('.test.js') &&
+      !f.path.endsWith('.spec.js')
+    );
     
     if (committableFiles.length === 0) {
-      logger.warn('No committable files in patch (all were workflow files or empty)');
+      logger.warn('No committable source files in patch (only test/workflow files)', {
+        allFiles: files.map(f => f.path),
+      });
       return { url: null, number: null };
     }
 

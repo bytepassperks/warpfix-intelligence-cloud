@@ -111,10 +111,7 @@ async function processRepairJob(job) {
       }
     }
 
-    // Step 9: Store fingerprint
-    const fingerprintId = await storeFingerprint(fingerprint, patch, confidence.score);
-
-    // Step 10: Create PR if confidence is sufficient
+    // Step 9: Create PR if confidence is sufficient
     let prUrl = null;
     let prNumber = null;
     if (confidence.score >= 40 && sandboxResult.passed) {
@@ -129,6 +126,14 @@ async function processRepairJob(job) {
       });
       prUrl = prResult.url;
       prNumber = prResult.number;
+    }
+
+    // Step 10: Store fingerprint only if PR was created successfully
+    let fingerprintId = null;
+    if (prUrl) {
+      fingerprintId = await storeFingerprint(fingerprint, patch, confidence.score);
+    } else {
+      logger.info('Skipping fingerprint storage (PR not created)');
     }
 
     // Step 11: Store repair record
