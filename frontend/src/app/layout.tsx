@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WarpFix Intelligence Cloud",
-  description: "Autonomous CI repair agent SaaS - Fix CI failures, analyze dependencies, generate safe patches automatically",
-  keywords: ["CI repair", "automated fixes", "DevOps", "Warp terminal", "CI/CD"],
+  title: "WarpFix — Autonomous CI Repair Agent",
+  description: "Detect CI failures, generate safe patches, validate in sandboxes, and open PRs automatically. Terminal-native intelligence for your pipeline.",
+  keywords: ["CI repair", "automated fixes", "DevOps", "GitHub", "CI/CD", "code review"],
 };
 
 export default function RootLayout({
@@ -26,9 +26,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="min-h-full flex flex-col">
         {children}
       </body>
     </html>

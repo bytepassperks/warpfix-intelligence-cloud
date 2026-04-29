@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "https://warpfix-api.onrender.com";
+import { motion } from "framer-motion";
+import { MessageSquareText, ExternalLink } from "lucide-react";
+import { Badge, RiskBadge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SkeletonCard, SkeletonTable } from "@/components/ui/skeleton";
+import { API_URL, formatRelativeTime } from "@/lib/utils";
 
 interface Review {
   id: string;
@@ -19,14 +23,14 @@ interface Review {
 }
 
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<Review[] | null>(null);
   const [stats, setStats] = useState({
     total_reviews: 0,
     issue_breakdown: { critical: 0, warnings: 0, nitpicks: 0, praise: 0 },
   });
 
   useEffect(() => {
-    fetch(`${API}/api/reviews/public-stats`)
+    fetch(`${API_URL}/api/reviews/public-stats`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (d) {
@@ -35,84 +39,95 @@ export default function ReviewsPage() {
             total_reviews: d.total_reviews || 0,
             issue_breakdown: d.issue_breakdown || stats.issue_breakdown,
           });
+        } else {
+          setReviews([]);
         }
       })
-      .catch(() => {});
+      .catch(() => setReviews([]));
   }, []);
 
-  const riskColor = (level: string) => {
-    switch (level) {
-      case "critical": return "bg-red-500/10 text-red-500";
-      case "high": return "bg-orange-500/10 text-orange-500";
-      case "medium": return "bg-yellow-500/10 text-yellow-500";
-      default: return "bg-green-500/10 text-green-500";
-    }
-  };
+  const statCards = [
+    { label: "Total Reviews", value: stats.total_reviews, color: "" },
+    { label: "Critical", value: stats.issue_breakdown.critical, color: "text-red-500" },
+    { label: "Warnings", value: stats.issue_breakdown.warnings, color: "text-amber-500" },
+    { label: "Nitpicks", value: stats.issue_breakdown.nitpicks, color: "text-blue-500" },
+  ];
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">PR Reviews</h1>
+      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <h1 className="text-xl font-semibold">PR Reviews</h1>
+        <p className="text-[13px] text-[var(--text-secondary)] mt-0.5">
+          Automated code reviews across your repositories
+        </p>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total Reviews" value={stats.total_reviews} />
-        <StatCard label="Critical Issues" value={stats.issue_breakdown.critical} color="text-red-500" />
-        <StatCard label="Warnings" value={stats.issue_breakdown.warnings} color="text-yellow-500" />
-        <StatCard label="Nitpicks" value={stats.issue_breakdown.nitpicks} color="text-blue-500" />
-      </div>
-
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-muted">
-            <tr>
-              <th className="px-4 py-3 text-left">PR</th>
-              <th className="px-4 py-3 text-left">Repository</th>
-              <th className="px-4 py-3 text-left">Risk</th>
-              <th className="px-4 py-3 text-left">Effort</th>
-              <th className="px-4 py-3 text-left">Comments</th>
-              <th className="px-4 py-3 text-left">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reviews.map((r) => (
-              <tr key={r.id} className="border-t border-border hover:bg-muted/30">
-                <td className="px-4 py-3">
-                  <a href={r.pr_url} target="_blank" rel="noopener" className="text-primary hover:underline">
-                    #{r.pr_number}
-                  </a>
-                  <div className="text-xs text-muted-foreground truncate max-w-xs">{r.pr_title}</div>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">{r.repo_name}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${riskColor(r.risk_level)}`}>
-                    {r.risk_level || "low"}
-                  </span>
-                </td>
-                <td className="px-4 py-3">{r.review_effort_level}/5</td>
-                <td className="px-4 py-3">{r.inline_comments_count}</td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {new Date(r.created_at).toLocaleDateString()}
-                </td>
-              </tr>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {reviews === null
+          ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+          : statCards.map((c, i) => (
+              <motion.div
+                key={c.label}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="bg-white rounded-lg border border-[var(--border-default)] p-5"
+              >
+                <div className="text-[13px] text-[var(--text-secondary)]">{c.label}</div>
+                <div className={`text-2xl font-bold mt-1 ${c.color}`}>{c.value}</div>
+              </motion.div>
             ))}
-            {reviews.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                  No reviews yet. Reviews appear when PRs are opened on repos with WarpFix installed.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
       </div>
-    </div>
-  );
-}
 
-function StatCard({ label, value, color }: { label: string; value: number; color?: string }) {
-  return (
-    <div className="bg-card border border-border rounded-lg p-4">
-      <div className="text-sm text-muted-foreground">{label}</div>
-      <div className={`text-2xl font-bold mt-1 ${color || ""}`}>{value}</div>
+      {reviews === null ? (
+        <SkeletonTable rows={3} />
+      ) : reviews.length === 0 ? (
+        <EmptyState
+          icon={MessageSquareText}
+          title="No reviews yet"
+          description="Reviews appear automatically when PRs are opened on repos with WarpFix installed."
+          action={{ label: "Connect Repository", href: "/dashboard/repositories" }}
+        />
+      ) : (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-white rounded-lg border border-[var(--border-default)] overflow-hidden"
+        >
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-[var(--border-default)] bg-[var(--bg-secondary)]">
+                <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">PR</th>
+                <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">Repository</th>
+                <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">Risk</th>
+                <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">Effort</th>
+                <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">Comments</th>
+                <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reviews.map((r) => (
+                <tr key={r.id} className="border-b border-[var(--border-default)] last:border-0 hover:bg-[var(--bg-secondary)] transition-colors">
+                  <td className="py-3 px-5">
+                    <a href={r.pr_url} target="_blank" rel="noopener" className="flex items-center gap-1.5 text-[var(--brand)] hover:underline">
+                      #{r.pr_number} <ExternalLink className="w-3 h-3" />
+                    </a>
+                    <div className="text-xs text-[var(--text-tertiary)] truncate max-w-[200px]">{r.pr_title}</div>
+                  </td>
+                  <td className="py-3 px-5 text-[var(--text-secondary)]">{r.repo_name}</td>
+                  <td className="py-3 px-5"><RiskBadge level={r.risk_level || "low"} /></td>
+                  <td className="py-3 px-5">
+                    <span className="font-medium">{r.review_effort_level}</span>
+                    <span className="text-[var(--text-tertiary)]">/5</span>
+                  </td>
+                  <td className="py-3 px-5">{r.inline_comments_count}</td>
+                  <td className="py-3 px-5 text-[var(--text-tertiary)]">{formatRelativeTime(r.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </motion.div>
+      )}
     </div>
   );
 }
