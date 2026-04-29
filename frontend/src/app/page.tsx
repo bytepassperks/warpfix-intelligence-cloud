@@ -275,30 +275,30 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="pt-36 pb-24 px-6 hero-bg grain relative overflow-hidden">
+      <section className="pt-24 pb-16 px-6 hero-bg grain relative overflow-hidden">
         {/* Animated grid background */}
         <div className="hero-grid" />
 
         {/* Floating decorative elements */}
-        <div className="absolute top-20 left-[8%] w-16 h-16 deco-circle float-slow opacity-60" />
-        <div className="absolute top-40 right-[10%] w-10 h-10 deco-square float-medium opacity-50" />
-        <div className="absolute bottom-32 left-[15%] w-6 h-6 deco-ring float-reverse opacity-40" />
-        <div className="absolute top-28 right-[25%] w-3 h-3 deco-dot float-slow opacity-50" style={{ animationDelay: "1s" }} />
-        <div className="absolute bottom-48 right-[8%] w-20 h-20 deco-ring float-medium opacity-30" style={{ animationDelay: "2s" }} />
-        <div className="absolute top-56 left-[5%] w-4 h-4 deco-dot float-medium opacity-40" style={{ animationDelay: "3s" }} />
-        <div className="absolute bottom-20 left-[35%] w-8 h-8 deco-square float-slow opacity-30" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute top-20 left-[12%] w-14 h-14 deco-circle float-slow opacity-50" />
+        <div className="absolute top-32 right-[14%] w-10 h-10 deco-square float-medium opacity-40" />
+        <div className="absolute bottom-32 left-[18%] w-8 h-8 deco-ring float-reverse opacity-40" />
+        <div className="absolute top-24 right-[30%] w-3 h-3 deco-dot float-slow opacity-50" style={{ animationDelay: "1s" }} />
+        <div className="absolute bottom-44 right-[12%] w-16 h-16 deco-ring float-medium opacity-30" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-48 left-[8%] w-4 h-4 deco-dot float-medium opacity-45" style={{ animationDelay: "3s" }} />
+        <div className="absolute bottom-20 left-[40%] w-6 h-6 deco-square float-slow opacity-30" style={{ animationDelay: "1.5s" }} />
 
         {/* Floating badges */}
-        <FloatingBadge label="SHA-256 fingerprint" className="top-36 right-[12%] float-slow" delay={1} />
-        <FloatingBadge label="94/100 confidence" className="top-64 left-[6%] float-medium" delay={1.5} />
-        <FloatingBadge label="auto-merge ready" className="bottom-40 right-[15%] float-reverse" delay={2} />
+        <FloatingBadge label="SHA-256 fingerprint" className="top-28 right-[18%] float-slow" delay={1} />
+        <FloatingBadge label="94/100 confidence" className="top-52 left-[12%] float-medium" delay={1.5} />
+        <FloatingBadge label="auto-merge ready" className="bottom-36 right-[20%] float-reverse" delay={2} />
 
         {/* Decorative vertical lines */}
         <div className="absolute top-0 left-[20%] h-full deco-line opacity-40" />
         <div className="absolute top-0 right-[20%] h-full deco-line opacity-30" />
 
         {/* Faded code decoration left side */}
-        <div className="hidden lg:block absolute top-32 left-6 code-deco select-none" aria-hidden="true">
+        <div className="hidden lg:block absolute top-28 left-8 code-deco select-none" aria-hidden="true">
 {`const repair = await warpfix.analyze({
   workflow: "ci.yml",
   branch: "main",
@@ -307,7 +307,7 @@ export default function LandingPage() {
         </div>
 
         {/* Faded code decoration right side */}
-        <div className="hidden lg:block absolute bottom-40 right-6 code-deco select-none text-right" aria-hidden="true">
+        <div className="hidden lg:block absolute bottom-36 right-8 code-deco select-none text-right" aria-hidden="true">
 {`fingerprint: "a3f8c2d1"
 matched: 47 times
 avg_time: "340ms"
@@ -391,15 +391,15 @@ confidence: 95`}
       <div className="section-glow-border" />
 
       {/* ─── Features ─── */}
-      <section id="features" className="py-24 px-6 relative section-offwhite overflow-hidden">
+      <section id="features" className="py-20 px-6 relative section-offwhite overflow-hidden">
         {/* Background decorations */}
-        <div className="absolute top-16 right-[5%] w-24 h-24 deco-ring float-slow opacity-20" />
-        <div className="absolute bottom-16 left-[3%] w-14 h-14 deco-circle float-medium opacity-25" style={{ animationDelay: "2s" }} />
-        <div className="absolute top-1/2 right-[2%] w-4 h-4 deco-dot float-reverse opacity-20" />
-        <div className="absolute top-24 left-[7%] w-6 h-6 deco-square float-slow opacity-15" style={{ animationDelay: "1s" }} />
+        <div className="absolute top-16 right-[5%] w-20 h-20 deco-ring float-slow opacity-30" />
+        <div className="absolute bottom-16 left-[4%] w-12 h-12 deco-circle float-medium opacity-35" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-1/2 right-[3%] w-4 h-4 deco-dot float-reverse opacity-35" />
+        <div className="absolute top-24 left-[7%] w-6 h-6 deco-square float-slow opacity-25" style={{ animationDelay: "1s" }} />
         {/* Subtle vertical accent lines */}
-        <div className="absolute top-0 left-[10%] h-full deco-line opacity-20" />
-        <div className="absolute top-0 right-[10%] h-full deco-line opacity-15" />
+        <div className="absolute top-0 left-[10%] h-full deco-line opacity-30" />
+        <div className="absolute top-0 right-[10%] h-full deco-line opacity-25" />
 
         <div className="max-w-6xl mx-auto relative z-10">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="text-center mb-16">
@@ -438,11 +438,11 @@ confidence: 95`}
       </section>
 
       {/* ─── How It Works ─── */}
-      <section id="how-it-works" className="py-24 px-6 section-tinted relative overflow-hidden">
+      <section id="how-it-works" className="py-20 px-6 section-tinted relative overflow-hidden">
         {/* Decorative background elements */}
-        <div className="absolute top-12 left-[6%] w-10 h-10 deco-ring float-medium opacity-20" />
-        <div className="absolute bottom-20 right-[8%] w-16 h-16 deco-circle float-slow opacity-15" style={{ animationDelay: "1.5s" }} />
-        <div className="absolute top-1/3 left-[3%] w-3 h-3 deco-dot float-reverse opacity-25" />
+        <div className="absolute top-12 left-[6%] w-10 h-10 deco-ring float-medium opacity-30" />
+        <div className="absolute bottom-20 right-[8%] w-14 h-14 deco-circle float-slow opacity-25" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute top-1/3 left-[3%] w-3 h-3 deco-dot float-reverse opacity-35" />
 
         <div className="max-w-4xl mx-auto relative z-10">
           <motion.div
@@ -486,8 +486,8 @@ confidence: 95`}
       {/* ─── Fingerprint Intelligence ─── */}
       <section className="py-24 px-6 section-warm grain relative overflow-hidden">
         {/* Decorative elements */}
-        <div className="absolute top-20 right-[5%] w-12 h-12 deco-ring float-slow opacity-20" />
-        <div className="absolute bottom-24 left-[4%] w-8 h-8 deco-square float-medium opacity-15" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-20 right-[5%] w-12 h-12 deco-ring float-slow opacity-30" />
+        <div className="absolute bottom-24 left-[4%] w-8 h-8 deco-square float-medium opacity-25" style={{ animationDelay: "2s" }} />
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <motion.div
@@ -541,9 +541,9 @@ confidence: 95`}
       <div className="section-glow-border" />
 
       {/* ─── Comparison ─── */}
-      <section className="py-24 px-6 section-tinted relative overflow-hidden">
-        <div className="absolute top-10 left-[5%] w-10 h-10 deco-circle float-slow opacity-15" />
-        <div className="absolute bottom-12 right-[6%] w-6 h-6 deco-ring float-medium opacity-20" style={{ animationDelay: "1s" }} />
+      <section className="py-20 px-6 section-tinted relative overflow-hidden">
+        <div className="absolute top-10 left-[5%] w-10 h-10 deco-circle float-slow opacity-30" />
+        <div className="absolute bottom-12 right-[6%] w-6 h-6 deco-ring float-medium opacity-30" style={{ animationDelay: "1s" }} />
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial="hidden"
@@ -603,10 +603,10 @@ confidence: 95`}
       <div className="section-glow-border" />
 
       {/* ─── Pricing ─── */}
-      <section id="pricing" className="py-24 px-6 section-offwhite relative overflow-hidden">
-        <div className="absolute top-14 right-[4%] w-18 h-18 deco-ring float-reverse opacity-15" />
-        <div className="absolute bottom-20 left-[6%] w-5 h-5 deco-dot float-slow opacity-20" style={{ animationDelay: "2s" }} />
-        <div className="absolute top-1/2 left-[3%] w-12 h-12 deco-circle float-medium opacity-10" />
+      <section id="pricing" className="py-20 px-6 section-offwhite relative overflow-hidden">
+        <div className="absolute top-14 right-[4%] w-16 h-16 deco-ring float-reverse opacity-30" />
+        <div className="absolute bottom-20 left-[6%] w-5 h-5 deco-dot float-slow opacity-35" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-1/2 left-[3%] w-12 h-12 deco-circle float-medium opacity-20" />
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial="hidden"
@@ -665,9 +665,9 @@ confidence: 95`}
       </section>
 
       {/* ─── FAQ ─── */}
-      <section id="faq" className="py-24 px-6 section-tinted relative overflow-hidden">
-        <div className="absolute top-16 right-[7%] w-8 h-8 deco-square float-slow opacity-15" />
-        <div className="absolute bottom-16 left-[5%] w-6 h-6 deco-ring float-medium opacity-20" style={{ animationDelay: "1s" }} />
+      <section id="faq" className="py-20 px-6 section-tinted relative overflow-hidden">
+        <div className="absolute top-16 right-[7%] w-8 h-8 deco-square float-slow opacity-30" />
+        <div className="absolute bottom-16 left-[5%] w-6 h-6 deco-ring float-medium opacity-30" style={{ animationDelay: "1s" }} />
         <div className="max-w-2xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 16 }}

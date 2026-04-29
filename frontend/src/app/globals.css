@@ -214,12 +214,12 @@ body {
   position: absolute;
   inset: -50%;
   background-image:
-    linear-gradient(rgba(99,91,255,0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99,91,255,0.06) 1px, transparent 1px);
-  background-size: 60px 60px;
+    linear-gradient(rgba(99,91,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,91,255,0.08) 1px, transparent 1px);
+  background-size: 56px 56px;
   animation: grid-drift 20s linear infinite;
-  mask-image: radial-gradient(ellipse 50% 50% at 50% 40%, black 0%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 40%, black 0%, transparent 70%);
+  mask-image: radial-gradient(ellipse 55% 55% at 50% 40%, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 55% 55% at 50% 40%, black 0%, transparent 70%);
 }
 @keyframes grid-drift {
   0% { transform: translate(0, 0); }
@@ -246,26 +246,26 @@ body {
 /* Decorative shapes */
 .deco-circle {
   border-radius: 50%;
-  border: 1px solid rgba(99,91,255,0.12);
-  background: rgba(99,91,255,0.03);
+  border: 1.5px solid rgba(99,91,255,0.18);
+  background: rgba(99,91,255,0.04);
 }
 .deco-ring {
   border-radius: 50%;
-  border: 1.5px solid rgba(99,91,255,0.1);
+  border: 1.5px solid rgba(99,91,255,0.16);
 }
 .deco-square {
   border-radius: 6px;
-  border: 1px solid rgba(99,91,255,0.1);
-  background: rgba(99,91,255,0.02);
+  border: 1.5px solid rgba(99,91,255,0.16);
+  background: rgba(99,91,255,0.03);
   transform: rotate(12deg);
 }
 .deco-line {
-  background: linear-gradient(180deg, transparent, rgba(99,91,255,0.1), transparent);
+  background: linear-gradient(180deg, transparent, rgba(99,91,255,0.15), transparent);
   width: 1px;
 }
 .deco-dot {
   border-radius: 50%;
-  background: rgba(99,91,255,0.15);
+  background: rgba(99,91,255,0.22);
 }
 
 /* Animated connecting line for How It Works */
@@ -292,11 +292,11 @@ body {
   height: 2px;
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(99,91,255,0.05) 15%,
-    rgba(99,91,255,0.2) 35%,
-    rgba(99,91,255,0.35) 50%,
-    rgba(99,91,255,0.2) 65%,
-    rgba(99,91,255,0.05) 85%,
+    rgba(99,91,255,0.08) 15%,
+    rgba(99,91,255,0.3) 35%,
+    rgba(99,91,255,0.45) 50%,
+    rgba(99,91,255,0.3) 65%,
+    rgba(99,91,255,0.08) 85%,
     transparent 100%
   );
   position: relative;
@@ -304,11 +304,11 @@ body {
 .section-glow-border::before {
   content: "";
   position: absolute;
-  top: -4px;
-  left: 30%;
-  right: 30%;
-  height: 10px;
-  background: radial-gradient(ellipse at center, rgba(99,91,255,0.08) 0%, transparent 70%);
+  top: -6px;
+  left: 25%;
+  right: 25%;
+  height: 14px;
+  background: radial-gradient(ellipse at center, rgba(99,91,255,0.12) 0%, transparent 70%);
 }
 
 /* Animated data stream particles */
@@ -331,7 +331,7 @@ body {
 .code-deco {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: rgba(99,91,255,0.08);
+  color: rgba(99,91,255,0.14);
   line-height: 1.6;
   white-space: pre;
   pointer-events: none;
