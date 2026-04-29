@@ -56,6 +56,7 @@ async function processRepairJob(job) {
         classification,
         repository,
         context,
+        installation_id,
       });
     }
 

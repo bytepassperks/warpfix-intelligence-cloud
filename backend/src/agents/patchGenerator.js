@@ -21,10 +21,17 @@ const PATCH_SAFETY_RULES = {
   ],
 };
 
-async function generatePatch({ logData, classification, repository, context }) {
+async function generatePatch({ logData, classification, repository, context, installation_id }) {
   logger.info('Generating patch', { type: classification.type, repo: repository?.full_name });
 
-  const prompt = buildPatchPrompt(logData, classification, context);
+  // Fetch source files from GitHub for accurate patching
+  let sourceFiles = {};
+  if (logData.affectedFiles?.length > 0 && installation_id && repository) {
+    sourceFiles = await fetchSourceFiles(logData.affectedFiles, repository, installation_id);
+    logger.info('Fetched source files', { count: Object.keys(sourceFiles).length });
+  }
+
+  const prompt = buildPatchPrompt(logData, classification, context, sourceFiles);
 
   const result = await callLLM({
     system: `You are an expert CI repair agent. Generate a minimal fix for the error.
@@ -40,9 +47,10 @@ Rules:
 - Never modify lockfiles, workflow files (.github/workflows/), or .env files
 - Never add console.log or debug statements
 - Include ALL original file content, only changing what's needed to fix the error
-- If you don't know the original file content, output a minimal fix file`,
+- You MUST output at least one ===FILE: ...=== / ===END_FILE=== block
+- Do NOT wrap the file blocks in markdown code fences`,
     user: prompt,
-    maxTokens: 4000,
+    maxTokens: 8000,
   });
 
   let patch;
@@ -64,7 +72,34 @@ Rules:
   return patch;
 }
 
-function buildPatchPrompt(logData, classification, context) {
+async function fetchSourceFiles(affectedFiles, repository, installationId) {
+  const files = {};
+  try {
+    const { getInstallationOctokit } = require('../services/github');
+    const octokit = await getInstallationOctokit(installationId);
+    const owner = repository.owner;
+    const repo = repository.name;
+    const branch = repository.default_branch || 'main';
+
+    for (const filePath of affectedFiles.slice(0, 5)) {
+      try {
+        const resp = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+          owner, repo, path: filePath, ref: branch,
+        });
+        if (resp.data.content) {
+          files[filePath] = Buffer.from(resp.data.content, 'base64').toString('utf8');
+        }
+      } catch {
+        // File may not exist
+      }
+    }
+  } catch (err) {
+    logger.error('Failed to fetch source files', { error: err.message });
+  }
+  return files;
+}
+
+function buildPatchPrompt(logData, classification, context, sourceFiles = {}) {
   let prompt = `Fix this ${classification.type} error.\n\n`;
   prompt += `Error: ${logData.errorMessage}\n\n`;
 
@@ -78,6 +113,16 @@ function buildPatchPrompt(logData, classification, context) {
 
   if (logData.affectedFiles?.length > 0) {
     prompt += `Affected files: ${logData.affectedFiles.join(', ')}\n\n`;
+  }
+
+  // Include actual source file contents for accurate patching
+  const fileEntries = Object.entries(sourceFiles);
+  if (fileEntries.length > 0) {
+    prompt += `\n--- CURRENT SOURCE FILES ---\n`;
+    for (const [path, content] of fileEntries) {
+      prompt += `\n=== ${path} ===\n${content.substring(0, 4000)}\n`;
+    }
+    prompt += `--- END SOURCE FILES ---\n\n`;
   }
 
   if (classification.suggestedApproach) {
