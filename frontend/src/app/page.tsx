@@ -156,20 +156,22 @@ const FAQS = [
 ];
 
 const COMPARISON = [
-  { feature: "CI failure auto-repair", wf: true, cr: false, cu: false },
-  { feature: "PR review & summaries", wf: true, cr: true, cu: false },
-  { feature: "Sandbox validation", wf: true, cr: false, cu: false },
-  { feature: "Fingerprint learning", wf: true, cr: false, cu: false },
-  { feature: "Predictive CI failure", wf: true, cr: false, cu: false },
-  { feature: "Security auto-patching", wf: true, cr: false, cu: false },
-  { feature: "Dead code detection", wf: true, cr: false, cu: false },
-  { feature: "Test coverage gap analysis", wf: true, cr: false, cu: false },
-  { feature: "Technical debt tracking", wf: true, cr: false, cu: false },
-  { feature: "Quality gates (.warpfix.yaml)", wf: true, cr: true, cu: false },
-  { feature: "Dependency radar", wf: true, cr: false, cu: false },
-  { feature: "Chat agent (@warpfix)", wf: true, cr: true, cu: false },
-  { feature: "Terminal-first UX", wf: true, cr: false, cu: true },
-  { feature: "Multi-file patches", wf: true, cr: true, cu: true },
+  { feature: "CI failure auto-repair", wf: true, cr: false, sn: false },
+  { feature: "PR review & summaries", wf: true, cr: true, sn: false },
+  { feature: "Inline review comments", wf: true, cr: true, sn: false },
+  { feature: "Sandbox validation", wf: true, cr: false, sn: false },
+  { feature: "Fingerprint fix caching", wf: true, cr: false, sn: false },
+  { feature: "Predictive CI failure", wf: true, cr: false, sn: false },
+  { feature: "Security auto-patching", wf: true, cr: false, sn: "partial" },
+  { feature: "Dead code detection", wf: true, cr: false, sn: false },
+  { feature: "Test coverage gap analysis", wf: true, cr: false, sn: false },
+  { feature: "Technical debt tracking", wf: true, cr: false, sn: false },
+  { feature: "Quality gates", wf: true, cr: true, sn: true },
+  { feature: "Dependency vulnerability scan", wf: true, cr: false, sn: true },
+  { feature: "Chat agent in PRs", wf: true, cr: true, sn: false },
+  { feature: "Multi-file patch generation", wf: true, cr: true, sn: false },
+  { feature: "Confidence scoring", wf: true, cr: false, sn: false },
+  { feature: "Free tier", wf: true, cr: true, sn: true },
 ];
 
 export default function LandingPage() {
@@ -387,6 +389,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight mb-3">How we compare</h2>
+            <p className="text-[var(--text-secondary)]">WarpFix is the only platform that repairs, reviews, and secures — all in one.</p>
           </div>
           <div className="rounded-xl border border-[var(--border-default)] overflow-hidden bg-white">
             <table className="w-full text-[13px]">
@@ -395,7 +398,7 @@ export default function LandingPage() {
                   <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">Feature</th>
                   <th className="text-center py-3 px-5 font-semibold text-[var(--brand)]">WarpFix</th>
                   <th className="text-center py-3 px-5 font-medium text-[var(--text-secondary)]">CodeRabbit</th>
-                  <th className="text-center py-3 px-5 font-medium text-[var(--text-secondary)]">Cursor</th>
+                  <th className="text-center py-3 px-5 font-medium text-[var(--text-secondary)]">Snyk</th>
                 </tr>
               </thead>
               <tbody>
@@ -409,7 +412,13 @@ export default function LandingPage() {
                       {row.cr ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <span className="text-[var(--text-tertiary)]">—</span>}
                     </td>
                     <td className="py-3 px-5 text-center">
-                      {row.cu ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <span className="text-[var(--text-tertiary)]">—</span>}
+                      {row.sn === "partial" ? (
+                        <span className="text-[11px] font-medium text-amber-500">Partial</span>
+                      ) : row.sn ? (
+                        <Check className="w-4 h-4 text-emerald-500 mx-auto" />
+                      ) : (
+                        <span className="text-[var(--text-tertiary)]">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
