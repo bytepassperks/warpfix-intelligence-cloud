@@ -199,6 +199,93 @@ body {
   top: 16px;
 }
 
+/* ─── Landing page rich backgrounds ─── */
+
+/* Subtle dot grid pattern */
+.bg-grid {
+  background-image: radial-gradient(circle, var(--border-default) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Hero gradient mesh */
+.hero-gradient {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.15), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 50%, rgba(139,92,246,0.08), transparent),
+    radial-gradient(ellipse 50% 50% at 20% 80%, rgba(59,130,246,0.06), transparent);
+}
+
+/* Section gradient - warm */
+.section-gradient-warm {
+  background:
+    linear-gradient(180deg, #f9fafb 0%, #f3f0ff 50%, #f9fafb 100%);
+}
+
+/* Section gradient - cool */
+.section-gradient-cool {
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f0f4ff 50%, #ffffff 100%);
+}
+
+/* Decorative floating orb */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.orb-indigo {
+  background: radial-gradient(circle, rgba(99,102,241,0.3), transparent 70%);
+}
+
+.orb-violet {
+  background: radial-gradient(circle, rgba(139,92,246,0.25), transparent 70%);
+}
+
+.orb-blue {
+  background: radial-gradient(circle, rgba(59,130,246,0.2), transparent 70%);
+}
+
+/* Gradient border glow for feature cards */
+.card-glow:hover {
+  box-shadow: 0 0 0 1px rgba(99,102,241,0.15), 0 8px 24px -4px rgba(99,102,241,0.12);
+}
+
+/* Comparison table row highlight */
+.comparison-row:nth-child(odd) {
+  background: rgba(249,250,251,0.5);
+}
+
+/* Pricing card gradient border */
+.pricing-highlight {
+  background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(139,92,246,0.05));
+}
+
+/* Animated gradient border */
+@keyframes gradient-rotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-border {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #3b82f6, #6366f1);
+  background-size: 300% 100%;
+  animation: gradient-rotate 6s ease infinite;
+}
+
+/* Noise texture overlay */
+.noise-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
 /* Responsive sidebar override */
 @media (max-width: 768px) {
   :root {

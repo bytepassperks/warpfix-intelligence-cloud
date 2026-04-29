@@ -213,8 +213,12 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="pt-28 pb-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="relative pt-28 pb-20 px-6 hero-gradient overflow-hidden">
+        {/* Decorative orbs */}
+        <div className="orb orb-indigo w-[500px] h-[500px] -top-48 -right-24" />
+        <div className="orb orb-violet w-[400px] h-[400px] top-20 -left-32" />
+        <div className="orb orb-blue w-[300px] h-[300px] bottom-0 right-1/4" />
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -274,8 +278,9 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Features ─── */}
-      <section id="features" className="py-24 px-6 bg-[var(--bg-secondary)]">
-        <div className="max-w-6xl mx-auto">
+      <section id="features" className="relative py-24 px-6 section-gradient-warm overflow-hidden">
+        <div className="absolute inset-0 bg-grid opacity-40" />
+        <div className="max-w-6xl mx-auto relative z-10">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -300,7 +305,7 @@ export default function LandingPage() {
                 key={f.title}
                 variants={fadeUp}
                 custom={i + 2}
-                className="group p-6 bg-white rounded-xl border border-[var(--border-default)] hover:border-[var(--border-hover)] hover:shadow-md transition-all duration-200"
+                className="group p-6 bg-white/80 backdrop-blur-sm rounded-xl border border-[var(--border-default)] hover:border-[var(--brand-subtle)] card-glow transition-all duration-200"
               >
                 <div className="w-10 h-10 rounded-lg bg-[var(--brand-muted)] flex items-center justify-center mb-4 group-hover:bg-[var(--brand-subtle)] transition-colors">
                   <f.icon className="w-5 h-5 text-[var(--brand)]" />
@@ -314,8 +319,9 @@ export default function LandingPage() {
       </section>
 
       {/* ─── How It Works ─── */}
-      <section id="how-it-works" className="py-24 px-6">
-        <div className="max-w-4xl mx-auto">
+      <section id="how-it-works" className="relative py-24 px-6 overflow-hidden">
+        <div className="orb orb-blue w-[400px] h-[400px] -bottom-32 -left-20" />
+        <div className="max-w-4xl mx-auto relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight mb-3">How WarpFix works</h2>
             <p className="text-[var(--text-secondary)]">From failure to fix in seconds</p>
@@ -343,8 +349,9 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Fingerprint Intelligence ─── */}
-      <section className="py-24 px-6 bg-[var(--bg-secondary)]">
-        <div className="max-w-5xl mx-auto">
+      <section className="relative py-24 px-6 section-gradient-cool overflow-hidden">
+        <div className="absolute inset-0 bg-grid opacity-30" />
+        <div className="max-w-5xl mx-auto relative z-10">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[var(--brand-text)] bg-[var(--brand-muted)] rounded-full mb-4">
@@ -385,8 +392,10 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Comparison ─── */}
-      <section className="py-24 px-6">
-        <div className="max-w-4xl mx-auto">
+      <section className="relative py-24 px-6 overflow-hidden">
+        <div className="orb orb-indigo w-[350px] h-[350px] top-10 -right-20" />
+        <div className="orb orb-violet w-[250px] h-[250px] bottom-10 -left-16" />
+        <div className="max-w-4xl mx-auto relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight mb-3">How we compare</h2>
             <p className="text-[var(--text-secondary)]">WarpFix is the only platform that repairs, reviews, and secures — all in one.</p>
@@ -429,8 +438,9 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Pricing ─── */}
-      <section id="pricing" className="py-24 px-6 bg-[var(--bg-secondary)]">
-        <div className="max-w-5xl mx-auto">
+      <section id="pricing" className="relative py-24 px-6 section-gradient-warm overflow-hidden">
+        <div className="absolute inset-0 bg-grid opacity-30" />
+        <div className="max-w-5xl mx-auto relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight mb-3">Simple pricing</h2>
             <p className="text-[var(--text-secondary)]">Start free. Scale as you grow.</p>
@@ -479,7 +489,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── FAQ ─── */}
-      <section id="faq" className="py-24 px-6">
+      <section id="faq" className="relative py-24 px-6 section-gradient-cool overflow-hidden">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl font-bold tracking-tight text-center mb-12">Frequently asked questions</h2>
           <div className="space-y-2">
@@ -520,7 +530,8 @@ export default function LandingPage() {
       </section>
 
       {/* ─── CTA ─── */}
-      <section className="py-24 px-6 bg-[var(--bg-inverse)] text-white">
+      <section className="relative py-24 px-6 bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] text-white overflow-hidden">
+        <div className="orb w-[500px] h-[500px] -top-32 -right-32" style={{background: 'radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%)'}} />
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold tracking-tight mb-4">Ready to stop babysitting CI?</h2>
           <p className="text-gray-400 mb-8 max-w-lg mx-auto">
