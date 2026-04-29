@@ -14,6 +14,10 @@ const { validateInSandbox } = require('../agents/sandboxValidator');
 const { computeConfidence } = require('../agents/confidenceEngine');
 const { createPullRequest } = require('../agents/pullRequestAgent');
 const { recordTelemetry } = require('../services/telemetry');
+const { getInstallationOctokit } = require('../services/github');
+const { generatePRReview, formatReviewComment } = require('../agents/reviewAgent');
+const { generateInlineComments, postInlineComments } = require('../agents/inlineReviewAgent');
+const { processMention } = require('../agents/chatAgent');
 
 async function processRepairJob(job) {
   const { jobId, type, repository, workflow_run, installation_id, user_id, context } = job.data;
@@ -181,25 +185,178 @@ async function processRepairJob(job) {
   }
 }
 
-// Start worker
-const worker = new Worker('repair-jobs', processRepairJob, {
+// ========== Review Job Processor ==========
+async function processReviewJob(job) {
+  const { jobId, repository, pull_request, installation_id, user_id } = job.data;
+  const startTime = Date.now();
+
+  logger.info('Processing review job', { jobId, pr: pull_request?.number });
+
+  try {
+    const octokit = await getInstallationOctokit(installation_id);
+    const owner = repository.owner;
+    const repo = repository.name;
+    const prNumber = pull_request.number;
+
+    // Fetch PR details and files
+    job.updateProgress(10);
+    const { data: prData } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
+      owner, repo, pull_number: prNumber,
+    });
+
+    job.updateProgress(20);
+    const { data: files } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}/files', {
+      owner, repo, pull_number: prNumber, per_page: 100,
+    });
+
+    // Generate PR review summary
+    job.updateProgress(40);
+    const review = await generatePRReview({ prData, files, repoConfig: null, reviewProfile: 'assertive' });
+
+    // Post review summary as PR comment
+    job.updateProgress(60);
+    const reviewComment = formatReviewComment(review, prData);
+    await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
+      owner, repo, issue_number: prNumber,
+      body: reviewComment,
+    });
+
+    // Generate and post inline comments
+    job.updateProgress(75);
+    const inlineComments = await generateInlineComments({
+      files, prData, repoConfig: null, reviewProfile: 'assertive', learnings: [],
+    });
+
+    if (inlineComments.length > 0) {
+      job.updateProgress(85);
+      await postInlineComments(octokit, owner, repo, prNumber, prData.head.sha, inlineComments);
+    }
+
+    // Store review in database
+    const duration = Date.now() - startTime;
+    const criticalCount = inlineComments.filter(c => c.severity === 'critical').length;
+    const warningCount = inlineComments.filter(c => c.severity === 'warning').length;
+    const nitpickCount = inlineComments.filter(c => c.severity === 'nitpick').length;
+    const praiseCount = inlineComments.filter(c => c.severity === 'praise').length;
+
+    try {
+      const reviewData = {
+        file_changes: review.file_changes,
+        sequence_diagram: review.sequence_diagram,
+        risk_factors: review.risk_analysis?.factors,
+        inline_breakdown: { critical: criticalCount, warning: warningCount, nitpick: nitpickCount, praise: praiseCount },
+        files_reviewed: files.length,
+      };
+      await query(
+        `INSERT INTO reviews (repository_id, user_id, pr_number, pr_title, pr_url,
+          summary, review_effort_level, risk_level, inline_comments_count,
+          review_data, duration_ms, status)
+         VALUES (
+           (SELECT id FROM repositories WHERE github_id = $1),
+           $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'completed'
+         )`,
+        [repository.id, user_id, prNumber, prData.title, prData.html_url,
+         review.summary, review.review_effort?.level || 3, review.risk_analysis?.level || 'medium',
+         inlineComments.length, JSON.stringify(reviewData), duration]
+      );
+    } catch (dbErr) {
+      logger.warn('Failed to store review in DB', { error: dbErr.message });
+    }
+
+    job.updateProgress(100);
+    logger.info('Review completed', {
+      pr: prNumber, comments: inlineComments.length,
+      critical: criticalCount, duration,
+    });
+
+    return {
+      status: 'completed',
+      pr_number: prNumber,
+      inline_comments: inlineComments.length,
+      duration_ms: duration,
+    };
+  } catch (err) {
+    logger.error('Review job failed', { jobId, error: err.message, stack: err.stack });
+    throw err;
+  }
+}
+
+// ========== Chat Job Processor ==========
+async function processChatJob(job) {
+  const { jobId, repository, issue_number, comment, installation_id } = job.data;
+  const startTime = Date.now();
+
+  logger.info('Processing chat job', { jobId, issue: issue_number });
+
+  try {
+    const octokit = await getInstallationOctokit(installation_id);
+    const owner = repository.owner;
+    const repo = repository.name;
+
+    // Fetch PR files for context
+    const { data: prData } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
+      owner, repo, pull_number: issue_number,
+    });
+    const { data: files } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}/files', {
+      owner, repo, pull_number: issue_number, per_page: 50,
+    });
+
+    // Process mention through chat agent
+    const response = await processMention({
+      comment: { body: comment.body },
+      prData,
+      files,
+      context: { owner, repo, prNumber: issue_number },
+    });
+
+    // Post response as comment
+    await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
+      owner, repo, issue_number,
+      body: response,
+    });
+
+    const duration = Date.now() - startTime;
+    logger.info('Chat response posted', { issue: issue_number, duration });
+
+    return { status: 'completed', duration_ms: duration };
+  } catch (err) {
+    logger.error('Chat job failed', { jobId, error: err.message, stack: err.stack });
+    throw err;
+  }
+}
+
+// ========== Start Workers ==========
+const repairWorker = new Worker('repair-jobs', processRepairJob, {
   connection: createRedisConnection(),
   concurrency: 3,
   limiter: { max: 10, duration: 60000 },
 });
 
-worker.on('completed', (job, result) => {
-  logger.info('Job completed', { jobId: job.id, result });
+const reviewWorker = new Worker('review-jobs', processReviewJob, {
+  connection: createRedisConnection(),
+  concurrency: 2,
+  limiter: { max: 5, duration: 60000 },
 });
 
-worker.on('failed', (job, err) => {
-  logger.error('Job failed', { jobId: job?.id, error: err.message });
+const chatWorker = new Worker('chat-jobs', processChatJob, {
+  connection: createRedisConnection(),
+  concurrency: 3,
+  limiter: { max: 20, duration: 60000 },
 });
 
-worker.on('error', (err) => {
-  logger.error('Worker error', { error: err.message });
+[repairWorker, reviewWorker, chatWorker].forEach((w, i) => {
+  const names = ['repair', 'review', 'chat'];
+  w.on('completed', (job, result) => {
+    logger.info(`${names[i]} job completed`, { jobId: job.id, result });
+  });
+  w.on('failed', (job, err) => {
+    logger.error(`${names[i]} job failed`, { jobId: job?.id, error: err.message });
+  });
+  w.on('error', (err) => {
+    logger.error(`${names[i]} worker error`, { error: err.message });
+  });
 });
 
-logger.info('WarpFix repair worker started');
+logger.info('WarpFix workers started (repair + review + chat)');
 
-module.exports = { worker };
+module.exports = { repairWorker, reviewWorker, chatWorker };
