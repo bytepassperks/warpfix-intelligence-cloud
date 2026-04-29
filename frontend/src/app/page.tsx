@@ -192,7 +192,7 @@ export default function LandingPage() {
   const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-[#fefeff]">
       {/* ─── Scroll Progress ─── */}
       <ScrollProgress />
 
@@ -305,7 +305,7 @@ export default function LandingPage() {
       <div className="gradient-divider" />
 
       {/* ─── Features ─── */}
-      <section id="features" className="py-24 px-6 relative">
+      <section id="features" className="py-24 px-6 relative section-offwhite">
         <div className="max-w-6xl mx-auto">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="text-center mb-16">
             <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold tracking-tight mb-4">
@@ -495,7 +495,7 @@ export default function LandingPage() {
       <div className="gradient-divider" />
 
       {/* ─── Pricing ─── */}
-      <section id="pricing" className="py-24 px-6">
+      <section id="pricing" className="py-24 px-6 section-offwhite">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial="hidden"
