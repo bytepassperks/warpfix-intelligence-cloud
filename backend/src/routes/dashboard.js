@@ -12,7 +12,7 @@ router.get('/stats', requireAuth, async (req, res) => {
       query('SELECT COUNT(*) as total FROM repairs WHERE user_id = $1 AND sandbox_passed = TRUE', [userId]),
       query(
         `SELECT COUNT(DISTINCT fingerprint_id) as unique_fingerprints,
-                SUM(CASE WHEN fingerprint_id IS NOT NULL THEN 1 ELSE 0 END) as reused
+                COALESCE(SUM(CASE WHEN fingerprint_id IS NOT NULL THEN 1 ELSE 0 END), 0) as reused
          FROM repairs WHERE user_id = $1`,
         [userId]
       ),

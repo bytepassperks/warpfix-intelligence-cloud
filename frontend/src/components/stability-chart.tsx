@@ -29,7 +29,10 @@ export function StabilityChart() {
     fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/dashboard/stability`, {
       credentials: "include",
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('API error');
+        return res.json();
+      })
       .then(setData)
       .catch(() => setData(DEMO_DATA));
   }, []);

@@ -19,7 +19,10 @@ export function StatsCards() {
     fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/dashboard/stats`, {
       credentials: "include",
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('API error');
+        return res.json();
+      })
       .then((data) => setStats(data.stats))
       .catch(() => {
         setStats({
@@ -47,7 +50,7 @@ export function StatsCards() {
   const cards = [
     { label: "Total Repairs", value: stats.total_repairs, sub: `${stats.repairs_this_month} this month` },
     { label: "Success Rate", value: `${stats.success_rate}%`, sub: `${stats.successful_repairs} succeeded` },
-    { label: "Fingerprints", value: stats.unique_fingerprints, sub: `${stats.fingerprint_reuse_count} reused` },
+    { label: "Fingerprints", value: stats.unique_fingerprints, sub: `${stats.fingerprint_reuse_count ?? 0} reused` },
     { label: "Current Plan", value: stats.plan.toUpperCase(), sub: stats.plan === "free" ? `${stats.repairs_this_month}/3 used` : "Unlimited" },
   ];
 
