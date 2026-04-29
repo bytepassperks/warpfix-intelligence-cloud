@@ -193,13 +193,157 @@ body {
 }
 .grain > * { position: relative; z-index: 2; }
 
-/* Hero — Stripe-inspired warm gradient wash + subtle mesh */
+/* Hero — gradient wash + animated grid lines */
 .hero-bg {
   position: relative;
   background:
     radial-gradient(ellipse 60% 40% at 70% 0%, rgba(99,91,255,0.08) 0%, transparent 70%),
     radial-gradient(ellipse 50% 50% at 20% 50%, rgba(129,140,248,0.05) 0%, transparent 70%),
     linear-gradient(180deg, #f8f8ff 0%, #fafafd 40%, var(--bg-primary) 80%);
+}
+
+/* Animated grid overlay for hero */
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hero-grid::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background-image:
+    linear-gradient(rgba(99,91,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,91,255,0.06) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: grid-drift 20s linear infinite;
+  mask-image: radial-gradient(ellipse 50% 50% at 50% 40%, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 40%, black 0%, transparent 70%);
+}
+@keyframes grid-drift {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(60px, 60px); }
+}
+
+/* Floating decorative elements */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-16px) rotate(3deg); }
+}
+@keyframes float-medium {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(-2deg); }
+}
+@keyframes float-reverse {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(14px) rotate(2deg); }
+}
+.float-slow { animation: float-slow 8s ease-in-out infinite; }
+.float-medium { animation: float-medium 6s ease-in-out infinite; }
+.float-reverse { animation: float-reverse 7s ease-in-out infinite; }
+
+/* Decorative shapes */
+.deco-circle {
+  border-radius: 50%;
+  border: 1px solid rgba(99,91,255,0.12);
+  background: rgba(99,91,255,0.03);
+}
+.deco-ring {
+  border-radius: 50%;
+  border: 1.5px solid rgba(99,91,255,0.1);
+}
+.deco-square {
+  border-radius: 6px;
+  border: 1px solid rgba(99,91,255,0.1);
+  background: rgba(99,91,255,0.02);
+  transform: rotate(12deg);
+}
+.deco-line {
+  background: linear-gradient(180deg, transparent, rgba(99,91,255,0.1), transparent);
+  width: 1px;
+}
+.deco-dot {
+  border-radius: 50%;
+  background: rgba(99,91,255,0.15);
+}
+
+/* Animated connecting line for How It Works */
+.connector-line {
+  position: relative;
+}
+.connector-line::after {
+  content: "";
+  position: absolute;
+  top: 24px;
+  right: -16px;
+  width: 32px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--brand), rgba(99,91,255,0.2));
+  animation: pulse-line 2s ease-in-out infinite;
+}
+@keyframes pulse-line {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* Glow border between sections */
+.section-glow-border {
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(99,91,255,0.05) 15%,
+    rgba(99,91,255,0.2) 35%,
+    rgba(99,91,255,0.35) 50%,
+    rgba(99,91,255,0.2) 65%,
+    rgba(99,91,255,0.05) 85%,
+    transparent 100%
+  );
+  position: relative;
+}
+.section-glow-border::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: 30%;
+  right: 30%;
+  height: 10px;
+  background: radial-gradient(ellipse at center, rgba(99,91,255,0.08) 0%, transparent 70%);
+}
+
+/* Animated data stream particles */
+@keyframes data-stream {
+  0% { transform: translateY(0) scale(1); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-80px) scale(0.5); opacity: 0; }
+}
+.data-particle {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--brand);
+  position: absolute;
+  animation: data-stream 3s ease-in-out infinite;
+}
+
+/* Code snippet background decoration */
+.code-deco {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(99,91,255,0.08);
+  line-height: 1.6;
+  white-space: pre;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Progress ring for stats */
+.progress-ring {
+  transform: rotate(-90deg);
+}
+.progress-ring circle {
+  transition: stroke-dashoffset 1.5s ease-in-out;
 }
 
 /* Section alternating backgrounds */

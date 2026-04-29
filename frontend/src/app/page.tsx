@@ -57,8 +57,35 @@ function useCountUp(end: number, duration: number = 1.8) {
   return { ref, count };
 }
 
+function ProgressRing({ value, max }: { value: number; max: number }) {
+  const radius = 28;
+  const circumference = 2 * Math.PI * radius;
+  const ref = useRef<SVGCircleElement>(null);
+  const inView = useInView(ref as React.RefObject<Element>, { once: true });
+  const offset = inView ? circumference - (value / max) * circumference : circumference;
+
+  return (
+    <svg className="progress-ring w-16 h-16 mx-auto mb-2" viewBox="0 0 64 64">
+      <circle cx="32" cy="32" r={radius} fill="none" stroke="rgba(99,91,255,0.08)" strokeWidth="3" />
+      <circle
+        ref={ref}
+        cx="32"
+        cy="32"
+        r={radius}
+        fill="none"
+        stroke="rgba(99,91,255,0.5)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+      />
+    </svg>
+  );
+}
+
 function AnimatedStat({ value, suffix, label }: { value: number; suffix: string; label: string }) {
   const { ref, count } = useCountUp(value);
+  const max = suffix === "%" ? 100 : suffix === "+" ? 20 : suffix === "<" ? 60 : 100;
   return (
     <motion.div
       ref={ref}
@@ -68,10 +95,26 @@ function AnimatedStat({ value, suffix, label }: { value: number; suffix: string;
       transition={{ duration: 0.5 }}
       className="text-center"
     >
+      <ProgressRing value={value} max={max} />
       <div className="text-3xl md:text-4xl font-bold tracking-tight mb-1 stat-number">
         {suffix === "%" ? `${count}%` : suffix === "<" ? `<${count}s` : suffix === "+" ? `${count}+` : `${count}`}
       </div>
       <div className="text-[13px] text-[var(--text-tertiary)]">{label}</div>
+    </motion.div>
+  );
+}
+
+/* ─── Floating Badge ─── */
+function FloatingBadge({ label, className, delay = 0 }: { label: string; className?: string; delay?: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.8 }}
+      className={`absolute hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-white/80 backdrop-blur-sm border border-[var(--border-default)] rounded-full text-[10px] font-medium text-[var(--text-secondary)] shadow-sm pointer-events-none select-none z-10 ${className ?? ""}`}
+    >
+      <div className="w-1.5 h-1.5 rounded-full bg-[var(--brand)] opacity-60" />
+      {label}
     </motion.div>
   );
 }
@@ -233,7 +276,45 @@ export default function LandingPage() {
 
       {/* ─── Hero ─── */}
       <section className="pt-36 pb-24 px-6 hero-bg grain relative overflow-hidden">
-        <div className="max-w-3xl mx-auto text-center">
+        {/* Animated grid background */}
+        <div className="hero-grid" />
+
+        {/* Floating decorative elements */}
+        <div className="absolute top-20 left-[8%] w-16 h-16 deco-circle float-slow opacity-60" />
+        <div className="absolute top-40 right-[10%] w-10 h-10 deco-square float-medium opacity-50" />
+        <div className="absolute bottom-32 left-[15%] w-6 h-6 deco-ring float-reverse opacity-40" />
+        <div className="absolute top-28 right-[25%] w-3 h-3 deco-dot float-slow opacity-50" style={{ animationDelay: "1s" }} />
+        <div className="absolute bottom-48 right-[8%] w-20 h-20 deco-ring float-medium opacity-30" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-56 left-[5%] w-4 h-4 deco-dot float-medium opacity-40" style={{ animationDelay: "3s" }} />
+        <div className="absolute bottom-20 left-[35%] w-8 h-8 deco-square float-slow opacity-30" style={{ animationDelay: "1.5s" }} />
+
+        {/* Floating badges */}
+        <FloatingBadge label="SHA-256 fingerprint" className="top-36 right-[12%] float-slow" delay={1} />
+        <FloatingBadge label="94/100 confidence" className="top-64 left-[6%] float-medium" delay={1.5} />
+        <FloatingBadge label="auto-merge ready" className="bottom-40 right-[15%] float-reverse" delay={2} />
+
+        {/* Decorative vertical lines */}
+        <div className="absolute top-0 left-[20%] h-full deco-line opacity-40" />
+        <div className="absolute top-0 right-[20%] h-full deco-line opacity-30" />
+
+        {/* Faded code decoration left side */}
+        <div className="hidden lg:block absolute top-32 left-6 code-deco select-none" aria-hidden="true">
+{`const repair = await warpfix.analyze({
+  workflow: "ci.yml",
+  branch: "main",
+  confidence: 0.92
+});`}
+        </div>
+
+        {/* Faded code decoration right side */}
+        <div className="hidden lg:block absolute bottom-40 right-6 code-deco select-none text-right" aria-hidden="true">
+{`fingerprint: "a3f8c2d1"
+matched: 47 times
+avg_time: "340ms"
+confidence: 95`}
+        </div>
+
+        <div className="max-w-3xl mx-auto text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--brand-muted)] text-[var(--brand-text)] rounded-full text-xs font-medium mb-8 border border-[var(--brand-subtle)] hero-badge">
               <Terminal className="w-3 h-3" />
@@ -289,12 +370,17 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* ─── Gradient divider ─── */}
-      <div className="gradient-divider" />
+      {/* ─── Glow divider ─── */}
+      <div className="section-glow-border" />
 
       {/* ─── Stats Bar ─── */}
-      <section className="py-16 px-6 stats-bar">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+      <section className="py-16 px-6 stats-bar relative overflow-hidden">
+        {/* Floating decorative dots behind stats */}
+        <div className="absolute top-4 left-[12%] w-2 h-2 deco-dot float-slow opacity-30" />
+        <div className="absolute bottom-4 right-[15%] w-3 h-3 deco-dot float-medium opacity-20" />
+        <div className="absolute top-8 right-[30%] w-1.5 h-1.5 deco-dot float-reverse opacity-25" style={{ animationDelay: "1s" }} />
+
+        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
           <AnimatedStat value={12} suffix="+" label="Specialized engines" />
           <AnimatedStat value={95} suffix="%" label="Avg confidence score" />
           <AnimatedStat value={30} suffix="<" label="Avg repair time" />
@@ -302,11 +388,20 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <div className="gradient-divider" />
+      <div className="section-glow-border" />
 
       {/* ─── Features ─── */}
-      <section id="features" className="py-24 px-6 relative section-offwhite">
-        <div className="max-w-6xl mx-auto">
+      <section id="features" className="py-24 px-6 relative section-offwhite overflow-hidden">
+        {/* Background decorations */}
+        <div className="absolute top-16 right-[5%] w-24 h-24 deco-ring float-slow opacity-20" />
+        <div className="absolute bottom-16 left-[3%] w-14 h-14 deco-circle float-medium opacity-25" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-1/2 right-[2%] w-4 h-4 deco-dot float-reverse opacity-20" />
+        <div className="absolute top-24 left-[7%] w-6 h-6 deco-square float-slow opacity-15" style={{ animationDelay: "1s" }} />
+        {/* Subtle vertical accent lines */}
+        <div className="absolute top-0 left-[10%] h-full deco-line opacity-20" />
+        <div className="absolute top-0 right-[10%] h-full deco-line opacity-15" />
+
+        <div className="max-w-6xl mx-auto relative z-10">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="text-center mb-16">
             <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold tracking-tight mb-4">
               Everything to keep CI green
@@ -343,8 +438,13 @@ export default function LandingPage() {
       </section>
 
       {/* ─── How It Works ─── */}
-      <section id="how-it-works" className="py-24 px-6 section-tinted">
-        <div className="max-w-4xl mx-auto">
+      <section id="how-it-works" className="py-24 px-6 section-tinted relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-12 left-[6%] w-10 h-10 deco-ring float-medium opacity-20" />
+        <div className="absolute bottom-20 right-[8%] w-16 h-16 deco-circle float-slow opacity-15" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute top-1/3 left-[3%] w-3 h-3 deco-dot float-reverse opacity-25" />
+
+        <div className="max-w-4xl mx-auto relative z-10">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -370,7 +470,10 @@ export default function LandingPage() {
                 <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
                 <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">{step.desc}</p>
                 {i < 2 && (
-                  <ArrowRight className="hidden md:block absolute top-5 -right-4 w-5 h-5 text-[var(--border-default)] group-hover:text-[var(--brand)] transition-colors duration-300" />
+                  <div className="hidden md:block">
+                    <div className="connector-line" />
+                    <ArrowRight className="absolute top-5 -right-4 w-5 h-5 text-[var(--brand)] opacity-60 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-1" />
+                  </div>
                 )}
               </motion.div>
             ))}
@@ -378,10 +481,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <div className="gradient-divider" />
+      <div className="section-glow-border" />
 
       {/* ─── Fingerprint Intelligence ─── */}
       <section className="py-24 px-6 section-warm grain relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-20 right-[5%] w-12 h-12 deco-ring float-slow opacity-20" />
+        <div className="absolute bottom-24 left-[4%] w-8 h-8 deco-square float-medium opacity-15" style={{ animationDelay: "2s" }} />
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <motion.div
@@ -432,10 +538,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <div className="gradient-divider" />
+      <div className="section-glow-border" />
 
       {/* ─── Comparison ─── */}
-      <section className="py-24 px-6 section-tinted">
+      <section className="py-24 px-6 section-tinted relative overflow-hidden">
+        <div className="absolute top-10 left-[5%] w-10 h-10 deco-circle float-slow opacity-15" />
+        <div className="absolute bottom-12 right-[6%] w-6 h-6 deco-ring float-medium opacity-20" style={{ animationDelay: "1s" }} />
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial="hidden"
@@ -492,10 +600,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <div className="gradient-divider" />
+      <div className="section-glow-border" />
 
       {/* ─── Pricing ─── */}
-      <section id="pricing" className="py-24 px-6 section-offwhite">
+      <section id="pricing" className="py-24 px-6 section-offwhite relative overflow-hidden">
+        <div className="absolute top-14 right-[4%] w-18 h-18 deco-ring float-reverse opacity-15" />
+        <div className="absolute bottom-20 left-[6%] w-5 h-5 deco-dot float-slow opacity-20" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-1/2 left-[3%] w-12 h-12 deco-circle float-medium opacity-10" />
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial="hidden"
@@ -554,7 +665,9 @@ export default function LandingPage() {
       </section>
 
       {/* ─── FAQ ─── */}
-      <section id="faq" className="py-24 px-6 section-tinted">
+      <section id="faq" className="py-24 px-6 section-tinted relative overflow-hidden">
+        <div className="absolute top-16 right-[7%] w-8 h-8 deco-square float-slow opacity-15" />
+        <div className="absolute bottom-16 left-[5%] w-6 h-6 deco-ring float-medium opacity-20" style={{ animationDelay: "1s" }} />
         <div className="max-w-2xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
@@ -598,10 +711,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <div className="gradient-divider" />
+      <div className="section-glow-border" />
 
       {/* ─── CTA ─── */}
-      <section className="py-24 px-6 cta-section text-white relative">
+      <section className="py-24 px-6 cta-section text-white relative overflow-hidden">
+        {/* Floating decorative elements in CTA */}
+        <div className="absolute top-10 left-[10%] w-12 h-12 rounded-full border border-white/10 float-slow" />
+        <div className="absolute bottom-14 right-[12%] w-8 h-8 rounded-full border border-white/8 float-medium" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute top-1/2 left-[5%] w-3 h-3 rounded-full bg-white/10 float-reverse" />
+        <div className="absolute top-16 right-[20%] w-5 h-5 rounded-lg border border-white/8 float-slow" style={{ animationDelay: "2s", transform: "rotate(15deg)" }} />
+
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
