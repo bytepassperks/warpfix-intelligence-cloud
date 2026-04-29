@@ -6,6 +6,7 @@ import {
   Zap, GitBranch, Shield, Fingerprint, BarChart3, Radar,
   Terminal, ArrowRight, Check, ChevronDown,
   Cpu, Box, Eye, MessageSquareText, Gauge,
+  BrainCircuit, ShieldAlert, Code2, TestTube2, Scale, SlidersHorizontal,
 } from "lucide-react";
 
 function GitHubIcon({ className }: { className?: string }) {
@@ -57,6 +58,36 @@ const FEATURES = [
     title: "Dependency Radar",
     description: "Monitors npm for breaking releases and deprecated packages before they hit CI.",
   },
+  {
+    icon: BrainCircuit,
+    title: "Predictive CI Failure",
+    description: "Analyzes PR diffs before CI runs to predict failures and warn developers proactively.",
+  },
+  {
+    icon: ShieldAlert,
+    title: "Security Auto-Patching",
+    description: "Detects CVEs and OWASP vulnerabilities in your code and dependencies, then auto-generates fix PRs.",
+  },
+  {
+    icon: Code2,
+    title: "Dead Code Detection",
+    description: "Uses codegraph analysis to find unreachable and unused code across your codebase.",
+  },
+  {
+    icon: TestTube2,
+    title: "Test Coverage Gaps",
+    description: "Identifies untested code paths in PRs and suggests missing test cases automatically.",
+  },
+  {
+    icon: Scale,
+    title: "Technical Debt Tracker",
+    description: "Scores and tracks tech debt over time with A-F grades, trends, and actionable cleanup plans.",
+  },
+  {
+    icon: SlidersHorizontal,
+    title: "Quality Gates",
+    description: "Custom pre-merge rules via .warpfix.yaml — block PRs that violate your team's quality standards.",
+  },
 ];
 
 const STEPS = [
@@ -93,8 +124,9 @@ const PLANS = [
     period: "/mo",
     description: "Unlimited repairs for serious developers",
     features: [
-      "Unlimited repairs", "Advanced classification", "Full sandbox validation",
-      "Dependency radar", "Unlimited repos", "Priority support", "Analytics dashboard",
+      "Unlimited repairs", "PR review intelligence", "Sandbox validation",
+      "Predictive CI failure", "Security auto-patching", "Dead code detection",
+      "Quality gates", "Dependency radar", "Unlimited repos", "Priority support",
     ],
     cta: "Upgrade to Pro",
     highlighted: true,
@@ -106,7 +138,8 @@ const PLANS = [
     description: "Org-level shared repair intelligence",
     features: [
       "Everything in Pro", "Shared fingerprints", "Team repair memory",
-      "Org stability score", "Admin dashboard", "SSO", "Dedicated support",
+      "Tech debt tracking", "Test coverage analysis", "Org stability score",
+      "Admin dashboard", "SSO", "Dedicated support",
     ],
     cta: "Contact Sales",
     highlighted: false,
@@ -127,6 +160,12 @@ const COMPARISON = [
   { feature: "PR review & summaries", wf: true, cr: true, cu: false },
   { feature: "Sandbox validation", wf: true, cr: false, cu: false },
   { feature: "Fingerprint learning", wf: true, cr: false, cu: false },
+  { feature: "Predictive CI failure", wf: true, cr: false, cu: false },
+  { feature: "Security auto-patching", wf: true, cr: false, cu: false },
+  { feature: "Dead code detection", wf: true, cr: false, cu: false },
+  { feature: "Test coverage gap analysis", wf: true, cr: false, cu: false },
+  { feature: "Technical debt tracking", wf: true, cr: false, cu: false },
+  { feature: "Quality gates (.warpfix.yaml)", wf: true, cr: true, cu: false },
   { feature: "Dependency radar", wf: true, cr: false, cu: false },
   { feature: "Chat agent (@warpfix)", wf: true, cr: true, cu: false },
   { feature: "Terminal-first UX", wf: true, cr: false, cu: true },
@@ -244,15 +283,15 @@ export default function LandingPage() {
             <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold tracking-tight mb-3">
               Everything to keep CI green
             </motion.h2>
-            <motion.p variants={fadeUp} custom={1} className="text-[var(--text-secondary)] max-w-lg mx-auto">
-              From failure detection to fix delivery — a complete autonomous repair pipeline.
+            <motion.p variants={fadeUp} custom={1} className="text-[var(--text-secondary)] max-w-xl mx-auto">
+              From failure detection to fix delivery — 12 specialized engines for CI repair, code review, security, and quality.
             </motion.p>
           </motion.div>
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-50px" }}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-5"
+            className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
           >
             {FEATURES.map((f, i) => (
               <motion.div
