@@ -275,48 +275,58 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="pt-24 pb-16 px-6 hero-bg grain relative overflow-hidden">
+      <section className="pt-10 pb-10 px-6 hero-bg grain relative overflow-hidden">
         {/* Animated grid background */}
         <div className="hero-grid" />
 
-        {/* Floating decorative elements */}
-        <div className="absolute top-20 left-[12%] w-14 h-14 deco-circle float-slow opacity-50" />
-        <div className="absolute top-32 right-[14%] w-10 h-10 deco-square float-medium opacity-40" />
-        <div className="absolute bottom-32 left-[18%] w-8 h-8 deco-ring float-reverse opacity-40" />
-        <div className="absolute top-24 right-[30%] w-3 h-3 deco-dot float-slow opacity-50" style={{ animationDelay: "1s" }} />
-        <div className="absolute bottom-44 right-[12%] w-16 h-16 deco-ring float-medium opacity-30" style={{ animationDelay: "2s" }} />
-        <div className="absolute top-48 left-[8%] w-4 h-4 deco-dot float-medium opacity-45" style={{ animationDelay: "3s" }} />
-        <div className="absolute bottom-20 left-[40%] w-6 h-6 deco-square float-slow opacity-30" style={{ animationDelay: "1.5s" }} />
+        {/* Floating decorative elements — larger and more visible */}
+        <div className="absolute top-8 left-[8%] w-24 h-24 deco-circle float-slow opacity-60" />
+        <div className="absolute top-16 right-[10%] w-16 h-16 deco-square float-medium opacity-50" />
+        <div className="absolute bottom-24 left-[15%] w-20 h-20 deco-ring float-reverse opacity-50" />
+        <div className="absolute top-12 right-[28%] w-5 h-5 deco-dot float-slow opacity-60" style={{ animationDelay: "1s" }} />
+        <div className="absolute bottom-32 right-[8%] w-28 h-28 deco-ring float-medium opacity-35" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-24 left-[5%] w-6 h-6 deco-dot float-medium opacity-55" style={{ animationDelay: "3s" }} />
+        <div className="absolute bottom-16 left-[35%] w-12 h-12 deco-square float-slow opacity-35" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute top-4 left-[40%] w-8 h-8 deco-ring float-reverse opacity-45" style={{ animationDelay: "0.5s" }} />
+        <div className="absolute top-20 right-[40%] w-4 h-4 deco-dot float-slow opacity-50" style={{ animationDelay: "2.5s" }} />
+        <div className="absolute bottom-8 right-[35%] w-10 h-10 deco-circle float-medium opacity-40" style={{ animationDelay: "1s" }} />
+        <div className="absolute top-36 left-[25%] w-6 h-6 deco-square float-reverse opacity-45" style={{ animationDelay: "3.5s" }} />
+        <div className="absolute bottom-40 left-[45%] w-5 h-5 deco-dot float-slow opacity-50" style={{ animationDelay: "4s" }} />
 
-        {/* Floating badges */}
-        <FloatingBadge label="SHA-256 fingerprint" className="top-28 right-[18%] float-slow" delay={1} />
-        <FloatingBadge label="94/100 confidence" className="top-52 left-[12%] float-medium" delay={1.5} />
-        <FloatingBadge label="auto-merge ready" className="bottom-36 right-[20%] float-reverse" delay={2} />
+        {/* Floating badges — closer to center */}
+        <FloatingBadge label="SHA-256 fingerprint" className="top-6 right-[25%] float-slow" delay={0.5} />
+        <FloatingBadge label="94/100 confidence" className="top-20 left-[18%] float-medium" delay={1} />
+        <FloatingBadge label="auto-merge ready" className="bottom-28 right-[22%] float-reverse" delay={1.5} />
 
-        {/* Decorative vertical lines */}
-        <div className="absolute top-0 left-[20%] h-full deco-line opacity-40" />
-        <div className="absolute top-0 right-[20%] h-full deco-line opacity-30" />
-
-        {/* Faded code decoration left side */}
-        <div className="hidden lg:block absolute top-28 left-8 code-deco select-none" aria-hidden="true">
+        {/* Faded code decoration left side — larger font, more visible */}
+        <div className="hidden lg:block absolute top-6 left-10 code-deco select-none" aria-hidden="true">
 {`const repair = await warpfix.analyze({
   workflow: "ci.yml",
   branch: "main",
   confidence: 0.92
-});`}
+});
+
+const result = {
+  status: "patched",
+  pr: "#287"
+};`}
         </div>
 
-        {/* Faded code decoration right side */}
-        <div className="hidden lg:block absolute bottom-36 right-8 code-deco select-none text-right" aria-hidden="true">
+        {/* Faded code decoration right side — larger font, more visible */}
+        <div className="hidden lg:block absolute top-6 right-10 code-deco select-none text-right" aria-hidden="true">
 {`fingerprint: "a3f8c2d1"
 matched: 47 times
 avg_time: "340ms"
-confidence: 95`}
+confidence: 95
+
+sandbox: "passed"
+auto_merge: true
+engines: 12`}
         </div>
 
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--brand-muted)] text-[var(--brand-text)] rounded-full text-xs font-medium mb-8 border border-[var(--brand-subtle)] hero-badge">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--brand-muted)] text-[var(--brand-text)] rounded-full text-xs font-medium mb-4 border border-[var(--brand-subtle)] hero-badge">
               <Terminal className="w-3 h-3" />
               Terminal-native CI repair agent
             </div>
@@ -325,7 +335,7 @@ confidence: 95`}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-[clamp(2.25rem,5.5vw,3.75rem)] font-bold tracking-[-0.03em] leading-[1.08] mb-6"
+            className="text-[clamp(2.25rem,5.5vw,3.75rem)] font-bold tracking-[-0.03em] leading-[1.08] mb-5"
           >
             Your CI pipeline<br />
             <span className="gradient-text">fixes itself</span>
@@ -334,7 +344,7 @@ confidence: 95`}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-[17px] text-[var(--text-secondary)] max-w-lg mx-auto mb-10 leading-relaxed"
+            className="text-[17px] text-[var(--text-secondary)] max-w-lg mx-auto mb-8 leading-relaxed"
           >
             WarpFix detects failures, generates safe patches, validates them in sandboxes,
             and opens pull requests — automatically.
@@ -343,7 +353,7 @@ confidence: 95`}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8"
           >
             <Link
               href="https://warpfix-api.onrender.com/auth/github"
@@ -397,9 +407,8 @@ confidence: 95`}
         <div className="absolute bottom-16 left-[4%] w-12 h-12 deco-circle float-medium opacity-35" style={{ animationDelay: "2s" }} />
         <div className="absolute top-1/2 right-[3%] w-4 h-4 deco-dot float-reverse opacity-35" />
         <div className="absolute top-24 left-[7%] w-6 h-6 deco-square float-slow opacity-25" style={{ animationDelay: "1s" }} />
-        {/* Subtle vertical accent lines */}
-        <div className="absolute top-0 left-[10%] h-full deco-line opacity-30" />
-        <div className="absolute top-0 right-[10%] h-full deco-line opacity-25" />
+        <div className="absolute bottom-24 right-[7%] w-8 h-8 deco-ring float-reverse opacity-35" style={{ animationDelay: "3s" }} />
+        <div className="absolute top-1/3 left-[3%] w-5 h-5 deco-dot float-medium opacity-30" style={{ animationDelay: "2s" }} />
 
         <div className="max-w-6xl mx-auto relative z-10">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="text-center mb-16">
