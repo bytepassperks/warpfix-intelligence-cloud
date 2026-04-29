@@ -54,15 +54,33 @@ export function RecentRepairs() {
   const [repairs, setRepairs] = useState<Repair[]>([]);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/repairs`, {
-      credentials: "include",
-    })
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    fetch(`${apiUrl}/api/repairs`, { credentials: "include" })
       .then((res) => {
         if (!res.ok) throw new Error('API error');
         return res.json();
       })
       .then((data) => setRepairs(data.repairs || []))
-      .catch(() => setRepairs(DEMO_REPAIRS));
+      .catch(() => {
+        // Fallback to public stats endpoint for recent repairs
+        fetch(`${apiUrl}/api/dashboard/public-stats`)
+          .then((res) => res.ok ? res.json() : Promise.reject())
+          .then((data) => {
+            const mapped = (data.recent_repairs || []).map((r: Record<string, unknown>) => ({
+              id: r.id,
+              status: r.sandbox_passed ? "completed" : "failed",
+              confidence_score: r.confidence_score || 0,
+              sandbox_passed: r.sandbox_passed,
+              pr_url: r.pr_url,
+              engine_used: r.error_classification || "unknown",
+              created_at: r.created_at,
+              repo_name: r.repo_name || r.repo_full_name || "—",
+              error_message: r.error_summary || r.error_message || "—",
+            }));
+            setRepairs(mapped);
+          })
+          .catch(() => setRepairs([]));
+      });
   }, []);
 
   if (repairs.length === 0) {

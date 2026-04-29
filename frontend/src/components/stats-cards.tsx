@@ -16,24 +16,23 @@ export function StatsCards() {
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/dashboard/stats`, {
-      credentials: "include",
-    })
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    fetch(`${apiUrl}/api/dashboard/stats`, { credentials: "include" })
       .then((res) => {
         if (!res.ok) throw new Error('API error');
         return res.json();
       })
       .then((data) => setStats(data.stats))
       .catch(() => {
-        setStats({
-          total_repairs: 24,
-          successful_repairs: 21,
-          success_rate: 88,
-          unique_fingerprints: 15,
-          fingerprint_reuse_count: 9,
-          repairs_this_month: 2,
-          plan: "free",
-        });
+        // Fallback to public stats endpoint (includes webhook-triggered repairs)
+        fetch(`${apiUrl}/api/dashboard/public-stats`)
+          .then((res) => res.ok ? res.json() : Promise.reject())
+          .then((data) => setStats(data.stats))
+          .catch(() => setStats({
+            total_repairs: 0, successful_repairs: 0, success_rate: 0,
+            unique_fingerprints: 0, fingerprint_reuse_count: 0,
+            repairs_this_month: 0, plan: "free",
+          }));
       });
   }, []);
 
