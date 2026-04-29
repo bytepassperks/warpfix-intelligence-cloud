@@ -26,15 +26,21 @@ async function generatePatch({ logData, classification, repository, context, ins
 
   // Fetch source files from GitHub for accurate patching
   let sourceFiles = {};
-  if (logData.affectedFiles?.length > 0 && installation_id && repository) {
-    sourceFiles = await fetchSourceFiles(logData.affectedFiles, repository, installation_id);
-    logger.info('Fetched source files', { count: Object.keys(sourceFiles).length });
+  if (installation_id && repository) {
+    const filesToFetch = [...(logData.affectedFiles || [])];
+    // Also fetch all src/ files from the repo tree for full context
+    const repoSrcFiles = await fetchRepoSourceTree(repository, installation_id);
+    for (const f of repoSrcFiles) {
+      if (!filesToFetch.includes(f)) filesToFetch.push(f);
+    }
+    sourceFiles = await fetchSourceFiles(filesToFetch.slice(0, 10), repository, installation_id);
+    logger.info('Fetched source files', { count: Object.keys(sourceFiles).length, files: Object.keys(sourceFiles) });
   }
 
   const prompt = buildPatchPrompt(logData, classification, context, sourceFiles);
 
   const result = await callLLM({
-    system: `You are an expert CI repair agent. Generate a minimal fix for the error.
+    system: `You are an expert CI repair agent. Analyze the error and fix the SOURCE code (not the tests).
 
 Output your fix in this EXACT format for each file you need to change:
 ===FILE: path/to/file.js===
@@ -42,10 +48,12 @@ Output your fix in this EXACT format for each file you need to change:
 ===END_FILE===
 
 Rules:
+- FIX THE SOURCE CODE, not the test files. Tests are correct; the source has the bug
 - Output the COMPLETE new file content (not a diff), with the fix applied
-- Keep changes minimal and focused
-- Never modify lockfiles, workflow files (.github/workflows/), or .env files
+- Keep changes minimal and focused - only change the buggy line(s)
+- Never modify lockfiles, workflow files (.github/workflows/), .env files, or test files
 - Never add console.log or debug statements
+- Never create new files - only modify existing source files
 - Include ALL original file content, only changing what's needed to fix the error
 - You MUST output at least one ===FILE: ...=== / ===END_FILE=== block
 - Do NOT wrap the file blocks in markdown code fences`,
@@ -70,6 +78,30 @@ Rules:
   }
 
   return patch;
+}
+
+async function fetchRepoSourceTree(repository, installationId) {
+  try {
+    const { getInstallationOctokit } = require('../services/github');
+    const octokit = await getInstallationOctokit(installationId);
+    const branch = repository.default_branch || 'main';
+    
+    const tree = await octokit.request('GET /repos/{owner}/{repo}/git/trees/{tree_sha}', {
+      owner: repository.owner,
+      repo: repository.name,
+      tree_sha: branch,
+      recursive: '1',
+    });
+    
+    // Return source files (not test files, not config files, not node_modules)
+    return tree.data.tree
+      .filter(f => f.type === 'blob' && f.path.startsWith('src/') && /\.(js|ts|jsx|tsx|py|rb|go|rs)$/.test(f.path))
+      .map(f => f.path)
+      .slice(0, 10);
+  } catch (err) {
+    logger.error('Failed to fetch repo tree', { error: err.message });
+    return [];
+  }
 }
 
 async function fetchSourceFiles(affectedFiles, repository, installationId) {
