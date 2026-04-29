@@ -213,11 +213,13 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="relative pt-28 pb-20 px-6 hero-gradient overflow-hidden">
-        {/* Decorative orbs */}
-        <div className="orb orb-indigo w-[500px] h-[500px] -top-48 -right-24" />
-        <div className="orb orb-violet w-[400px] h-[400px] top-20 -left-32" />
-        <div className="orb orb-blue w-[300px] h-[300px] bottom-0 right-1/4" />
+      <section className="relative pt-32 pb-24 px-6 hero-gradient overflow-hidden">
+        {/* Beam + grid + orbs */}
+        <div className="hero-beam" />
+        <div className="absolute inset-0 animated-grid" />
+        <div className="orb orb-indigo orb-float w-[600px] h-[600px] -top-64 -right-32" />
+        <div className="orb orb-violet orb-float-delay w-[450px] h-[450px] top-16 -left-40" />
+        <div className="orb orb-blue orb-float-delay2 w-[350px] h-[350px] bottom-0 right-1/4" />
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -236,7 +238,7 @@ export default function LandingPage() {
             className="text-[clamp(2.5rem,6vw,3.75rem)] font-bold tracking-tight leading-[1.08] mb-5"
           >
             Your CI pipeline<br />
-            <span className="text-[var(--brand)]">fixes itself</span>
+            <span className="gradient-text">fixes itself</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 12 }}
@@ -271,9 +273,27 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4 }}
+            className="terminal-glow"
           >
             <TerminalDemo />
           </motion.div>
+        </div>
+      </section>
+
+      {/* ─── Stats Bar ─── */}
+      <section className="py-12 px-6 border-y border-[var(--border-default)] bg-white/50 backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {[
+            { num: "12", label: "Specialized engines" },
+            { num: "95%", label: "Avg confidence score" },
+            { num: "<30s", label: "Avg repair time" },
+            { num: "37%", label: "Faster with fingerprints" },
+          ].map((s) => (
+            <div key={s.label}>
+              <div className="stat-number text-3xl font-bold text-[var(--brand)] mb-1">{s.num}</div>
+              <div className="text-[13px] text-[var(--text-secondary)]">{s.label}</div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -305,9 +325,9 @@ export default function LandingPage() {
                 key={f.title}
                 variants={fadeUp}
                 custom={i + 2}
-                className="group p-6 bg-white/80 backdrop-blur-sm rounded-xl border border-[var(--border-default)] hover:border-[var(--brand-subtle)] card-glow transition-all duration-200"
+                className="group p-6 rounded-xl feature-card"
               >
-                <div className="w-10 h-10 rounded-lg bg-[var(--brand-muted)] flex items-center justify-center mb-4 group-hover:bg-[var(--brand-subtle)] transition-colors">
+                <div className="feature-icon-box w-10 h-10 rounded-lg bg-[var(--brand-muted)] flex items-center justify-center mb-4 transition-all duration-300">
                   <f.icon className="w-5 h-5 text-[var(--brand)]" />
                 </div>
                 <h3 className="font-semibold text-[15px] mb-1.5">{f.title}</h3>
@@ -320,10 +340,10 @@ export default function LandingPage() {
 
       {/* ─── How It Works ─── */}
       <section id="how-it-works" className="relative py-24 px-6 overflow-hidden">
-        <div className="orb orb-blue w-[400px] h-[400px] -bottom-32 -left-20" />
+        <div className="orb orb-blue orb-float-delay w-[400px] h-[400px] -bottom-32 -left-20" />
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-3">How WarpFix works</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-3">How <span className="gradient-text">WarpFix</span> works</h2>
             <p className="text-[var(--text-secondary)]">From failure to fix in seconds</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
@@ -393,8 +413,8 @@ export default function LandingPage() {
 
       {/* ─── Comparison ─── */}
       <section className="relative py-24 px-6 overflow-hidden">
-        <div className="orb orb-indigo w-[350px] h-[350px] top-10 -right-20" />
-        <div className="orb orb-violet w-[250px] h-[250px] bottom-10 -left-16" />
+        <div className="orb orb-indigo orb-float w-[350px] h-[350px] top-10 -right-20" />
+        <div className="orb orb-violet orb-float-delay w-[250px] h-[250px] bottom-10 -left-16" />
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight mb-3">How we compare</h2>
@@ -451,7 +471,7 @@ export default function LandingPage() {
                 key={plan.name}
                 className={`p-6 rounded-xl border bg-white transition-shadow ${
                   plan.highlighted
-                    ? "border-[var(--brand)] shadow-lg shadow-indigo-100 ring-1 ring-[var(--brand)]"
+                    ? "border-[var(--brand)] pricing-ring"
                     : "border-[var(--border-default)] hover:shadow-md"
                 }`}
               >
@@ -530,8 +550,9 @@ export default function LandingPage() {
       </section>
 
       {/* ─── CTA ─── */}
-      <section className="relative py-24 px-6 bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] text-white overflow-hidden">
-        <div className="orb w-[500px] h-[500px] -top-32 -right-32" style={{background: 'radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%)'}} />
+      <section className="relative py-28 px-6 bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] text-white overflow-hidden">
+        <div className="orb cta-glow w-[600px] h-[600px] -top-40 -right-40" style={{background: 'radial-gradient(circle, rgba(99,102,241,0.25), transparent 70%)'}} />
+        <div className="orb cta-glow w-[400px] h-[400px] bottom-0 -left-20" style={{background: 'radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%)', animationDelay: '2s'}} />
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold tracking-tight mb-4">Ready to stop babysitting CI?</h2>
           <p className="text-gray-400 mb-8 max-w-lg mx-auto">

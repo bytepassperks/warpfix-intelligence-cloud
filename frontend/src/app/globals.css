@@ -199,91 +199,159 @@ body {
   top: 16px;
 }
 
-/* ─── Landing page rich backgrounds ─── */
+/* ─── Landing page — premium backgrounds & animations ─── */
 
-/* Subtle dot grid pattern */
-.bg-grid {
-  background-image: radial-gradient(circle, var(--border-default) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-/* Hero gradient mesh */
+/* Hero: spotlight cone + radial mesh (like Linear/Vercel) */
 .hero-gradient {
   background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.15), transparent),
-    radial-gradient(ellipse 60% 40% at 80% 50%, rgba(139,92,246,0.08), transparent),
-    radial-gradient(ellipse 50% 50% at 20% 80%, rgba(59,130,246,0.06), transparent);
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(99,102,241,0.18), transparent 70%),
+    radial-gradient(ellipse 50% 60% at 80% 20%, rgba(139,92,246,0.10), transparent 60%),
+    radial-gradient(ellipse 40% 50% at 20% 60%, rgba(59,130,246,0.07), transparent 60%),
+    linear-gradient(180deg, #f8f7ff 0%, #ffffff 40%, #ffffff 100%);
 }
 
-/* Section gradient - warm */
-.section-gradient-warm {
-  background:
-    linear-gradient(180deg, #f9fafb 0%, #f3f0ff 50%, #f9fafb 100%);
+/* Animated grid lines (CSS only — no JS) */
+.animated-grid {
+  background-image:
+    linear-gradient(rgba(99,102,241,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 30%, transparent 70%);
 }
 
-/* Section gradient - cool */
-.section-gradient-cool {
-  background:
-    linear-gradient(180deg, #ffffff 0%, #f0f4ff 50%, #ffffff 100%);
+/* Beam ray from top center (Vercel-style) */
+.hero-beam {
+  position: absolute;
+  top: -120px;
+  left: 50%;
+  width: 600px;
+  height: 500px;
+  transform: translateX(-50%);
+  background: conic-gradient(from 90deg at 50% 0%, transparent 40%, rgba(99,102,241,0.08) 50%, transparent 60%);
+  pointer-events: none;
 }
 
-/* Decorative floating orb */
+/* Floating orb base */
 .orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.4;
+  filter: blur(80px);
+  opacity: 0.5;
   pointer-events: none;
+  will-change: transform;
 }
+
+/* Slow float animation for orbs */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-20px) scale(1.05); }
+}
+.orb-float { animation: float-slow 8s ease-in-out infinite; }
+.orb-float-delay { animation: float-slow 10s ease-in-out 2s infinite; }
+.orb-float-delay2 { animation: float-slow 12s ease-in-out 4s infinite; }
 
 .orb-indigo {
-  background: radial-gradient(circle, rgba(99,102,241,0.3), transparent 70%);
+  background: radial-gradient(circle, rgba(99,102,241,0.35), transparent 70%);
 }
-
 .orb-violet {
-  background: radial-gradient(circle, rgba(139,92,246,0.25), transparent 70%);
+  background: radial-gradient(circle, rgba(139,92,246,0.28), transparent 70%);
 }
-
 .orb-blue {
-  background: radial-gradient(circle, rgba(59,130,246,0.2), transparent 70%);
+  background: radial-gradient(circle, rgba(59,130,246,0.22), transparent 70%);
 }
 
-/* Gradient border glow for feature cards */
-.card-glow:hover {
-  box-shadow: 0 0 0 1px rgba(99,102,241,0.15), 0 8px 24px -4px rgba(99,102,241,0.12);
+/* Section backgrounds */
+.section-gradient-warm {
+  background: linear-gradient(180deg, #faf9ff 0%, #f0eeff 40%, #f6f5ff 70%, #faf9ff 100%);
+}
+.section-gradient-cool {
+  background: linear-gradient(180deg, #ffffff 0%, #eef2ff 50%, #ffffff 100%);
 }
 
-/* Comparison table row highlight */
-.comparison-row:nth-child(odd) {
-  background: rgba(249,250,251,0.5);
+/* Dot grid overlay (subtle) */
+.bg-grid {
+  background-image: radial-gradient(circle, rgba(99,102,241,0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
-/* Pricing card gradient border */
-.pricing-highlight {
-  background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(139,92,246,0.05));
+/* Feature card: gradient border on hover (like Linear cards) */
+.feature-card {
+  position: relative;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-default);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.feature-card:hover {
+  border-color: rgba(99,102,241,0.3);
+  background: rgba(255,255,255,0.9);
+  box-shadow:
+    0 0 0 1px rgba(99,102,241,0.1),
+    0 4px 12px rgba(99,102,241,0.08),
+    0 20px 40px -12px rgba(99,102,241,0.12);
+  transform: translateY(-2px);
+}
+.feature-card:hover .feature-icon-box {
+  background: var(--brand-subtle);
+  box-shadow: 0 0 20px rgba(99,102,241,0.15);
 }
 
-/* Animated gradient border */
-@keyframes gradient-rotate {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* Animated gradient border for terminal demo */
+.terminal-glow {
+  position: relative;
 }
-
-.gradient-border {
-  background: linear-gradient(90deg, #6366f1, #8b5cf6, #3b82f6, #6366f1);
-  background-size: 300% 100%;
-  animation: gradient-rotate 6s ease infinite;
-}
-
-/* Noise texture overlay */
-.noise-overlay::before {
+.terminal-glow::before {
   content: '';
   position: absolute;
-  inset: 0;
-  opacity: 0.03;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  pointer-events: none;
+  inset: -1px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.4), rgba(139,92,246,0.2), rgba(59,130,246,0.3));
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.terminal-glow:hover::before {
+  opacity: 1;
+}
+
+/* Shimmer for stat numbers */
+@keyframes count-glow {
+  0%, 100% { text-shadow: none; }
+  50% { text-shadow: 0 0 20px rgba(99,102,241,0.3); }
+}
+.stat-number {
+  animation: count-glow 3s ease-in-out infinite;
+}
+
+/* Comparison WarpFix column highlight */
+.wf-highlight {
+  background: linear-gradient(180deg, rgba(99,102,241,0.04) 0%, rgba(99,102,241,0.08) 100%);
+}
+
+/* CTA section animated glow */
+@keyframes cta-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+.cta-glow {
+  animation: cta-pulse 4s ease-in-out infinite;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #6366f1 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Pricing popular card ring */
+.pricing-ring {
+  box-shadow:
+    0 0 0 2px var(--brand),
+    0 8px 32px -4px rgba(99,102,241,0.2);
 }
 
 /* Responsive sidebar override */
