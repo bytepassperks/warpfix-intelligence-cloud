@@ -59,8 +59,10 @@ async function runMigrations() {
       full_name VARCHAR(512) NOT NULL,
       default_branch VARCHAR(255) DEFAULT 'main',
       language VARCHAR(100),
+      installation_id VARCHAR(255),
       user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-      created_at TIMESTAMPTZ DEFAULT NOW()
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
     );
 
     CREATE TABLE IF NOT EXISTS installations (
@@ -167,6 +169,16 @@ async function runMigrations() {
 
   try {
     await pool.query(migrations);
+
+    // Add columns that may be missing from older schema
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TABLE repositories ADD COLUMN IF NOT EXISTS installation_id VARCHAR(255);
+        ALTER TABLE repositories ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+      EXCEPTION WHEN OTHERS THEN NULL;
+      END $$;
+    `);
+
     logger.info('Database migrations completed successfully');
   } catch (err) {
     logger.error('Migration failed', { error: err.message });
