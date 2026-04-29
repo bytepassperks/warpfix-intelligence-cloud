@@ -27,21 +27,32 @@ async function generatePatch({ logData, classification, repository, context }) {
   const prompt = buildPatchPrompt(logData, classification, context);
 
   const result = await callLLM({
-    system: `You are an expert CI repair agent. Generate a minimal, safe git diff patch that fixes the error.
+    system: `You are an expert CI repair agent. Generate a minimal fix for the error.
+
+Output your fix in this EXACT format for each file you need to change:
+===FILE: path/to/file.js===
+(complete new file content here)
+===END_FILE===
 
 Rules:
-- Output ONLY a valid unified diff (git diff format)
+- Output the COMPLETE new file content (not a diff), with the fix applied
 - Keep changes minimal and focused
-- Never modify lockfiles
-- Never touch secrets or .env files
+- Never modify lockfiles, workflow files (.github/workflows/), or .env files
 - Never add console.log or debug statements
-- Maximum 200 lines changed
-- Ensure the fix is correct and complete`,
+- Include ALL original file content, only changing what's needed to fix the error
+- If you don't know the original file content, output a minimal fix file`,
     user: prompt,
     maxTokens: 4000,
   });
 
-  const patch = extractDiff(result);
+  let patch;
+  const fileBlocks = parseFileBlocks(result);
+  if (fileBlocks.length > 0) {
+    // Store as JSON with _warpfix_format marker for the PR agent
+    patch = JSON.stringify({ _warpfix_format: 'file_blocks', files: fileBlocks });
+  } else {
+    patch = extractDiff(result);
+  }
 
   // Safety validation
   const safetyCheck = validatePatchSafety(patch);
@@ -80,8 +91,22 @@ function buildPatchPrompt(logData, classification, context) {
     prompt += `Package manager: ${context.package_manager}\n`;
   }
 
-  prompt += '\nGenerate a minimal unified diff patch to fix this error:';
+  prompt += '\nGenerate the fix using the ===FILE: path=== / ===END_FILE=== format with complete file content:';
   return prompt;
+}
+
+function parseFileBlocks(llmOutput) {
+  const files = [];
+  const regex = /===FILE:\s*(.+?)===\n([\s\S]*?)===END_FILE===/g;
+  let match;
+  while ((match = regex.exec(llmOutput)) !== null) {
+    const path = match[1].trim();
+    const content = match[2].trim();
+    if (path && content) {
+      files.push({ path, content });
+    }
+  }
+  return files;
 }
 
 function extractDiff(llmOutput) {

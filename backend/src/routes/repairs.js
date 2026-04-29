@@ -11,6 +11,12 @@ router.get('/', requireAuth, async (req, res) => {
        LEFT JOIN failures f ON f.id = r.failure_id
        LEFT JOIN repositories repo ON repo.id = r.repository_id
        WHERE r.user_id = $1
+          OR r.repository_id IN (
+            SELECT rp.id FROM repositories rp
+            JOIN installations i ON i.installation_id::text = rp.installation_id
+            JOIN users u ON u.username = i.account_login
+            WHERE u.id = $1
+          )
        ORDER BY r.created_at DESC
        LIMIT 50`,
       [req.user.id]

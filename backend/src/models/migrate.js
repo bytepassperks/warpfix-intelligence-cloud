@@ -26,8 +26,10 @@ CREATE TABLE IF NOT EXISTS repositories (
   full_name VARCHAR(512) NOT NULL,
   default_branch VARCHAR(255) DEFAULT 'main',
   language VARCHAR(100),
+  installation_id VARCHAR(255),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- GitHub App Installations
@@ -127,6 +129,13 @@ CREATE TABLE IF NOT EXISTS telemetry_metrics (
   metric_value JSONB NOT NULL,
   recorded_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Schema migrations (add columns that may not exist yet)
+DO $$ BEGIN
+  ALTER TABLE repositories ADD COLUMN IF NOT EXISTS installation_id VARCHAR(255);
+  ALTER TABLE repositories ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_failures_repository ON failures(repository_id);

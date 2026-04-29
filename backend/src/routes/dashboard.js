@@ -3,26 +3,46 @@ const { query } = require('../models/database');
 const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 
+// Helper: get all repo IDs the user has access to (via direct ownership or installation)
+async function getUserRepoIds(userId) {
+  const result = await query(
+    `SELECT DISTINCT rp.id FROM repositories rp
+     LEFT JOIN installations i ON i.installation_id::text = rp.installation_id
+     LEFT JOIN users u ON u.username = i.account_login
+     WHERE rp.user_id = $1 OR u.id = $1`,
+    [userId]
+  );
+  return result.rows.map(r => r.id);
+}
+
 router.get('/stats', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const repoIds = await getUserRepoIds(userId);
+    const repoIdList = repoIds.length > 0 ? repoIds : ['00000000-0000-0000-0000-000000000000'];
 
     const [repairsResult, successResult, fingerprintResult, recentResult] = await Promise.all([
-      query('SELECT COUNT(*) as total FROM repairs WHERE user_id = $1', [userId]),
-      query('SELECT COUNT(*) as total FROM repairs WHERE user_id = $1 AND sandbox_passed = TRUE', [userId]),
+      query(
+        `SELECT COUNT(*) as total FROM repairs WHERE user_id = $1 OR repository_id = ANY($2::uuid[])`,
+        [userId, repoIdList]
+      ),
+      query(
+        `SELECT COUNT(*) as total FROM repairs WHERE (user_id = $1 OR repository_id = ANY($2::uuid[])) AND sandbox_passed = TRUE`,
+        [userId, repoIdList]
+      ),
       query(
         `SELECT COUNT(DISTINCT fingerprint_id) as unique_fingerprints,
                 COALESCE(SUM(CASE WHEN fingerprint_id IS NOT NULL THEN 1 ELSE 0 END), 0) as reused
-         FROM repairs WHERE user_id = $1`,
-        [userId]
+         FROM repairs WHERE user_id = $1 OR repository_id = ANY($2::uuid[])`,
+        [userId, repoIdList]
       ),
       query(
         `SELECT r.*, repo.full_name as repo_name
          FROM repairs r
          LEFT JOIN repositories repo ON repo.id = r.repository_id
-         WHERE r.user_id = $1
+         WHERE r.user_id = $1 OR r.repository_id = ANY($2::uuid[])
          ORDER BY r.created_at DESC LIMIT 5`,
-        [userId]
+        [userId, repoIdList]
       ),
     ]);
 
@@ -50,28 +70,28 @@ router.get('/stats', requireAuth, async (req, res) => {
 router.get('/stability', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const repoIds = await getUserRepoIds(userId);
+    const repoIdList = repoIds.length > 0 ? repoIds : ['00000000-0000-0000-0000-000000000000'];
 
     const [ciTrend, repairFreq, depAlerts] = await Promise.all([
       query(
         `SELECT DATE(created_at) as day, COUNT(*) as failures
          FROM failures f
-         JOIN repositories r ON r.id = f.repository_id
-         WHERE r.user_id = $1 AND f.created_at > NOW() - INTERVAL '30 days'
+         WHERE f.repository_id = ANY($1::uuid[]) AND f.created_at > NOW() - INTERVAL '30 days'
          GROUP BY DATE(created_at) ORDER BY day`,
-        [userId]
+        [repoIdList]
       ),
       query(
         `SELECT DATE(created_at) as day, COUNT(*) as repairs
          FROM repairs
-         WHERE user_id = $1 AND created_at > NOW() - INTERVAL '30 days'
+         WHERE (user_id = $1 OR repository_id = ANY($2::uuid[])) AND created_at > NOW() - INTERVAL '30 days'
          GROUP BY DATE(created_at) ORDER BY day`,
-        [userId]
+        [userId, repoIdList]
       ),
       query(
         `SELECT COUNT(*) as total FROM dependency_alerts da
-         JOIN repositories r ON r.id = da.repository_id
-         WHERE r.user_id = $1 AND da.resolved = FALSE`,
-        [userId]
+         WHERE da.repository_id = ANY($1::uuid[]) AND da.resolved = FALSE`,
+        [repoIdList]
       ),
     ]);
 
@@ -95,7 +115,7 @@ router.get('/telemetry', requireAuth, async (req, res) => {
     const result = await query(
       `SELECT metric_type, metric_value, recorded_at
        FROM telemetry_metrics
-       WHERE user_id = $1
+       WHERE user_id = $1 OR user_id IS NULL
        ORDER BY recorded_at DESC LIMIT 100`,
       [req.user.id]
     );

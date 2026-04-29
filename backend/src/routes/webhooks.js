@@ -55,6 +55,19 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
             branch: run.head_branch,
           });
 
+          // Look up user_id from installation
+          let userId = null;
+          const installId = payload.installation?.id;
+          if (installId) {
+            const instResult = await query(
+              `SELECT u.id FROM installations i
+               JOIN users u ON u.username = i.account_login
+               WHERE i.installation_id = $1`,
+              [installId]
+            );
+            userId = instResult.rows[0]?.id || null;
+          }
+
           await enqueueRepairJob({
             type: 'ci_failure',
             repository: {
@@ -72,7 +85,8 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
               logs_url: run.logs_url,
               jobs_url: run.jobs_url,
             },
-            installation_id: payload.installation?.id,
+            installation_id: installId,
+            user_id: userId,
           });
         }
         break;

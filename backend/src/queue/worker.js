@@ -76,14 +76,28 @@ async function processRepairJob(job) {
       classification,
     });
 
-    // Step 8: Store failure record
+    // Step 8: Store failure record (auto-create repo if missing)
     let failureId = null;
+    let repoId = null;
     if (repository) {
       const repoResult = await query(
         'SELECT id FROM repositories WHERE github_id = $1',
         [repository.id]
       );
-      const repoId = repoResult.rows[0]?.id;
+      repoId = repoResult.rows[0]?.id;
+
+      if (!repoId) {
+        const insertRepo = await query(
+          `INSERT INTO repositories (github_id, full_name, owner, name, default_branch, installation_id)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT (github_id) DO UPDATE SET updated_at = NOW()
+           RETURNING id`,
+          [repository.id, repository.full_name, repository.owner, repository.name,
+           repository.default_branch, installation_id]
+        );
+        repoId = insertRepo.rows[0]?.id;
+        logger.info('Auto-created repository record', { repoId, full_name: repository.full_name });
+      }
 
       if (repoId) {
         const failureResult = await query(
@@ -123,7 +137,7 @@ async function processRepairJob(job) {
         patch_diff, patch_summary, confidence_score, sandbox_passed,
         pr_number, pr_url, status, engine_used, duration_ms)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-      [failureId, null, user_id, fingerprintId, patch, classification.summary,
+      [failureId, repoId, user_id, fingerprintId, patch, classification.summary,
        confidence.score, sandboxResult.passed, prNumber, prUrl,
        sandboxResult.passed ? 'completed' : 'failed',
        classification.type, duration]

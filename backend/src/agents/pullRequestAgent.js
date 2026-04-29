@@ -33,7 +33,14 @@ async function createPullRequest({ patch, repository, installation_id, classific
 
     // Parse diff and apply changes via API
     const files = parsePatchFiles(patch);
-    for (const file of files) {
+    const committableFiles = files.filter(f => !f.path.startsWith('.github/workflows/'));
+    
+    if (committableFiles.length === 0) {
+      logger.warn('No committable files in patch (all were workflow files or empty)');
+      return { url: null, number: null };
+    }
+
+    for (const file of committableFiles) {
       try {
         let existingSha;
         try {
@@ -115,7 +122,7 @@ ${Object.entries(confidence.breakdown)
 
 ### Patch
 \`\`\`diff
-${patch.substring(0, 5000)}
+${formatPatchForDisplay(patch)}
 \`\`\`
 
 ---
@@ -123,8 +130,30 @@ ${patch.substring(0, 5000)}
 `;
 }
 
+function formatPatchForDisplay(patch) {
+  try {
+    const parsed = JSON.parse(patch);
+    if (parsed._warpfix_format === 'file_blocks' && Array.isArray(parsed.files)) {
+      return parsed.files.map(f => `--- a/${f.path}\n+++ b/${f.path}\n${f.content.substring(0, 1500)}`).join('\n\n');
+    }
+  } catch {
+    // Not JSON, display as-is
+  }
+  return patch.substring(0, 5000);
+}
+
 function parsePatchFiles(patch) {
-  // Simple patch parser - extracts file paths and new content
+  // Try new structured format first
+  try {
+    const parsed = JSON.parse(patch);
+    if (parsed._warpfix_format === 'file_blocks' && Array.isArray(parsed.files)) {
+      return parsed.files;
+    }
+  } catch {
+    // Not JSON, try legacy diff format
+  }
+
+  // Legacy diff parser - extracts file paths and new content from unified diff
   const files = [];
   const sections = patch.split(/^diff --git/m).filter(Boolean);
 
