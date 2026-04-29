@@ -26,6 +26,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
+        logger.info('OAuth verify callback', { githubId: profile.id, username: profile.username });
         const email = profile.emails?.[0]?.value || null;
         const result = await query(
           `INSERT INTO users (github_id, username, email, avatar_url, access_token)
@@ -37,11 +38,12 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
              access_token = EXCLUDED.access_token,
              updated_at = NOW()
            RETURNING *`,
-          [profile.id, profile.username, email, profile._json.avatar_url, accessToken]
+          [parseInt(profile.id, 10), profile.username, email, profile._json.avatar_url, accessToken]
         );
+        logger.info('User upserted successfully', { userId: result.rows[0]?.id });
         done(null, result.rows[0]);
       } catch (err) {
-        logger.error('GitHub OAuth error', { error: err.message });
+        logger.error('GitHub OAuth verify error', { error: err.message, stack: err.stack, githubId: profile.id });
         done(err, null);
       }
     }
