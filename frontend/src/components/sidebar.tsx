@@ -146,13 +146,13 @@ export function Sidebar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="mx-3 mb-3 p-3 rounded-lg bg-[var(--bg-inverse)] text-white"
+            className="mx-3 mb-3 p-3 rounded-lg bg-[var(--brand-muted)] border border-[var(--brand-subtle)]"
           >
             <div className="flex items-center gap-2 mb-1.5">
               <Terminal className="w-3.5 h-3.5 text-[var(--brand)]" />
-              <span className="text-[11px] font-medium text-gray-400">Quick Command</span>
+              <span className="text-[11px] font-medium text-[var(--text-tertiary)]">Quick Command</span>
             </div>
-            <code className="text-xs font-mono text-[var(--brand)]">/fix-ci</code>
+            <code className="text-xs font-mono text-[var(--brand-text)]">/fix-ci</code>
           </motion.div>
         )}
       </AnimatePresence>
