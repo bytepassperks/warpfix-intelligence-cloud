@@ -52,7 +52,7 @@ function quickClassify(errorMessage) {
     { regex: /cannot find module|module not found|no such file|enoent/i, type: ERROR_CATEGORIES.DEPENDENCY, severity: 'high' },
     { regex: /type\s?error|ts\d{4}|is not assignable/i, type: ERROR_CATEGORIES.TYPE, severity: 'medium' },
     { regex: /syntax\s?error|unexpected token/i, type: ERROR_CATEGORIES.BUILD, severity: 'high' },
-    { regex: /test\s(failed|failure)|expect.*received|assert/i, type: ERROR_CATEGORIES.TEST, severity: 'medium' },
+    { regex: /test\s(failed|failure)|expect.*received|assert|promise.*pending.*resolved/i, type: ERROR_CATEGORIES.TEST, severity: 'medium' },
     { regex: /eslint|prettier|lint/i, type: ERROR_CATEGORIES.LINT, severity: 'low' },
     { regex: /eacces|permission denied|forbidden/i, type: ERROR_CATEGORIES.PERMISSION, severity: 'high' },
     { regex: /timeout|econnrefused|enotfound|fetch failed/i, type: ERROR_CATEGORIES.NETWORK, severity: 'medium' },
@@ -64,7 +64,7 @@ function quickClassify(errorMessage) {
     if (regex.test(msg)) {
       return {
         type,
-        summary: errorMessage.substring(0, 200),
+        summary: cleanSummary(errorMessage, type),
         severity,
         suggestedApproach: '',
         confidence: 0.9,
@@ -74,11 +74,23 @@ function quickClassify(errorMessage) {
 
   return {
     type: ERROR_CATEGORIES.UNKNOWN,
-    summary: errorMessage?.substring(0, 200) || 'Unknown error',
+    summary: cleanSummary(errorMessage, ERROR_CATEGORIES.UNKNOWN),
     severity: 'medium',
     suggestedApproach: '',
     confidence: 0.3,
   };
+}
+
+function cleanSummary(errorMessage, type) {
+  if (!errorMessage) return `${type} detected`;
+  // Strip timestamp prefixes (e.g. "2026-04-29T02:01:02.8238731Z")
+  let cleaned = errorMessage.replace(/\d{4}-\d{2}-\d{2}T[\d:.]+Z\s*/g, '').trim();
+  // Strip ANSI escape codes
+  cleaned = cleaned.replace(/\x1b\[[0-9;]*m/g, '');
+  // Take first meaningful line
+  const lines = cleaned.split('\n').map(l => l.trim()).filter(l => l.length > 10);
+  const summary = lines[0] || cleaned;
+  return summary.substring(0, 200);
 }
 
 module.exports = { classifyError, ERROR_CATEGORIES };
