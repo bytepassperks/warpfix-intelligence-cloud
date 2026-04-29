@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Zap, GitBranch, Shield, Fingerprint, BarChart3, Radar,
+  Zap, Shield, Fingerprint, Radar,
   Terminal, ArrowRight, Check, ChevronDown,
-  Cpu, Box, Eye, MessageSquareText, Gauge,
+  Cpu, Box, Eye, MessageSquareText,
   BrainCircuit, ShieldAlert, Code2, TestTube2, Scale, SlidersHorizontal,
 } from "lucide-react";
 
@@ -28,122 +28,30 @@ const fadeUp = {
 };
 
 const FEATURES = [
-  {
-    icon: Cpu,
-    title: "Multi-Agent Pipeline",
-    description: "Six specialized agents parse, classify, patch, validate, score, and ship fixes automatically.",
-  },
-  {
-    icon: Fingerprint,
-    title: "Fingerprint Learning",
-    description: "Error patterns are hashed and cached. Proven fixes are reused instantly on repeat failures.",
-  },
-  {
-    icon: Box,
-    title: "Sandbox Validation",
-    description: "Every patch is tested in an isolated container before any PR is opened.",
-  },
-  {
-    icon: Eye,
-    title: "PR Review Intelligence",
-    description: "Auto-summaries, inline comments with severity, Mermaid diagrams, and effort estimation.",
-  },
-  {
-    icon: MessageSquareText,
-    title: "Chat Agent",
-    description: "Mention @warpfix in any PR comment for instant security analysis, test suggestions, or explanations.",
-  },
-  {
-    icon: Radar,
-    title: "Dependency Radar",
-    description: "Monitors npm for breaking releases and deprecated packages before they hit CI.",
-  },
-  {
-    icon: BrainCircuit,
-    title: "Predictive CI Failure",
-    description: "Analyzes PR diffs before CI runs to predict failures and warn developers proactively.",
-  },
-  {
-    icon: ShieldAlert,
-    title: "Security Auto-Patching",
-    description: "Detects CVEs and OWASP vulnerabilities in your code and dependencies, then auto-generates fix PRs.",
-  },
-  {
-    icon: Code2,
-    title: "Dead Code Detection",
-    description: "Uses codegraph analysis to find unreachable and unused code across your codebase.",
-  },
-  {
-    icon: TestTube2,
-    title: "Test Coverage Gaps",
-    description: "Identifies untested code paths in PRs and suggests missing test cases automatically.",
-  },
-  {
-    icon: Scale,
-    title: "Technical Debt Tracker",
-    description: "Scores and tracks tech debt over time with A-F grades, trends, and actionable cleanup plans.",
-  },
-  {
-    icon: SlidersHorizontal,
-    title: "Quality Gates",
-    description: "Custom pre-merge rules via .warpfix.yaml — block PRs that violate your team's quality standards.",
-  },
+  { icon: Cpu, title: "Multi-Agent Pipeline", description: "Six specialized agents parse, classify, patch, validate, score, and ship fixes automatically." },
+  { icon: Fingerprint, title: "Fingerprint Learning", description: "Error patterns are hashed and cached. Proven fixes are reused instantly on repeat failures." },
+  { icon: Box, title: "Sandbox Validation", description: "Every patch is tested in an isolated container before any PR is opened." },
+  { icon: Eye, title: "PR Review Intelligence", description: "Auto-summaries, inline comments with severity, Mermaid diagrams, and effort estimation." },
+  { icon: MessageSquareText, title: "Chat Agent", description: "Mention @warpfix in any PR comment for instant security analysis, test suggestions, or explanations." },
+  { icon: Radar, title: "Dependency Radar", description: "Monitors npm for breaking releases and deprecated packages before they hit CI." },
+  { icon: BrainCircuit, title: "Predictive CI Failure", description: "Analyzes PR diffs before CI runs to predict failures and warn developers proactively." },
+  { icon: ShieldAlert, title: "Security Auto-Patching", description: "Detects CVEs and OWASP vulnerabilities in your code and dependencies, then auto-generates fix PRs." },
+  { icon: Code2, title: "Dead Code Detection", description: "Uses codegraph analysis to find unreachable and unused code across your codebase." },
+  { icon: TestTube2, title: "Test Coverage Gaps", description: "Identifies untested code paths in PRs and suggests missing test cases automatically." },
+  { icon: Scale, title: "Technical Debt Tracker", description: "Scores and tracks tech debt over time with A-F grades, trends, and actionable cleanup plans." },
+  { icon: SlidersHorizontal, title: "Quality Gates", description: "Custom pre-merge rules via .warpfix.yaml — block PRs that violate your team's quality standards." },
 ];
 
 const STEPS = [
-  {
-    num: "01",
-    title: "CI fails",
-    desc: "GitHub fires a webhook the moment your workflow fails. WarpFix starts analyzing within seconds.",
-  },
-  {
-    num: "02",
-    title: "Analyze & patch",
-    desc: "Logs are parsed, errors classified, fingerprints checked, and a safe patch is generated via LLM.",
-  },
-  {
-    num: "03",
-    title: "Validate & ship",
-    desc: "Patch is tested in a sandbox, scored for confidence, and a PR is opened automatically.",
-  },
+  { num: "01", title: "CI fails", desc: "GitHub fires a webhook the moment your workflow fails. WarpFix starts analyzing within seconds.", color: "bg-red-50 text-red-600 border-red-100" },
+  { num: "02", title: "Analyze & patch", desc: "Logs are parsed, errors classified, fingerprints checked, and a safe patch is generated via LLM.", color: "bg-amber-50 text-amber-600 border-amber-100" },
+  { num: "03", title: "Validate & ship", desc: "Patch is tested in a sandbox, scored for confidence, and a PR is opened automatically.", color: "bg-emerald-50 text-emerald-600 border-emerald-100" },
 ];
 
 const PLANS = [
-  {
-    name: "Free",
-    price: "$0",
-    period: "",
-    description: "Get started with basic CI repair",
-    features: ["3 repairs / month", "Error classification", "Fingerprint matching", "1 repository", "Community support"],
-    cta: "Start Free",
-    highlighted: false,
-  },
-  {
-    name: "Pro",
-    price: "$12",
-    period: "/mo",
-    description: "Unlimited repairs for serious developers",
-    features: [
-      "Unlimited repairs", "PR review intelligence", "Sandbox validation",
-      "Predictive CI failure", "Security auto-patching", "Dead code detection",
-      "Quality gates", "Dependency radar", "Unlimited repos", "Priority support",
-    ],
-    cta: "Upgrade to Pro",
-    highlighted: true,
-  },
-  {
-    name: "Team",
-    price: "$36",
-    period: "/mo",
-    description: "Org-level shared repair intelligence",
-    features: [
-      "Everything in Pro", "Shared fingerprints", "Team repair memory",
-      "Tech debt tracking", "Test coverage analysis", "Org stability score",
-      "Admin dashboard", "SSO", "Dedicated support",
-    ],
-    cta: "Contact Sales",
-    highlighted: false,
-  },
+  { name: "Free", price: "$0", period: "", description: "Get started with basic CI repair", features: ["3 repairs / month", "Error classification", "Fingerprint matching", "1 repository", "Community support"], cta: "Start Free", highlighted: false },
+  { name: "Pro", price: "$12", period: "/mo", description: "Unlimited repairs for serious developers", features: ["Unlimited repairs", "PR review intelligence", "Sandbox validation", "Predictive CI failure", "Security auto-patching", "Dead code detection", "Quality gates", "Dependency radar", "Unlimited repos", "Priority support"], cta: "Upgrade to Pro", highlighted: true },
+  { name: "Team", price: "$36", period: "/mo", description: "Org-level shared repair intelligence", features: ["Everything in Pro", "Shared fingerprints", "Team repair memory", "Tech debt tracking", "Test coverage analysis", "Org stability score", "Admin dashboard", "SSO", "Dedicated support"], cta: "Contact Sales", highlighted: false },
 ];
 
 const FAQS = [
@@ -162,7 +70,7 @@ const COMPARISON = [
   { feature: "Sandbox validation", wf: true, cr: false, sn: false },
   { feature: "Fingerprint fix caching", wf: true, cr: false, sn: false },
   { feature: "Predictive CI failure", wf: true, cr: false, sn: false },
-  { feature: "Security auto-patching", wf: true, cr: false, sn: "partial" },
+  { feature: "Security auto-patching", wf: true, cr: false, sn: "partial" as const },
   { feature: "Dead code detection", wf: true, cr: false, sn: false },
   { feature: "Test coverage gap analysis", wf: true, cr: false, sn: false },
   { feature: "Technical debt tracking", wf: true, cr: false, sn: false },
@@ -180,13 +88,13 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* ─── Nav ─── */}
-      <nav className="fixed top-0 w-full z-50 border-b border-[var(--border-default)] bg-white/80 backdrop-blur-xl">
+      <nav className="fixed top-0 w-full z-50 border-b border-[var(--border-default)]/60 bg-white/90 backdrop-blur-lg">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2.5">
             <div className="w-7 h-7 bg-[var(--brand)] rounded-lg flex items-center justify-center">
               <Zap className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-semibold text-[15px]">WarpFix</span>
+            <span className="font-semibold text-[15px] tracking-tight">WarpFix</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-[13px] text-[var(--text-secondary)]">
             <a href="#features" className="hover:text-[var(--text-primary)] transition-colors">Features</a>
@@ -195,16 +103,10 @@ export default function LandingPage() {
             <a href="#faq" className="hover:text-[var(--text-primary)] transition-colors">FAQ</a>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href="https://warpfix-api.onrender.com/auth/github"
-              className="text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-            >
+            <Link href="https://warpfix-api.onrender.com/auth/github" className="text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
               Sign in
             </Link>
-            <Link
-              href="https://warpfix-api.onrender.com/auth/github"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--brand)] text-white rounded-lg text-[13px] font-medium hover:bg-[var(--brand-hover)] transition-colors"
-            >
+            <Link href="https://warpfix-api.onrender.com/auth/github" className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--brand)] text-white rounded-lg text-[13px] font-medium hover:bg-[var(--brand-hover)] transition-colors shadow-sm">
               <GitHubIcon className="w-3.5 h-3.5" />
               Get Started
             </Link>
@@ -213,14 +115,10 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="pt-32 pb-24 px-6 hero-bg">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--brand-muted)] text-[var(--brand-text)] rounded-full text-xs font-medium mb-8">
+      <section className="pt-36 pb-20 px-6 hero-bg">
+        <div className="max-w-3xl mx-auto text-center">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--brand-muted)] text-[var(--brand-text)] rounded-full text-xs font-medium mb-8 border border-[var(--brand-subtle)]">
               <Terminal className="w-3 h-3" />
               Terminal-native CI repair agent
             </div>
@@ -229,7 +127,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-[clamp(2.5rem,6vw,3.75rem)] font-bold tracking-tight leading-[1.08] mb-5"
+            className="text-[clamp(2.25rem,5.5vw,3.5rem)] font-bold tracking-[-0.03em] leading-[1.1] mb-6"
           >
             Your CI pipeline<br />
             <span className="gradient-text">fixes itself</span>
@@ -238,7 +136,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg text-[var(--text-secondary)] max-w-xl mx-auto mb-10 leading-relaxed"
+            className="text-[17px] text-[var(--text-secondary)] max-w-lg mx-auto mb-10 leading-relaxed"
           >
             WarpFix detects failures, generates safe patches, validates them in sandboxes,
             and opens pull requests — automatically.
@@ -251,32 +149,33 @@ export default function LandingPage() {
           >
             <Link
               href="https://warpfix-api.onrender.com/auth/github"
-              className="flex items-center gap-2 px-6 py-2.5 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand-hover)] transition-colors"
+              className="flex items-center gap-2 px-6 py-2.5 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand-hover)] transition-all shadow-sm"
             >
               Start fixing for free
               <ArrowRight className="w-4 h-4" />
             </Link>
             <a
               href="#how-it-works"
-              className="px-6 py-2.5 border border-[var(--border-default)] rounded-lg font-medium hover:bg-[var(--bg-secondary)] hover:border-[var(--border-hover)] transition-colors text-[var(--text-primary)]"
+              className="px-6 py-2.5 border border-[var(--border-default)] rounded-lg font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] hover:border-[var(--border-hover)] transition-all"
             >
               See how it works
             </a>
           </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.4 }}
-            className="terminal-card overflow-hidden"
-          >
-            <TerminalDemo />
-          </motion.div>
         </div>
+        {/* Terminal — full width container for breathing room */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.4 }}
+          className="max-w-3xl mx-auto terminal-card"
+        >
+          <TerminalDemo />
+        </motion.div>
       </section>
 
       {/* ─── Stats Bar ─── */}
-      <section className="py-12 px-6 border-y border-[var(--border-default)] bg-white">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      <section className="py-14 px-6 border-y border-[var(--border-default)]">
+        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { num: "12", label: "Specialized engines" },
             { num: "95%", label: "Avg confidence score" },
@@ -284,44 +183,29 @@ export default function LandingPage() {
             { num: "37%", label: "Faster with fingerprints" },
           ].map((s) => (
             <div key={s.label}>
-              <div className="stat-number text-3xl font-bold mb-1">{s.num}</div>
-              <div className="text-[13px] text-[var(--text-secondary)]">{s.label}</div>
+              <div className="text-3xl font-bold tracking-tight mb-1">{s.num}</div>
+              <div className="text-[13px] text-[var(--text-tertiary)]">{s.label}</div>
             </div>
           ))}
         </div>
       </section>
 
       {/* ─── Features ─── */}
-      <section id="features" className="py-24 px-6 section-tinted">
+      <section id="features" className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            className="text-center mb-16"
-          >
-            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold tracking-tight mb-3">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="text-center mb-16">
+            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold tracking-tight mb-4">
               Everything to keep CI green
             </motion.h2>
-            <motion.p variants={fadeUp} custom={1} className="text-[var(--text-secondary)] max-w-xl mx-auto">
+            <motion.p variants={fadeUp} custom={1} className="text-[var(--text-secondary)] max-w-lg mx-auto leading-relaxed">
               From failure detection to fix delivery — 12 specialized engines for CI repair, code review, security, and quality.
             </motion.p>
           </motion.div>
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
-            className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
-          >
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {FEATURES.map((f, i) => (
-              <motion.div
-                key={f.title}
-                variants={fadeUp}
-                custom={i + 2}
-                className="group p-6 rounded-xl feature-card"
-              >
-                <div className="feature-icon-box w-10 h-10 rounded-lg bg-[var(--brand-muted)] flex items-center justify-center mb-4 transition-all duration-300">
-                  <f.icon className="w-5 h-5 text-[var(--brand)]" />
+              <motion.div key={f.title} variants={fadeUp} custom={i + 2} className="group p-5 rounded-xl feature-card">
+                <div className="w-9 h-9 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-default)] flex items-center justify-center mb-4 group-hover:border-[var(--brand-subtle)] group-hover:bg-[var(--brand-muted)] transition-colors">
+                  <f.icon className="w-[18px] h-[18px] text-[var(--text-secondary)] group-hover:text-[var(--brand)] transition-colors" />
                 </div>
                 <h3 className="font-semibold text-[15px] mb-1.5">{f.title}</h3>
                 <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">{f.description}</p>
@@ -332,13 +216,13 @@ export default function LandingPage() {
       </section>
 
       {/* ─── How It Works ─── */}
-      <section id="how-it-works" className="py-24 px-6">
+      <section id="how-it-works" className="py-24 px-6 section-tinted">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-3">How WarpFix works</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-4">How WarpFix works</h2>
             <p className="text-[var(--text-secondary)]">From failure to fix in seconds</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {STEPS.map((step, i) => (
               <motion.div
                 key={step.num}
@@ -348,11 +232,13 @@ export default function LandingPage() {
                 transition={{ delay: i * 0.12, duration: 0.5 }}
                 className="relative"
               >
-                <div className="text-[56px] font-bold text-[var(--brand-muted)] leading-none mb-3">{step.num}</div>
+                <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold mb-4 border ${step.color}`}>
+                  {step.num}
+                </div>
                 <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
                 <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">{step.desc}</p>
                 {i < 2 && (
-                  <ArrowRight className="hidden md:block absolute top-8 -right-3 w-5 h-5 text-[var(--border-default)]" />
+                  <ArrowRight className="hidden md:block absolute top-5 -right-4 w-5 h-5 text-[var(--border-default)]" />
                 )}
               </motion.div>
             ))}
@@ -361,11 +247,11 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Fingerprint Intelligence ─── */}
-      <section className="py-24 px-6 section-tinted">
+      <section className="py-24 px-6 section-warm">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[var(--brand-text)] bg-[var(--brand-muted)] rounded-full mb-4">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[var(--brand-text)] bg-[var(--brand-muted)] rounded-full mb-4 border border-[var(--brand-subtle)]">
                 <Fingerprint className="w-3 h-3" />
                 Unique to WarpFix
               </div>
@@ -382,31 +268,31 @@ export default function LandingPage() {
                   "Accuracy improves over time",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-[13px]">
-                    <Check className="w-4 h-4 text-[var(--brand)] mt-0.5 shrink-0" />
+                    <Check className="w-4 h-4 text-[var(--success)] mt-0.5 shrink-0" />
                     <span>{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="bg-[var(--bg-inverse)] rounded-xl p-6 font-mono text-sm shadow-lg">
-              <div className="text-gray-500 text-xs mb-1">fingerprint.hash</div>
+            <div className="bg-[var(--bg-inverse)] rounded-xl p-6 font-mono text-sm border border-neutral-800">
+              <div className="text-neutral-500 text-xs mb-1">fingerprint.hash</div>
               <div className="text-[var(--brand)] mb-4">a3f8c2d1e5b74910</div>
-              <div className="text-gray-500 text-xs mb-1">times_matched</div>
+              <div className="text-neutral-500 text-xs mb-1">times_matched</div>
               <div className="text-emerald-400 mb-4">47</div>
-              <div className="text-gray-500 text-xs mb-1">resolution_confidence</div>
+              <div className="text-neutral-500 text-xs mb-1">resolution_confidence</div>
               <div className="text-amber-400 mb-4">92 / 100</div>
-              <div className="text-gray-500 text-xs mb-1">avg_resolution_time</div>
-              <div className="text-white">340ms</div>
+              <div className="text-neutral-500 text-xs mb-1">avg_resolution_time</div>
+              <div className="text-neutral-200">340ms</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* ─── Comparison ─── */}
-      <section className="py-24 px-6">
+      <section className="py-24 px-6 section-tinted">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight mb-3">How we compare</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-4">How we compare</h2>
             <p className="text-[var(--text-secondary)]">WarpFix is the only platform that repairs, reviews, and secures — all in one.</p>
           </div>
           <div className="rounded-xl border border-[var(--border-default)] overflow-hidden bg-white">
@@ -420,8 +306,8 @@ export default function LandingPage() {
                 </tr>
               </thead>
               <tbody>
-                {COMPARISON.map((row) => (
-                  <tr key={row.feature} className="border-b border-[var(--border-default)] last:border-0">
+                {COMPARISON.map((row, i) => (
+                  <tr key={row.feature} className={`border-b border-[var(--border-default)] last:border-0 ${i % 2 === 1 ? 'bg-[var(--bg-secondary)]/50' : ''}`}>
                     <td className="py-3 px-5">{row.feature}</td>
                     <td className="py-3 px-5 text-center">
                       {row.wf ? <Check className="w-4 h-4 text-[var(--brand)] mx-auto" /> : <span className="text-[var(--text-tertiary)]">—</span>}
@@ -431,7 +317,7 @@ export default function LandingPage() {
                     </td>
                     <td className="py-3 px-5 text-center">
                       {row.sn === "partial" ? (
-                        <span className="text-[11px] font-medium text-amber-500">Partial</span>
+                        <span className="text-[11px] font-medium text-amber-600">Partial</span>
                       ) : row.sn ? (
                         <Check className="w-4 h-4 text-emerald-500 mx-auto" />
                       ) : (
@@ -447,20 +333,20 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Pricing ─── */}
-      <section id="pricing" className="py-24 px-6 section-tinted">
+      <section id="pricing" className="py-24 px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight mb-3">Simple pricing</h2>
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold tracking-tight mb-4">Simple pricing</h2>
             <p className="text-[var(--text-secondary)]">Start free. Scale as you grow.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {PLANS.map((plan) => (
               <div
                 key={plan.name}
-                className={`p-6 rounded-xl border bg-white transition-shadow ${
+                className={`p-6 rounded-xl bg-white transition-all ${
                   plan.highlighted
-                    ? "border-[var(--brand)] pricing-ring"
-                    : "border-[var(--border-default)] hover:shadow-md"
+                    ? "pricing-ring"
+                    : "border border-[var(--border-default)] hover:border-[var(--border-hover)] hover:shadow-sm"
                 }`}
               >
                 {plan.highlighted && (
@@ -468,21 +354,21 @@ export default function LandingPage() {
                 )}
                 <h3 className="text-lg font-bold mb-1">{plan.name}</h3>
                 <div className="flex items-baseline gap-0.5 mb-1">
-                  <span className="text-3xl font-bold">{plan.price}</span>
-                  {plan.period && <span className="text-[var(--text-secondary)] text-sm">{plan.period}</span>}
+                  <span className="text-3xl font-bold tracking-tight">{plan.price}</span>
+                  {plan.period && <span className="text-[var(--text-tertiary)] text-sm">{plan.period}</span>}
                 </div>
                 <p className="text-[13px] text-[var(--text-secondary)] mb-5">{plan.description}</p>
                 <Link
                   href="https://warpfix-api.onrender.com/auth/github"
-                  className={`block text-center py-2.5 rounded-lg text-[13px] font-medium transition-colors ${
+                  className={`block text-center py-2.5 rounded-lg text-[13px] font-medium transition-all ${
                     plan.highlighted
-                      ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]"
+                      ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] shadow-sm"
                       : "bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-default)]"
                   }`}
                 >
                   {plan.cta}
                 </Link>
-                <ul className="mt-5 space-y-2.5">
+                <ul className="mt-6 space-y-2.5">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-center gap-2 text-[13px]">
                       <Check className="w-3.5 h-3.5 text-[var(--brand)] shrink-0" />
@@ -497,39 +383,28 @@ export default function LandingPage() {
       </section>
 
       {/* ─── FAQ ─── */}
-      <section id="faq" className="py-24 px-6">
+      <section id="faq" className="py-24 px-6 section-tinted">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl font-bold tracking-tight text-center mb-12">Frequently asked questions</h2>
           <div className="space-y-2">
             {FAQS.map((faq, i) => (
-              <div
-                key={i}
-                className="border border-[var(--border-default)] rounded-lg overflow-hidden bg-white"
-              >
+              <div key={i} className="border border-[var(--border-default)] rounded-lg overflow-hidden bg-white">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full text-left px-5 py-4 flex items-center justify-between hover:bg-[var(--bg-secondary)] transition-colors"
                 >
                   <span className="font-medium text-[14px]">{faq.q}</span>
-                  <motion.div
-                    animate={{ rotate: openFaq === i ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
+                  <motion.div animate={{ rotate: openFaq === i ? 180 : 0 }} transition={{ duration: 0.2 }}>
                     <ChevronDown className="w-4 h-4 text-[var(--text-tertiary)]" />
                   </motion.div>
                 </button>
                 <motion.div
                   initial={false}
-                  animate={{
-                    height: openFaq === i ? "auto" : 0,
-                    opacity: openFaq === i ? 1 : 0,
-                  }}
+                  animate={{ height: openFaq === i ? "auto" : 0, opacity: openFaq === i ? 1 : 0 }}
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="px-5 pb-4 text-[13px] text-[var(--text-secondary)] leading-relaxed">
-                    {faq.a}
-                  </div>
+                  <div className="px-5 pb-4 text-[13px] text-[var(--text-secondary)] leading-relaxed">{faq.a}</div>
                 </motion.div>
               </div>
             ))}
@@ -541,12 +416,12 @@ export default function LandingPage() {
       <section className="py-24 px-6 cta-section text-white">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold tracking-tight mb-4">Ready to stop babysitting CI?</h2>
-          <p className="text-gray-400 mb-8 max-w-lg mx-auto">
+          <p className="text-neutral-400 mb-8 max-w-lg mx-auto leading-relaxed">
             Install WarpFix in under a minute. Your next CI failure fixes itself.
           </p>
           <Link
             href="https://warpfix-api.onrender.com/auth/github"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#0f172a] rounded-lg font-medium hover:bg-gray-100 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[var(--bg-inverse)] rounded-lg font-medium hover:bg-neutral-100 transition-colors"
           >
             <GitHubIcon className="w-4 h-4" />
             Install WarpFix
@@ -556,7 +431,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Footer ─── */}
-      <footer className="py-8 px-6 border-t border-[var(--border-default)] bg-white">
+      <footer className="py-8 px-6 border-t border-[var(--border-default)]">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-[var(--text-tertiary)]">
           <div className="flex items-center gap-2">
             <Zap className="w-3.5 h-3.5 text-[var(--brand)]" />

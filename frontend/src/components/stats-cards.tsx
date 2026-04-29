@@ -91,7 +91,7 @@ export function StatsCards() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.3 }}
-            className="bg-white rounded-lg border border-[var(--border-default)] p-5 hover:shadow-sm hover:border-[var(--border-hover)] transition-all"
+            className="bg-white rounded-xl border border-[var(--border-default)] p-5 hover:border-[var(--border-hover)] transition-all"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-[13px] text-[var(--text-secondary)]">{card.label}</span>
