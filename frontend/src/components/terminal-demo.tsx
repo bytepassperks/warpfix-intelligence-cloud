@@ -35,7 +35,7 @@ export function TerminalDemo() {
   }, []);
 
   return (
-    <div className="rounded-xl overflow-hidden shadow-2xl ring-1 ring-black/5 max-w-2xl mx-auto">
+    <div className="rounded-xl overflow-hidden ring-1 ring-black/10 max-w-2xl mx-auto">
       {/* Title bar */}
       <div className="flex items-center gap-2 px-4 py-3 bg-[#1e1e2e] border-b border-white/5">
         <div className="flex gap-1.5">

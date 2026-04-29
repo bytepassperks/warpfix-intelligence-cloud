@@ -208,9 +208,8 @@ body {
   transform: translateY(-2px);
 }
 
-/* Terminal demo — tight contained shadow, no "wings" */
+/* Terminal demo — border only, no shadow wings */
 .terminal-card {
-  box-shadow: var(--shadow-lg);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
   overflow: hidden;
