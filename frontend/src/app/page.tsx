@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import {
-  Zap, Shield, Fingerprint, Radar,
+  Zap, Fingerprint, Radar,
   Terminal, ArrowRight, Check, ChevronDown,
   Cpu, Box, Eye, MessageSquareText,
   BrainCircuit, ShieldAlert, Code2, TestTube2, Scale, SlidersHorizontal,
 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -17,15 +18,119 @@ function GitHubIcon({ className }: { className?: string }) {
   );
 }
 import { TerminalDemo } from "@/components/terminal-demo";
-import { useState } from "react";
 
+/* ─── Animation variants ─── */
 const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 24 },
   visible: (i: number) => ({
     opacity: 1, y: 0,
-    transition: { delay: i * 0.08, duration: 0.5, ease: "easeOut" as const },
+    transition: { delay: i * 0.08, duration: 0.6, ease: "easeOut" as const },
   }),
 };
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: (i: number) => ({
+    opacity: 1, scale: 1,
+    transition: { delay: i * 0.06, duration: 0.5, ease: "easeOut" as const },
+  }),
+};
+
+/* ─── Animated counter hook ─── */
+function useCountUp(end: number, duration: number = 1.8) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-50px" });
+
+  useEffect(() => {
+    if (!inView) return;
+    let start = 0;
+    const step = end / (duration * 60);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= end) { setCount(end); clearInterval(timer); }
+      else setCount(Math.floor(start));
+    }, 1000 / 60);
+    return () => clearInterval(timer);
+  }, [inView, end, duration]);
+
+  return { ref, count };
+}
+
+function AnimatedStat({ value, suffix, label }: { value: number; suffix: string; label: string }) {
+  const { ref, count } = useCountUp(value);
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5 }}
+      className="text-center"
+    >
+      <div className="text-3xl md:text-4xl font-bold tracking-tight mb-1 stat-number">
+        {suffix === "%" ? `${count}%` : suffix === "<" ? `<${count}s` : suffix === "+" ? `${count}+` : `${count}`}
+      </div>
+      <div className="text-[13px] text-[var(--text-tertiary)]">{label}</div>
+    </motion.div>
+  );
+}
+
+/* ─── Scroll progress hook ─── */
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const width = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+  return (
+    <motion.div
+      className="fixed top-14 left-0 right-0 h-[2px] bg-[var(--brand)] z-50 origin-left"
+      style={{ width, opacity: scrollYProgress }}
+    />
+  );
+}
+
+/* ─── Interactive fingerprint viz ─── */
+function FingerprintViz() {
+  const [activeField, setActiveField] = useState<string | null>(null);
+  const fields = [
+    { key: "hash", label: "fingerprint.hash", value: "a3f8c2d1e5b74910", color: "text-[var(--brand)]", detail: "SHA-256 of normalized error pattern" },
+    { key: "matched", label: "times_matched", value: "47", color: "text-emerald-400", detail: "Across 12 repositories in your org" },
+    { key: "confidence", label: "resolution_confidence", value: "92 / 100", color: "text-amber-400", detail: "Based on 47 successful resolutions" },
+    { key: "time", label: "avg_resolution_time", value: "340ms", color: "text-neutral-200", detail: "37% faster than first-time repair" },
+  ];
+
+  return (
+    <div className="bg-[var(--bg-inverse)] rounded-xl p-6 font-mono text-sm border border-neutral-800 fingerprint-panel">
+      {fields.map((f, i) => (
+        <motion.div
+          key={f.key}
+          initial={{ opacity: 0, x: -8 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
+          className="group cursor-pointer mb-4 last:mb-0"
+          onMouseEnter={() => setActiveField(f.key)}
+          onMouseLeave={() => setActiveField(null)}
+        >
+          <div className="text-neutral-500 text-xs mb-0.5 flex items-center gap-2">
+            {f.label}
+            {activeField === f.key && (
+              <motion.span
+                initial={{ opacity: 0, x: -4 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-neutral-600 text-[10px]"
+              >
+                — {f.detail}
+              </motion.span>
+            )}
+          </div>
+          <div className={`${f.color} transition-all duration-200 ${activeField === f.key ? "translate-x-1" : ""}`}>
+            {f.value}
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
 const FEATURES = [
   { icon: Cpu, title: "Multi-Agent Pipeline", description: "Six specialized agents parse, classify, patch, validate, score, and ship fixes automatically." },
@@ -43,9 +148,9 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { num: "01", title: "CI fails", desc: "GitHub fires a webhook the moment your workflow fails. WarpFix starts analyzing within seconds.", color: "bg-red-50 text-red-600 border-red-100" },
-  { num: "02", title: "Analyze & patch", desc: "Logs are parsed, errors classified, fingerprints checked, and a safe patch is generated via LLM.", color: "bg-amber-50 text-amber-600 border-amber-100" },
-  { num: "03", title: "Validate & ship", desc: "Patch is tested in a sandbox, scored for confidence, and a PR is opened automatically.", color: "bg-emerald-50 text-emerald-600 border-emerald-100" },
+  { num: "01", title: "CI fails", desc: "GitHub fires a webhook the moment your workflow fails. WarpFix starts analyzing within seconds.", color: "text-red-500", bg: "bg-red-50", border: "border-red-100" },
+  { num: "02", title: "Analyze & patch", desc: "Logs are parsed, errors classified, fingerprints checked, and a safe patch is generated via LLM.", color: "text-amber-500", bg: "bg-amber-50", border: "border-amber-100" },
+  { num: "03", title: "Validate & ship", desc: "Patch is tested in a sandbox, scored for confidence, and a PR is opened automatically.", color: "text-emerald-500", bg: "bg-emerald-50", border: "border-emerald-100" },
 ];
 
 const PLANS = [
@@ -84,29 +189,41 @@ const COMPARISON = [
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
+      {/* ─── Scroll Progress ─── */}
+      <ScrollProgress />
+
       {/* ─── Nav ─── */}
       <nav className="fixed top-0 w-full z-50 border-b border-[var(--border-default)]/60 bg-white/90 backdrop-blur-lg">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-7 h-7 bg-[var(--brand)] rounded-lg flex items-center justify-center">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-7 h-7 bg-[var(--brand)] rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
               <Zap className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="font-semibold text-[15px] tracking-tight">WarpFix</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-[13px] text-[var(--text-secondary)]">
-            <a href="#features" className="hover:text-[var(--text-primary)] transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-[var(--text-primary)] transition-colors">How It Works</a>
-            <a href="#pricing" className="hover:text-[var(--text-primary)] transition-colors">Pricing</a>
-            <a href="#faq" className="hover:text-[var(--text-primary)] transition-colors">FAQ</a>
+            {["Features", "How It Works", "Pricing", "FAQ"].map((item) => (
+              <a
+                key={item}
+                href={`#${item.toLowerCase().replace(/ /g, "-")}`}
+                className="relative hover:text-[var(--text-primary)] transition-colors duration-200 py-1"
+              >
+                {item}
+              </a>
+            ))}
           </div>
           <div className="flex items-center gap-3">
             <Link href="https://warpfix-api.onrender.com/auth/github" className="text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
               Sign in
             </Link>
-            <Link href="https://warpfix-api.onrender.com/auth/github" className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--brand)] text-white rounded-lg text-[13px] font-medium hover:bg-[var(--brand-hover)] transition-colors shadow-sm">
+            <Link
+              href="https://warpfix-api.onrender.com/auth/github"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--brand)] text-white rounded-lg text-[13px] font-medium hover:bg-[var(--brand-hover)] transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
+            >
               <GitHubIcon className="w-3.5 h-3.5" />
               Get Started
             </Link>
@@ -115,10 +232,10 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="pt-36 pb-20 px-6 hero-bg">
+      <section className="pt-36 pb-24 px-6 hero-bg grain relative overflow-hidden">
         <div className="max-w-3xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--brand-muted)] text-[var(--brand-text)] rounded-full text-xs font-medium mb-8 border border-[var(--brand-subtle)]">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--brand-muted)] text-[var(--brand-text)] rounded-full text-xs font-medium mb-8 border border-[var(--brand-subtle)] hero-badge">
               <Terminal className="w-3 h-3" />
               Terminal-native CI repair agent
             </div>
@@ -127,7 +244,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-[clamp(2.25rem,5.5vw,3.5rem)] font-bold tracking-[-0.03em] leading-[1.1] mb-6"
+            className="text-[clamp(2.25rem,5.5vw,3.75rem)] font-bold tracking-[-0.03em] leading-[1.08] mb-6"
           >
             Your CI pipeline<br />
             <span className="gradient-text">fixes itself</span>
@@ -149,49 +266,46 @@ export default function LandingPage() {
           >
             <Link
               href="https://warpfix-api.onrender.com/auth/github"
-              className="flex items-center gap-2 px-6 py-2.5 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand-hover)] transition-all shadow-sm"
+              className="group flex items-center gap-2 px-6 py-2.5 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand-hover)] transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
             >
               Start fixing for free
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
             <a
               href="#how-it-works"
-              className="px-6 py-2.5 border border-[var(--border-default)] rounded-lg font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] hover:border-[var(--border-hover)] transition-all"
+              className="px-6 py-2.5 border border-[var(--border-default)] rounded-lg font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] hover:border-[var(--border-hover)] transition-all duration-200"
             >
               See how it works
             </a>
           </motion.div>
         </div>
-        {/* Terminal — full width container for breathing room */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.4 }}
+          transition={{ duration: 0.8, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="max-w-3xl mx-auto terminal-card"
         >
           <TerminalDemo />
         </motion.div>
       </section>
 
+      {/* ─── Gradient divider ─── */}
+      <div className="gradient-divider" />
+
       {/* ─── Stats Bar ─── */}
-      <section className="py-14 px-6 border-y border-[var(--border-default)]">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[
-            { num: "12", label: "Specialized engines" },
-            { num: "95%", label: "Avg confidence score" },
-            { num: "<30s", label: "Avg repair time" },
-            { num: "37%", label: "Faster with fingerprints" },
-          ].map((s) => (
-            <div key={s.label}>
-              <div className="text-3xl font-bold tracking-tight mb-1">{s.num}</div>
-              <div className="text-[13px] text-[var(--text-tertiary)]">{s.label}</div>
-            </div>
-          ))}
+      <section className="py-16 px-6 stats-bar">
+        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+          <AnimatedStat value={12} suffix="+" label="Specialized engines" />
+          <AnimatedStat value={95} suffix="%" label="Avg confidence score" />
+          <AnimatedStat value={30} suffix="<" label="Avg repair time" />
+          <AnimatedStat value={37} suffix="%" label="Faster with fingerprints" />
         </div>
       </section>
 
+      <div className="gradient-divider" />
+
       {/* ─── Features ─── */}
-      <section id="features" className="py-24 px-6">
+      <section id="features" className="py-24 px-6 relative">
         <div className="max-w-6xl mx-auto">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="text-center mb-16">
             <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold tracking-tight mb-4">
@@ -203,9 +317,22 @@ export default function LandingPage() {
           </motion.div>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {FEATURES.map((f, i) => (
-              <motion.div key={f.title} variants={fadeUp} custom={i + 2} className="group p-5 rounded-xl feature-card">
-                <div className="w-9 h-9 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-default)] flex items-center justify-center mb-4 group-hover:border-[var(--brand-subtle)] group-hover:bg-[var(--brand-muted)] transition-colors">
-                  <f.icon className="w-[18px] h-[18px] text-[var(--text-secondary)] group-hover:text-[var(--brand)] transition-colors" />
+              <motion.div
+                key={f.title}
+                variants={scaleIn}
+                custom={i}
+                className="group p-5 rounded-xl feature-card cursor-default"
+                onMouseEnter={() => setHoveredFeature(i)}
+                onMouseLeave={() => setHoveredFeature(null)}
+              >
+                <div className={`w-9 h-9 rounded-lg border flex items-center justify-center mb-4 transition-all duration-300 ${
+                  hoveredFeature === i
+                    ? "bg-[var(--brand-muted)] border-[var(--brand-subtle)] scale-110"
+                    : "bg-[var(--bg-secondary)] border-[var(--border-default)]"
+                }`}>
+                  <f.icon className={`w-[18px] h-[18px] transition-colors duration-300 ${
+                    hoveredFeature === i ? "text-[var(--brand)]" : "text-[var(--text-secondary)]"
+                  }`} />
                 </div>
                 <h3 className="font-semibold text-[15px] mb-1.5">{f.title}</h3>
                 <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">{f.description}</p>
@@ -218,27 +345,32 @@ export default function LandingPage() {
       {/* ─── How It Works ─── */}
       <section id="how-it-works" className="py-24 px-6 section-tinted">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">How WarpFix works</h2>
-            <p className="text-[var(--text-secondary)]">From failure to fix in seconds</p>
-          </div>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="text-center mb-16"
+          >
+            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold tracking-tight mb-4">How WarpFix works</motion.h2>
+            <motion.p variants={fadeUp} custom={1} className="text-[var(--text-secondary)]">From failure to fix in seconds</motion.p>
+          </motion.div>
           <div className="grid md:grid-cols-3 gap-8">
             {STEPS.map((step, i) => (
               <motion.div
                 key={step.num}
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.12, duration: 0.5 }}
-                className="relative"
+                transition={{ delay: i * 0.15, duration: 0.5 }}
+                className="relative step-card group"
               >
-                <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold mb-4 border ${step.color}`}>
+                <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold mb-4 border ${step.bg} ${step.color} ${step.border}`}>
                   {step.num}
                 </div>
                 <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
                 <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">{step.desc}</p>
                 {i < 2 && (
-                  <ArrowRight className="hidden md:block absolute top-5 -right-4 w-5 h-5 text-[var(--border-default)]" />
+                  <ArrowRight className="hidden md:block absolute top-5 -right-4 w-5 h-5 text-[var(--border-default)] group-hover:text-[var(--brand)] transition-colors duration-300" />
                 )}
               </motion.div>
             ))}
@@ -246,11 +378,18 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <div className="gradient-divider" />
+
       {/* ─── Fingerprint Intelligence ─── */}
-      <section className="py-24 px-6 section-warm">
+      <section className="py-24 px-6 section-warm grain relative overflow-hidden">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center">
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[var(--brand-text)] bg-[var(--brand-muted)] rounded-full mb-4 border border-[var(--brand-subtle)]">
                 <Fingerprint className="w-3 h-3" />
                 Unique to WarpFix
@@ -266,36 +405,54 @@ export default function LandingPage() {
                   "Fixes stored with confidence scores",
                   "Org-wide shared repair memory",
                   "Accuracy improves over time",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-[13px]">
+                ].map((item, i) => (
+                  <motion.li
+                    key={item}
+                    initial={{ opacity: 0, x: -8 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2 + i * 0.08, duration: 0.4 }}
+                    className="flex items-start gap-2.5 text-[13px]"
+                  >
                     <Check className="w-4 h-4 text-[var(--success)] mt-0.5 shrink-0" />
                     <span>{item}</span>
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
-            </div>
-            <div className="bg-[var(--bg-inverse)] rounded-xl p-6 font-mono text-sm border border-neutral-800">
-              <div className="text-neutral-500 text-xs mb-1">fingerprint.hash</div>
-              <div className="text-[var(--brand)] mb-4">a3f8c2d1e5b74910</div>
-              <div className="text-neutral-500 text-xs mb-1">times_matched</div>
-              <div className="text-emerald-400 mb-4">47</div>
-              <div className="text-neutral-500 text-xs mb-1">resolution_confidence</div>
-              <div className="text-amber-400 mb-4">92 / 100</div>
-              <div className="text-neutral-500 text-xs mb-1">avg_resolution_time</div>
-              <div className="text-neutral-200">340ms</div>
-            </div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <FingerprintViz />
+            </motion.div>
           </div>
         </div>
       </section>
 
+      <div className="gradient-divider" />
+
       {/* ─── Comparison ─── */}
       <section className="py-24 px-6 section-tinted">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">How we compare</h2>
-            <p className="text-[var(--text-secondary)]">WarpFix is the only platform that repairs, reviews, and secures — all in one.</p>
-          </div>
-          <div className="rounded-xl border border-[var(--border-default)] overflow-hidden bg-white">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="text-center mb-12"
+          >
+            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold tracking-tight mb-4">How we compare</motion.h2>
+            <motion.p variants={fadeUp} custom={1} className="text-[var(--text-secondary)]">WarpFix is the only platform that repairs, reviews, and secures — all in one.</motion.p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="rounded-xl border border-[var(--border-default)] overflow-hidden bg-white"
+          >
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="border-b border-[var(--border-default)] bg-[var(--bg-secondary)]">
@@ -307,7 +464,10 @@ export default function LandingPage() {
               </thead>
               <tbody>
                 {COMPARISON.map((row, i) => (
-                  <tr key={row.feature} className={`border-b border-[var(--border-default)] last:border-0 ${i % 2 === 1 ? 'bg-[var(--bg-secondary)]/50' : ''}`}>
+                  <tr
+                    key={row.feature}
+                    className={`border-b border-[var(--border-default)] last:border-0 transition-colors duration-150 hover:bg-[var(--brand-muted)]/30 ${i % 2 === 1 ? "bg-[var(--bg-secondary)]/50" : ""}`}
+                  >
                     <td className="py-3 px-5">{row.feature}</td>
                     <td className="py-3 px-5 text-center">
                       {row.wf ? <Check className="w-4 h-4 text-[var(--brand)] mx-auto" /> : <span className="text-[var(--text-tertiary)]">—</span>}
@@ -328,26 +488,37 @@ export default function LandingPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </motion.div>
         </div>
       </section>
+
+      <div className="gradient-divider" />
 
       {/* ─── Pricing ─── */}
       <section id="pricing" className="py-24 px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Simple pricing</h2>
-            <p className="text-[var(--text-secondary)]">Start free. Scale as you grow.</p>
-          </div>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="text-center mb-14"
+          >
+            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold tracking-tight mb-4">Simple pricing</motion.h2>
+            <motion.p variants={fadeUp} custom={1} className="text-[var(--text-secondary)]">Start free. Scale as you grow.</motion.p>
+          </motion.div>
           <div className="grid md:grid-cols-3 gap-5">
-            {PLANS.map((plan) => (
-              <div
+            {PLANS.map((plan, i) => (
+              <motion.div
                 key={plan.name}
-                className={`p-6 rounded-xl bg-white transition-all ${
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className={`p-6 rounded-xl bg-white transition-all duration-300 ${
                   plan.highlighted
-                    ? "pricing-ring"
-                    : "border border-[var(--border-default)] hover:border-[var(--border-hover)] hover:shadow-sm"
-                }`}
+                    ? "pricing-ring hover:shadow-xl"
+                    : "border border-[var(--border-default)] hover:border-[var(--border-hover)] hover:shadow-md"
+                } hover:-translate-y-1`}
               >
                 {plan.highlighted && (
                   <div className="text-[11px] font-semibold text-[var(--brand)] uppercase tracking-wider mb-3">Most Popular</div>
@@ -360,9 +531,9 @@ export default function LandingPage() {
                 <p className="text-[13px] text-[var(--text-secondary)] mb-5">{plan.description}</p>
                 <Link
                   href="https://warpfix-api.onrender.com/auth/github"
-                  className={`block text-center py-2.5 rounded-lg text-[13px] font-medium transition-all ${
+                  className={`block text-center py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 active:scale-[0.98] ${
                     plan.highlighted
-                      ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] shadow-sm"
+                      ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] shadow-sm hover:shadow-md"
                       : "bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-default)]"
                   }`}
                 >
@@ -376,7 +547,7 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -385,13 +556,28 @@ export default function LandingPage() {
       {/* ─── FAQ ─── */}
       <section id="faq" className="py-24 px-6 section-tinted">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-3xl font-bold tracking-tight text-center mb-12">Frequently asked questions</h2>
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-3xl font-bold tracking-tight text-center mb-12"
+          >
+            Frequently asked questions
+          </motion.h2>
           <div className="space-y-2">
             {FAQS.map((faq, i) => (
-              <div key={i} className="border border-[var(--border-default)] rounded-lg overflow-hidden bg-white">
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05, duration: 0.4 }}
+                className="border border-[var(--border-default)] rounded-lg overflow-hidden bg-white faq-item"
+              >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full text-left px-5 py-4 flex items-center justify-between hover:bg-[var(--bg-secondary)] transition-colors"
+                  className="w-full text-left px-5 py-4 flex items-center justify-between hover:bg-[var(--bg-secondary)] transition-colors duration-150"
                 >
                   <span className="font-medium text-[14px]">{faq.q}</span>
                   <motion.div animate={{ rotate: openFaq === i ? 180 : 0 }} transition={{ duration: 0.2 }}>
@@ -401,32 +587,55 @@ export default function LandingPage() {
                 <motion.div
                   initial={false}
                   animate={{ height: openFaq === i ? "auto" : 0, opacity: openFaq === i ? 1 : 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.25 }}
                   className="overflow-hidden"
                 >
                   <div className="px-5 pb-4 text-[13px] text-[var(--text-secondary)] leading-relaxed">{faq.a}</div>
                 </motion.div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
+      <div className="gradient-divider" />
+
       {/* ─── CTA ─── */}
-      <section className="py-24 px-6 cta-section text-white">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold tracking-tight mb-4">Ready to stop babysitting CI?</h2>
-          <p className="text-neutral-400 mb-8 max-w-lg mx-auto leading-relaxed">
-            Install WarpFix in under a minute. Your next CI failure fixes itself.
-          </p>
-          <Link
-            href="https://warpfix-api.onrender.com/auth/github"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[var(--bg-inverse)] rounded-lg font-medium hover:bg-neutral-100 transition-colors"
+      <section className="py-24 px-6 cta-section text-white relative">
+        <div className="max-w-3xl mx-auto text-center relative z-10">
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-3xl font-bold tracking-tight mb-4"
           >
-            <GitHubIcon className="w-4 h-4" />
-            Install WarpFix
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+            Ready to stop babysitting CI?
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-neutral-400 mb-8 max-w-lg mx-auto leading-relaxed"
+          >
+            Install WarpFix in under a minute. Your next CI failure fixes itself.
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Link
+              href="https://warpfix-api.onrender.com/auth/github"
+              className="group inline-flex items-center gap-2 px-6 py-3 bg-white text-[var(--bg-inverse)] rounded-lg font-medium hover:bg-neutral-100 transition-all duration-200 active:scale-[0.98]"
+            >
+              <GitHubIcon className="w-4 h-4" />
+              Install WarpFix
+              <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
+          </motion.div>
         </div>
       </section>
 
@@ -438,10 +647,9 @@ export default function LandingPage() {
             <span>WarpFix</span>
           </div>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-[var(--text-secondary)] transition-colors">Docs</a>
-            <a href="#" className="hover:text-[var(--text-secondary)] transition-colors">GitHub</a>
-            <a href="#" className="hover:text-[var(--text-secondary)] transition-colors">Privacy</a>
-            <a href="#" className="hover:text-[var(--text-secondary)] transition-colors">Terms</a>
+            {["Docs", "GitHub", "Privacy", "Terms"].map((link) => (
+              <a key={link} href="#" className="hover:text-[var(--text-secondary)] transition-colors duration-150">{link}</a>
+            ))}
           </div>
         </div>
       </footer>
