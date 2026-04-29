@@ -49,6 +49,15 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
           const run = payload.workflow_run;
           const repo = payload.repository;
 
+          // Skip warpfix branches to prevent repair loops
+          if (run.head_branch && run.head_branch.startsWith('warpfix/')) {
+            logger.info('Skipping warpfix branch failure (prevent repair loop)', {
+              branch: run.head_branch,
+              repo: repo.full_name,
+            });
+            break;
+          }
+
           logger.info('CI failure detected', {
             repo: repo.full_name,
             workflow: run.name,
