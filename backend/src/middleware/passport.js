@@ -22,12 +22,11 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
       callbackURL: `${process.env.API_BASE_URL || 'http://localhost:4000'}/auth/github/callback`,
-      scope: ['user:email', 'repo'],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
         logger.info('OAuth verify callback', { githubId: profile.id, username: profile.username });
-        const email = profile.emails?.[0]?.value || null;
+        const email = profile.emails?.[0]?.value || profile._json?.email || null;
         const result = await query(
           `INSERT INTO users (github_id, username, email, avatar_url, access_token)
            VALUES ($1, $2, $3, $4, $5)
