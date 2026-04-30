@@ -244,7 +244,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 border-b border-[var(--border-default)]/60 bg-white/90 backdrop-blur-lg" role="navigation" aria-label="Main navigation">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <Image src="/logo-warpfix.png" alt="WarpFix" width={28} height={28} className="transition-transform duration-200 group-hover:scale-105" />
+            <Image src="/logo-warpfix.png" alt="WarpFix" width={36} height={36} className="transition-transform duration-200 group-hover:scale-105" />
             <span className="font-semibold text-[15px] tracking-tight">WarpFix</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-[13px] text-[var(--text-secondary)]">
@@ -770,7 +770,7 @@ engines: 12`}
       <footer className="py-8 px-6 border-t border-[var(--border-default)]">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-[var(--text-tertiary)]">
           <div className="flex items-center gap-2">
-            <Image src="/logo-warpfix.png" alt="WarpFix" width={16} height={16} />
+            <Image src="/logo-warpfix.png" alt="WarpFix" width={24} height={24} />
             <span>WarpFix</span>
           </div>
           <div className="flex gap-6">

@@ -55,7 +55,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="h-14 flex items-center px-3 border-b border-[var(--border-default)] shrink-0">
         <Link href="/" className="flex items-center gap-2.5 min-w-0">
-          <Image src="/logo-warpfix.png" alt="WarpFix" width={32} height={32} className="shrink-0" />
+          <Image src="/logo-warpfix.png" alt="WarpFix" width={40} height={40} className="shrink-0" />
           <span className="font-semibold text-[15px] text-[var(--text-primary)] whitespace-nowrap">
             WarpFix
           </span>
