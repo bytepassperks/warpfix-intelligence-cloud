@@ -259,9 +259,9 @@ A: Yes. The free plan includes 3 repairs per month, 1 repository, error classifi
 
 ## Contact
 
-- Support: support@warpfix.dev
-- Security: security@warpfix.dev
-- Sales: sales@warpfix.dev
+- Support: support@warpfix.org
+- Security: security@warpfix.org
+- Sales: sales@warpfix.org
 
 ---
 Last updated: 2025-01-01

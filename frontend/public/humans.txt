@@ -1,7 +1,7 @@
 /* TEAM */
 Product: WarpFix — Autonomous CI Repair Agent
-Site: https://warpfix-frontend.onrender.com
-Contact: support@warpfix.dev
+Site: https://warpfix.org
+Contact: support@warpfix.org
 
 /* TECHNOLOGY */
 Framework: Next.js 16 (App Router, Turbopack)

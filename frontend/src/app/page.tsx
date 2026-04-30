@@ -767,16 +767,52 @@ engines: 12`}
       </section>
 
       {/* ─── Footer ─── */}
-      <footer className="py-8 px-6 border-t border-[var(--border-default)]">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-[var(--text-tertiary)]">
-          <div className="flex items-center gap-2">
-            <Image src="/logo-warpfix.png" alt="WarpFix" width={24} height={24} />
-            <span>WarpFix</span>
+      <footer className="py-12 px-6 border-t border-[var(--border-default)] bg-[var(--bg-elevated)]">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Image src="/logo-warpfix.png" alt="WarpFix" width={24} height={24} />
+                <span className="font-semibold text-[14px] text-[var(--text-primary)]">WarpFix</span>
+              </div>
+              <p className="text-[13px] text-[var(--text-tertiary)] leading-relaxed">
+                Autonomous CI repair agent that fixes pipeline failures in seconds.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-[13px] font-semibold text-[var(--text-primary)] mb-3 uppercase tracking-wider">Product</h4>
+              <ul className="space-y-2 text-[13px] text-[var(--text-tertiary)]">
+                <li><a href="#features" className="hover:text-[var(--text-secondary)] transition-colors">Features</a></li>
+                <li><a href="#pricing" className="hover:text-[var(--text-secondary)] transition-colors">Pricing</a></li>
+                <li><a href="#how-it-works" className="hover:text-[var(--text-secondary)] transition-colors">How It Works</a></li>
+                <li><a href="#faq" className="hover:text-[var(--text-secondary)] transition-colors">FAQ</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-[13px] font-semibold text-[var(--text-primary)] mb-3 uppercase tracking-wider">Legal</h4>
+              <ul className="space-y-2 text-[13px] text-[var(--text-tertiary)]">
+                <li><Link href="/privacy" className="hover:text-[var(--text-secondary)] transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="hover:text-[var(--text-secondary)] transition-colors">Terms of Service</Link></li>
+                <li><Link href="/cookies" className="hover:text-[var(--text-secondary)] transition-colors">Cookie Policy</Link></li>
+                <li><Link href="/refund" className="hover:text-[var(--text-secondary)] transition-colors">Refund Policy</Link></li>
+                <li><Link href="/acceptable-use" className="hover:text-[var(--text-secondary)] transition-colors">Acceptable Use</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-[13px] font-semibold text-[var(--text-primary)] mb-3 uppercase tracking-wider">Support</h4>
+              <ul className="space-y-2 text-[13px] text-[var(--text-tertiary)]">
+                <li><a href="mailto:support@warpfix.org" className="hover:text-[var(--text-secondary)] transition-colors">support@warpfix.org</a></li>
+                <li><a href="https://github.com/bytepassperks/warpfix-intelligence-cloud" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--text-secondary)] transition-colors">GitHub</a></li>
+              </ul>
+            </div>
           </div>
-          <div className="flex gap-6">
-            {["Docs", "GitHub", "Privacy", "Terms"].map((link) => (
-              <a key={link} href="#" className="hover:text-[var(--text-secondary)] transition-colors duration-150">{link}</a>
-            ))}
+          <div className="pt-6 border-t border-[var(--border-default)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[12px] text-[var(--text-tertiary)]">
+            <span>&copy; {new Date().getFullYear()} WarpFix. All rights reserved.</span>
+            <div className="flex gap-4">
+              <Link href="/privacy" className="hover:text-[var(--text-secondary)] transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-[var(--text-secondary)] transition-colors">Terms</Link>
+              <Link href="/cookies" className="hover:text-[var(--text-secondary)] transition-colors">Cookies</Link>
+            </div>
           </div>
         </div>
       </footer>

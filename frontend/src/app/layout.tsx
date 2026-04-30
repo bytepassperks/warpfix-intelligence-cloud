@@ -146,6 +146,7 @@ function JsonLd() {
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "technical support",
+      email: "support@warpfix.org",
       url: `${BASE_URL}/#faq`,
     },
   };
