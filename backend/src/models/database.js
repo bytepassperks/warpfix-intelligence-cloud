@@ -228,6 +228,55 @@ async function runMigrations() {
     CREATE INDEX IF NOT EXISTS idx_learnings_user ON learnings(user_id);
     CREATE INDEX IF NOT EXISTS idx_learnings_repo ON learnings(repository_id);
     CREATE INDEX IF NOT EXISTS idx_repo_configs_repo ON repo_configs(repository_id);
+
+    -- Admin tables
+    CREATE TABLE IF NOT EXISTS admins (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      name VARCHAR(255) DEFAULT '',
+      role VARCHAR(50) DEFAULT 'admin',
+      active BOOLEAN DEFAULT TRUE,
+      last_login_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS promo_codes (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      code VARCHAR(100) UNIQUE NOT NULL,
+      description TEXT DEFAULT '',
+      discount_type VARCHAR(50) DEFAULT 'percentage',
+      discount_value NUMERIC(10,2) DEFAULT 0,
+      plan_override VARCHAR(50),
+      max_redemptions INTEGER,
+      active BOOLEAN DEFAULT TRUE,
+      expires_at TIMESTAMPTZ,
+      created_by UUID REFERENCES admins(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS promo_redemptions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      promo_id UUID REFERENCES promo_codes(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      applied_by UUID REFERENCES admins(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_activity_log (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      admin_id UUID REFERENCES admins(id) ON DELETE SET NULL,
+      action VARCHAR(100) NOT NULL,
+      target_type VARCHAR(50),
+      target_id UUID,
+      details JSONB,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes(code);
+    CREATE INDEX IF NOT EXISTS idx_promo_redemptions_promo ON promo_redemptions(promo_id);
+    CREATE INDEX IF NOT EXISTS idx_promo_redemptions_user ON promo_redemptions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_admin_activity_log_admin ON admin_activity_log(admin_id);
   `;
 
   try {
@@ -241,6 +290,19 @@ async function runMigrations() {
       EXCEPTION WHEN OTHERS THEN NULL;
       END $$;
     `);
+
+    // Seed default super admin if not exists
+    const bcrypt = require('bcryptjs');
+    const adminEmail = 'harryroger798@gmail.com';
+    const existing = await pool.query('SELECT id FROM admins WHERE email = $1', [adminEmail]);
+    if (existing.rows.length === 0) {
+      const hash = await bcrypt.hash('007JamesBond@@', 12);
+      await pool.query(
+        "INSERT INTO admins (email, password_hash, name, role) VALUES ($1, $2, $3, $4)",
+        [adminEmail, hash, 'Super Admin', 'super_admin']
+      );
+      logger.info('Default super admin seeded');
+    }
 
     logger.info('Database migrations completed successfully');
   } catch (err) {
