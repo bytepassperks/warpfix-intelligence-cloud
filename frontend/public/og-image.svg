@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f8ff"/>
+      <stop offset="100%" style="stop-color:#f0f0ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="4" fill="#635bff"/>
+  <g transform="translate(80, 180)">
+    <rect width="80" height="80" rx="16" fill="#635bff"/>
+    <text x="40" y="50" text-anchor="middle" fill="white" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="36">W</text>
+  </g>
+  <text x="80" y="320" fill="#111" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="52">WarpFix</text>
+  <text x="80" y="375" fill="#555" font-family="Inter, system-ui, sans-serif" font-weight="400" font-size="28">Autonomous CI Repair Agent</text>
+  <text x="80" y="430" fill="#888" font-family="Inter, system-ui, sans-serif" font-weight="400" font-size="20">Detect failures · Generate patches · Validate in sandboxes · Open PRs automatically</text>
+  <g transform="translate(80, 480)">
+    <rect width="180" height="44" rx="8" fill="#635bff"/>
+    <text x="90" y="28" text-anchor="middle" fill="white" font-family="Inter, system-ui, sans-serif" font-weight="600" font-size="16">Get Started Free</text>
+  </g>
+  <g transform="translate(700, 140)">
+    <rect width="420" height="340" rx="12" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
+    <rect x="0" y="0" width="420" height="36" rx="12 12 0 0" fill="#252540"/>
+    <circle cx="20" cy="18" r="6" fill="#ff5f56"/>
+    <circle cx="40" cy="18" r="6" fill="#ffbd2e"/>
+    <circle cx="60" cy="18" r="6" fill="#27c93f"/>
+    <text x="20" y="72" fill="#888" font-family="JetBrains Mono, monospace" font-size="13">$ warpfix /fix-ci</text>
+    <text x="20" y="102" fill="#635bff" font-family="JetBrains Mono, monospace" font-size="13">⚡ Analyzing CI failure...</text>
+    <text x="20" y="132" fill="#27c93f" font-family="JetBrains Mono, monospace" font-size="13">✓ Error classified: type_error</text>
+    <text x="20" y="162" fill="#27c93f" font-family="JetBrains Mono, monospace" font-size="13">✓ Fingerprint: a3f8c2d1 (cached)</text>
+    <text x="20" y="192" fill="#27c93f" font-family="JetBrains Mono, monospace" font-size="13">✓ Patch generated (confidence: 94)</text>
+    <text x="20" y="222" fill="#27c93f" font-family="JetBrains Mono, monospace" font-size="13">✓ Sandbox validation passed</text>
+    <text x="20" y="252" fill="#ffbd2e" font-family="JetBrains Mono, monospace" font-size="13">→ PR #42 opened successfully</text>
+  </g>
+</svg>

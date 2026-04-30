@@ -235,12 +235,12 @@ export default function LandingPage() {
   const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#fefeff]">
+    <div id="main-content" className="flex flex-col min-h-screen bg-[#fefeff]">
       {/* ─── Scroll Progress ─── */}
       <ScrollProgress />
 
       {/* ─── Nav ─── */}
-      <nav className="fixed top-0 w-full z-50 border-b border-[var(--border-default)]/60 bg-white/90 backdrop-blur-lg">
+      <nav className="fixed top-0 w-full z-50 border-b border-[var(--border-default)]/60 bg-white/90 backdrop-blur-lg" role="navigation" aria-label="Main navigation">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="w-7 h-7 bg-[var(--brand)] rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
@@ -401,7 +401,7 @@ engines: 12`}
       <div className="section-glow-border" />
 
       {/* ─── Features ─── */}
-      <section id="features" className="py-20 px-6 relative section-offwhite overflow-hidden">
+      <section id="features" className="py-20 px-6 relative section-offwhite overflow-hidden lazy-section" aria-label="Features">
         {/* Background decorations */}
         <div className="absolute top-16 right-[5%] w-20 h-20 deco-ring float-slow opacity-30" />
         <div className="absolute bottom-16 left-[4%] w-12 h-12 deco-circle float-medium opacity-35" style={{ animationDelay: "2s" }} />
@@ -447,7 +447,7 @@ engines: 12`}
       </section>
 
       {/* ─── How It Works ─── */}
-      <section id="how-it-works" className="py-20 px-6 section-tinted relative overflow-hidden">
+      <section id="how-it-works" className="py-20 px-6 section-tinted relative overflow-hidden lazy-section" aria-label="How It Works">
         {/* Decorative background elements */}
         <div className="absolute top-12 left-[6%] w-10 h-10 deco-ring float-medium opacity-30" />
         <div className="absolute bottom-20 right-[8%] w-14 h-14 deco-circle float-slow opacity-25" style={{ animationDelay: "1.5s" }} />
@@ -612,7 +612,7 @@ engines: 12`}
       <div className="section-glow-border" />
 
       {/* ─── Pricing ─── */}
-      <section id="pricing" className="py-20 px-6 section-offwhite relative overflow-hidden">
+      <section id="pricing" className="py-20 px-6 section-offwhite relative overflow-hidden lazy-section" aria-label="Pricing">
         <div className="absolute top-14 right-[4%] w-16 h-16 deco-ring float-reverse opacity-30" />
         <div className="absolute bottom-20 left-[6%] w-5 h-5 deco-dot float-slow opacity-35" style={{ animationDelay: "2s" }} />
         <div className="absolute top-1/2 left-[3%] w-12 h-12 deco-circle float-medium opacity-20" />
@@ -674,7 +674,7 @@ engines: 12`}
       </section>
 
       {/* ─── FAQ ─── */}
-      <section id="faq" className="py-20 px-6 section-tinted relative overflow-hidden">
+      <section id="faq" className="py-20 px-6 section-tinted relative overflow-hidden lazy-section" aria-label="Frequently Asked Questions" itemScope itemType="https://schema.org/FAQPage">
         <div className="absolute top-16 right-[7%] w-8 h-8 deco-square float-slow opacity-30" />
         <div className="absolute bottom-16 left-[5%] w-6 h-6 deco-ring float-medium opacity-30" style={{ animationDelay: "1s" }} />
         <div className="max-w-2xl mx-auto">

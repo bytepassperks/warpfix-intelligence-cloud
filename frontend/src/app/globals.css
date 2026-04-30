@@ -487,8 +487,77 @@ body {
   :root { --sidebar-width: 0px; }
 }
 
-/* Print styles */
+/* ─── Mobile Optimization ─── */
+@media (max-width: 640px) {
+  html { font-size: 15px; }
+  h1 { font-size: 1.75rem !important; }
+  h2 { font-size: 1.5rem !important; }
+  section { padding-left: 1rem !important; padding-right: 1rem !important; }
+}
+
+/* Touch target minimum 44px */
+@media (pointer: coarse) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .float-slow, .float-medium, .float-reverse { animation: none !important; }
+}
+
+/* ─── Print Styles ─── */
 @media print {
-  nav, aside, header { display: none !important; }
+  nav, aside, header, footer, .skip-to-content { display: none !important; }
   main { margin: 0 !important; padding: 0 !important; }
+  body { color: #000 !important; background: #fff !important; }
+  a { color: #000 !important; text-decoration: underline !important; }
+  a[href]::after { content: " (" attr(href) ")"; font-size: 0.8em; color: #666; }
+  .section-offwhite, .section-tinted, .hero-bg { background: #fff !important; }
+  .deco-circle, .deco-ring, .deco-square, .deco-dot, .hero-grid, .grain::before { display: none !important; }
+  * { box-shadow: none !important; }
+}
+
+/* ─── High Contrast Mode ─── */
+@media (prefers-contrast: high) {
+  :root {
+    --text-primary: #000;
+    --text-secondary: #333;
+    --border-default: #666;
+    --border-hover: #333;
+  }
+}
+
+/* ─── Focus Visible Enhancement ─── */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ─── Selection Color ─── */
+::selection {
+  background: rgba(99, 91, 255, 0.2);
+  color: var(--text-primary);
+}
+
+/* ─── Smooth Scroll ─── */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ─── Content Visibility for Performance ─── */
+.lazy-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
 }
