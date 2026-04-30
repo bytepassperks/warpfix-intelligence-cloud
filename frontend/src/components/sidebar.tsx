@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -12,7 +13,6 @@ import {
   Radar,
   Settings,
   CreditCard,
-  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -55,9 +55,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="h-14 flex items-center px-3 border-b border-[var(--border-default)] shrink-0">
         <Link href="/" className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-[var(--brand)] flex items-center justify-center shrink-0">
-            <Zap className="w-4 h-4 text-white" />
-          </div>
+          <Image src="/logo-warpfix.png" alt="WarpFix" width={32} height={32} className="shrink-0" />
           <span className="font-semibold text-[15px] text-[var(--text-primary)] whitespace-nowrap">
             WarpFix
           </span>

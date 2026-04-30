@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import {
-  Zap, Fingerprint, Radar,
+  Fingerprint, Radar,
   Terminal, ArrowRight, Check, ChevronDown,
   Cpu, Box, Eye, MessageSquareText,
   BrainCircuit, ShieldAlert, Code2, TestTube2, Scale, SlidersHorizontal,
@@ -243,9 +244,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 border-b border-[var(--border-default)]/60 bg-white/90 backdrop-blur-lg" role="navigation" aria-label="Main navigation">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-7 h-7 bg-[var(--brand)] rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
-              <Zap className="w-3.5 h-3.5 text-white" />
-            </div>
+            <Image src="/logo-warpfix.png" alt="WarpFix" width={28} height={28} className="transition-transform duration-200 group-hover:scale-105" />
             <span className="font-semibold text-[15px] tracking-tight">WarpFix</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-[13px] text-[var(--text-secondary)]">
@@ -771,7 +770,7 @@ engines: 12`}
       <footer className="py-8 px-6 border-t border-[var(--border-default)]">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-[var(--text-tertiary)]">
           <div className="flex items-center gap-2">
-            <Zap className="w-3.5 h-3.5 text-[var(--brand)]" />
+            <Image src="/logo-warpfix.png" alt="WarpFix" width={16} height={16} />
             <span>WarpFix</span>
           </div>
           <div className="flex gap-6">
