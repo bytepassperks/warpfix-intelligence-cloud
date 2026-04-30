@@ -1,0 +1,6 @@
+Contact: mailto:security@warpfix.dev
+Preferred-Languages: en
+Canonical: https://warpfix-frontend.onrender.com/.well-known/security.txt
+Encryption: https://warpfix-frontend.onrender.com/pgp-key.txt
+Policy: https://warpfix-frontend.onrender.com/security-policy
+Hiring: https://warpfix-frontend.onrender.com/careers

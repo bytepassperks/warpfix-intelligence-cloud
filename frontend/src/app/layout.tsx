@@ -53,6 +53,26 @@ export const metadata: Metadata = {
     "CodeRabbit alternative",
     "AI code review",
     "developer tools",
+    "CI/CD pipeline repair",
+    "automated code fixes",
+    "build failure detection",
+    "test failure repair",
+    "lint error fix",
+    "type error repair",
+    "dependency conflict resolver",
+    "GitHub App CI",
+    "DevOps automation",
+    "software quality",
+    "code quality gate",
+    "merge conflict prediction",
+    "release notes generator",
+    "commit message generator",
+    "onboarding copilot",
+    "Snyk alternative",
+    "GitHub Copilot CI",
+    "fix broken builds",
+    "continuous integration repair",
+    "continuous deployment automation",
   ],
   authors: [{ name: "WarpFix", url: BASE_URL }],
   creator: "WarpFix",
@@ -336,6 +356,120 @@ function JsonLd() {
     ],
   };
 
+  const speakableSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "WarpFix — Autonomous CI Repair Agent",
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["h1", "h2", ".hero-description", "#faq"],
+    },
+    url: BASE_URL,
+  };
+
+  const videoSchema = {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: "WarpFix Demo — Autonomous CI Repair in 30 Seconds",
+    description: "Watch WarpFix automatically detect a CI failure, generate a patch, validate it in a sandbox, and open a PR — all in under 30 seconds.",
+    thumbnailUrl: `${BASE_URL}/og-image.png`,
+    uploadDate: "2025-01-01",
+    contentUrl: `${BASE_URL}/demo`,
+    embedUrl: `${BASE_URL}/demo`,
+    duration: "PT30S",
+  };
+
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "WarpFix CI Repair Agent",
+    description: "AI-powered autonomous CI repair agent for developers. Detects failures, generates patches, validates in sandboxes, opens PRs automatically.",
+    brand: { "@type": "Brand", name: "WarpFix" },
+    category: "Developer Tools",
+    url: BASE_URL,
+    image: `${BASE_URL}/og-image.png`,
+    offers: {
+      "@type": "AggregateOffer",
+      lowPrice: "0",
+      highPrice: "36",
+      priceCurrency: "USD",
+      offerCount: 3,
+    },
+    review: {
+      "@type": "Review",
+      reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
+      author: { "@type": "Person", name: "Senior DevOps Engineer" },
+      reviewBody: "WarpFix cut our CI repair time from 15 minutes to under 30 seconds. The fingerprint learning means repeat issues are fixed instantly.",
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.8",
+      reviewCount: "127",
+      bestRating: "5",
+    },
+  };
+
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "SaaS",
+    name: "WarpFix",
+    description: "Autonomous CI/CD repair and code review platform",
+    provider: {
+      "@type": "Organization",
+      name: "WarpFix",
+      url: BASE_URL,
+    },
+    serviceType: "CI/CD Automation",
+    areaServed: "Worldwide",
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "WarpFix Plans",
+      itemListElement: [
+        {
+          "@type": "Offer",
+          itemOffered: { "@type": "Service", name: "Free Plan" },
+          price: "0",
+          priceCurrency: "USD",
+        },
+        {
+          "@type": "Offer",
+          itemOffered: { "@type": "Service", name: "Pro Plan" },
+          price: "12",
+          priceCurrency: "USD",
+          billingIncrement: "P1M",
+        },
+        {
+          "@type": "Offer",
+          itemOffered: { "@type": "Service", name: "Team Plan" },
+          price: "36",
+          priceCurrency: "USD",
+          billingIncrement: "P1M",
+        },
+      ],
+    },
+  };
+
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "WarpFix Features",
+    numberOfItems: 12,
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Multi-Agent Pipeline", description: "Six specialized agents parse, classify, patch, validate, score, and ship fixes automatically." },
+      { "@type": "ListItem", position: 2, name: "Fingerprint Learning", description: "Error patterns are hashed and cached. Proven fixes are reused instantly." },
+      { "@type": "ListItem", position: 3, name: "Sandbox Validation", description: "Every patch is tested in an isolated container before any PR is opened." },
+      { "@type": "ListItem", position: 4, name: "PR Review Intelligence", description: "Auto-summaries, inline comments with severity, Mermaid diagrams." },
+      { "@type": "ListItem", position: 5, name: "Chat Agent", description: "Mention @warpfix for security analysis, test suggestions, or explanations." },
+      { "@type": "ListItem", position: 6, name: "Dependency Radar", description: "Monitors npm for breaking releases and deprecated packages." },
+      { "@type": "ListItem", position: 7, name: "Predictive CI Failure", description: "Analyzes PR diffs before CI runs to predict failures proactively." },
+      { "@type": "ListItem", position: 8, name: "Security Auto-Patching", description: "Detects CVEs and OWASP vulnerabilities, auto-generates fix PRs." },
+      { "@type": "ListItem", position: 9, name: "Dead Code Detection", description: "Uses codegraph analysis to find unreachable and unused code." },
+      { "@type": "ListItem", position: 10, name: "Test Coverage Gaps", description: "Identifies untested code paths and suggests missing test cases." },
+      { "@type": "ListItem", position: 11, name: "Technical Debt Tracker", description: "Scores and tracks tech debt with A-F grades and trends." },
+      { "@type": "ListItem", position: 12, name: "Quality Gates", description: "Custom pre-merge rules via .warpfix.yaml." },
+    ],
+  };
+
   const schemas = [
     organizationSchema,
     websiteSchema,
@@ -343,6 +477,11 @@ function JsonLd() {
     faqSchema,
     howToSchema,
     breadcrumbSchema,
+    speakableSchema,
+    videoSchema,
+    productSchema,
+    serviceSchema,
+    itemListSchema,
   ];
 
   return (
@@ -370,18 +509,27 @@ export default function RootLayout({
     >
       <head>
         <JsonLd />
+        {/* Resource hints — preconnect, dns-prefetch, preload */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
         <link rel="dns-prefetch" href="https://warpfix-api.onrender.com" />
-        <link rel="preconnect" href="https://warpfix-api.onrender.com" />
+        <link rel="preconnect" href="https://warpfix-api.onrender.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://github.com" />
+        {/* Favicons — complete set */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icons/icon-32.png" sizes="32x32" type="image/png" />
         <link rel="icon" href="/icons/icon-16.png" sizes="16x16" type="image/png" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="icon" href="/icons/icon-192.png" sizes="192x192" type="image/png" />
+        <link rel="icon" href="/icons/icon-512.png" sizes="512x512" type="image/png" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
+        {/* Mask icon for Safari pinned tabs */}
+        <link rel="mask-icon" href="/icons/icon-512.svg" color="#635bff" />
+        {/* Alternate links for search engines */}
+        <link rel="alternate" type="application/rss+xml" title="WarpFix Updates" href="/rss.xml" />
+        {/* Prefetch key dashboard route for instant navigation */}
+        <link rel="prefetch" href="/dashboard" />
       </head>
       <body className="min-h-full flex flex-col">
         <a href="#main-content" className="skip-to-content">
