@@ -275,31 +275,31 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="pt-10 pb-10 px-6 hero-bg grain relative overflow-hidden">
+      <section className="pt-24 pb-12 px-6 hero-bg grain relative overflow-hidden">
         {/* Animated grid background */}
         <div className="hero-grid" />
 
         {/* Floating decorative elements — larger and more visible */}
-        <div className="absolute top-8 left-[8%] w-24 h-24 deco-circle float-slow opacity-60" />
-        <div className="absolute top-16 right-[10%] w-16 h-16 deco-square float-medium opacity-50" />
+        <div className="absolute top-20 left-[8%] w-24 h-24 deco-circle float-slow opacity-60" />
+        <div className="absolute top-28 right-[10%] w-16 h-16 deco-square float-medium opacity-50" />
         <div className="absolute bottom-24 left-[15%] w-20 h-20 deco-ring float-reverse opacity-50" />
-        <div className="absolute top-12 right-[28%] w-5 h-5 deco-dot float-slow opacity-60" style={{ animationDelay: "1s" }} />
+        <div className="absolute top-24 right-[28%] w-5 h-5 deco-dot float-slow opacity-60" style={{ animationDelay: "1s" }} />
         <div className="absolute bottom-32 right-[8%] w-28 h-28 deco-ring float-medium opacity-35" style={{ animationDelay: "2s" }} />
-        <div className="absolute top-24 left-[5%] w-6 h-6 deco-dot float-medium opacity-55" style={{ animationDelay: "3s" }} />
+        <div className="absolute top-36 left-[5%] w-6 h-6 deco-dot float-medium opacity-55" style={{ animationDelay: "3s" }} />
         <div className="absolute bottom-16 left-[35%] w-12 h-12 deco-square float-slow opacity-35" style={{ animationDelay: "1.5s" }} />
-        <div className="absolute top-4 left-[40%] w-8 h-8 deco-ring float-reverse opacity-45" style={{ animationDelay: "0.5s" }} />
-        <div className="absolute top-20 right-[40%] w-4 h-4 deco-dot float-slow opacity-50" style={{ animationDelay: "2.5s" }} />
+        <div className="absolute top-20 left-[40%] w-8 h-8 deco-ring float-reverse opacity-45" style={{ animationDelay: "0.5s" }} />
+        <div className="absolute top-32 right-[40%] w-4 h-4 deco-dot float-slow opacity-50" style={{ animationDelay: "2.5s" }} />
         <div className="absolute bottom-8 right-[35%] w-10 h-10 deco-circle float-medium opacity-40" style={{ animationDelay: "1s" }} />
-        <div className="absolute top-36 left-[25%] w-6 h-6 deco-square float-reverse opacity-45" style={{ animationDelay: "3.5s" }} />
+        <div className="absolute top-48 left-[25%] w-6 h-6 deco-square float-reverse opacity-45" style={{ animationDelay: "3.5s" }} />
         <div className="absolute bottom-40 left-[45%] w-5 h-5 deco-dot float-slow opacity-50" style={{ animationDelay: "4s" }} />
 
         {/* Floating badges — closer to center */}
-        <FloatingBadge label="SHA-256 fingerprint" className="top-6 right-[25%] float-slow" delay={0.5} />
-        <FloatingBadge label="94/100 confidence" className="top-20 left-[18%] float-medium" delay={1} />
+        <FloatingBadge label="SHA-256 fingerprint" className="top-20 right-[25%] float-slow" delay={0.5} />
+        <FloatingBadge label="94/100 confidence" className="top-32 left-[18%] float-medium" delay={1} />
         <FloatingBadge label="auto-merge ready" className="bottom-28 right-[22%] float-reverse" delay={1.5} />
 
         {/* Faded code decoration left side — larger font, more visible */}
-        <div className="hidden lg:block absolute top-6 left-10 code-deco select-none" aria-hidden="true">
+        <div className="hidden lg:block absolute top-20 left-10 code-deco select-none" aria-hidden="true">
 {`const repair = await warpfix.analyze({
   workflow: "ci.yml",
   branch: "main",
@@ -313,7 +313,7 @@ const result = {
         </div>
 
         {/* Faded code decoration right side — larger font, more visible */}
-        <div className="hidden lg:block absolute top-6 right-10 code-deco select-none text-right" aria-hidden="true">
+        <div className="hidden lg:block absolute top-20 right-10 code-deco select-none text-right" aria-hidden="true">
 {`fingerprint: "a3f8c2d1"
 matched: 47 times
 avg_time: "340ms"
