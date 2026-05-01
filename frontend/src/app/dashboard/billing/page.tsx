@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ArrowRight, Tag, Sparkles, Zap } from "lucide-react";
+import { Check, ArrowRight, Tag, Sparkles, Zap, LogIn } from "lucide-react";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { API_URL } from "@/lib/utils";
+import { useUser } from "@/lib/user-context";
 
 interface Subscription {
   current_plan: string;
@@ -39,18 +40,25 @@ const PLANS = [
 ];
 
 export default function BillingPage() {
+  const { user, loading: userLoading } = useUser();
   const [sub, setSub] = useState<Subscription | null>(null);
   const [promoCode, setPromoCode] = useState("");
   const [promoStatus, setPromoStatus] = useState<"idle" | "applying" | "success" | "error">("idle");
   const [promoMessage, setPromoMessage] = useState("");
   const [upgradeModal, setUpgradeModal] = useState<string | null>(null);
+  const isAuthenticated = !userLoading && user !== null;
 
   useEffect(() => {
+    if (userLoading) return;
+    if (!user) {
+      setSub({ current_plan: "free", usage: { repairs_used: 0, repairs_limit: 3 } });
+      return;
+    }
     fetch(`${API_URL}/api/billing/subscription`, { credentials: "include" })
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then(setSub)
       .catch(() => setSub({ current_plan: "free", usage: { repairs_used: 0, repairs_limit: 3 } }));
-  }, []);
+  }, [user, userLoading]);
 
   const usagePercent = sub
     ? sub.usage.repairs_limit === Infinity ? 0 : (sub.usage.repairs_used / sub.usage.repairs_limit) * 100
@@ -151,56 +159,74 @@ export default function BillingPage() {
           <Tag className="w-4 h-4 text-[var(--brand)]" />
           <h3 className="text-[15px] font-semibold">Promo Code</h3>
         </div>
-        <p className="text-[12px] text-[var(--text-secondary)] mb-4">
-          Have a promo code? Enter it below to unlock discounts or plan upgrades.
-        </p>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={promoCode}
-            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-            placeholder="Enter promo code (e.g. WARPFIX50)"
-            className="flex-1 px-3 py-2 text-[13px] border border-[var(--border-default)] rounded-lg bg-[var(--bg-secondary)] outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] transition-all placeholder:text-[var(--text-tertiary)]"
-            onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
-          />
-          <button
-            onClick={handleApplyPromo}
-            disabled={!promoCode.trim() || promoStatus === "applying"}
-            className="px-4 py-2 bg-[var(--brand)] text-white text-[13px] font-medium rounded-lg hover:bg-[var(--brand-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-          >
-            {promoStatus === "applying" ? (
-              <span className="flex items-center gap-1.5">
-                <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                Applying...
-              </span>
-            ) : (
-              "Apply"
-            )}
-          </button>
-        </div>
-        <AnimatePresence>
-          {promoStatus === "success" && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-3 flex items-center gap-2 text-[12px] text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg"
+        {!isAuthenticated ? (
+          <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <LogIn className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <p className="text-[13px] font-medium text-amber-800">Sign in to use promo codes</p>
+              <p className="text-[12px] text-amber-600 mt-0.5">You need to be logged in to apply promotional codes.</p>
+            </div>
+            <a
+              href={`${API_URL}/auth/github`}
+              className="ml-auto px-3 py-1.5 bg-[var(--brand)] text-white text-[12px] font-medium rounded-lg hover:bg-[var(--brand-hover)] transition-colors shrink-0"
             >
-              <Check className="w-3.5 h-3.5" />
-              {promoMessage}
-            </motion.div>
-          )}
-          {promoStatus === "error" && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-3 text-[12px] text-red-600 bg-red-50 px-3 py-2 rounded-lg"
-            >
-              {promoMessage}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              Sign In
+            </a>
+          </div>
+        ) : (
+          <>
+            <p className="text-[12px] text-[var(--text-secondary)] mb-4">
+              Have a promo code? Enter it below to unlock discounts or plan upgrades.
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                placeholder="Enter promo code (e.g. WARPFIX50)"
+                className="flex-1 px-3 py-2 text-[13px] border border-[var(--border-default)] rounded-lg bg-[var(--bg-secondary)] outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)] transition-all placeholder:text-[var(--text-tertiary)]"
+                onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
+              />
+              <button
+                onClick={handleApplyPromo}
+                disabled={!promoCode.trim() || promoStatus === "applying"}
+                className="px-4 py-2 bg-[var(--brand)] text-white text-[13px] font-medium rounded-lg hover:bg-[var(--brand-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 shrink-0 whitespace-nowrap"
+              >
+                {promoStatus === "applying" ? (
+                  <span className="flex items-center gap-1.5">
+                    <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    Applying...
+                  </span>
+                ) : (
+                  "Apply"
+                )}
+              </button>
+            </div>
+            <AnimatePresence>
+              {promoStatus === "success" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-3 flex items-center gap-2 text-[12px] text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  {promoMessage}
+                </motion.div>
+              )}
+              {promoStatus === "error" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-3 text-[12px] text-red-600 bg-red-50 px-3 py-2 rounded-lg"
+                >
+                  {promoMessage}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
       </motion.div>
 
       {/* Plans */}
