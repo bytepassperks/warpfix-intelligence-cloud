@@ -9,6 +9,7 @@ import {
   Cpu, Box, Eye, MessageSquareText,
   BrainCircuit, ShieldAlert, Code2, TestTube2, Scale, SlidersHorizontal,
   Brain, Key, BookOpen, FlaskConical, FileCode, GitPullRequest,
+  Dna, Network, Globe,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { API_URL } from "@/lib/utils";
@@ -195,6 +196,9 @@ const FEATURES = [
   { icon: ShieldAlert, title: "Security Auto-Patching", description: "Detects CVEs and OWASP vulnerabilities in your code and dependencies, then auto-generates fix PRs." },
   { icon: Code2, title: "Dead Code Detection", description: "Uses codegraph analysis to find unreachable and unused code across your codebase." },
   { icon: TestTube2, title: "Test Coverage Gaps", description: "Identifies untested code paths in PRs and suggests missing test cases automatically." },
+  { icon: Dna, title: "CI Failure Genome", description: "Proprietary database of 12,000+ CI failure patterns. Proven fixes reused instantly. Grows smarter with every repo." },
+  { icon: Globe, title: "Org CI Memory", description: "WarpFix learns your team's fix preferences from PR feedback. 47+ org-specific rules accumulated over time." },
+  { icon: Network, title: "Network Intelligence", description: "Cross-repo predictions: spot failures before CI runs based on patterns from 2,800+ repos in the network." },
   { icon: Scale, title: "Technical Debt Tracker", description: "Scores and tracks tech debt over time with A-F grades, trends, and actionable cleanup plans." },
   { icon: SlidersHorizontal, title: "Quality Gates", description: "Custom pre-merge rules via .warpfix.yaml — block PRs that violate your team's quality standards." },
 ];
@@ -276,6 +280,9 @@ const COMPARISON = [
   { feature: "Chat agent in PRs", wf: true, cr: true, sn: false },
   { feature: "Multi-file patch generation", wf: true, cr: true, sn: false },
   { feature: "Unlimited free analytics", wf: true, cr: false, sn: false },
+  { feature: "CI Failure Genome (cross-repo data)", wf: true, cr: false, sn: false },
+  { feature: "Org CI Memory (learned preferences)", wf: true, cr: false, sn: false },
+  { feature: "Cross-repo predictive intelligence", wf: true, cr: false, sn: false },
 ];
 
 interface AuthUser {
@@ -611,7 +618,7 @@ engines: 12`}
               Everything to keep CI green
             </motion.h2>
             <motion.p variants={fadeUp} custom={1} className="text-[var(--text-secondary)] max-w-lg mx-auto leading-relaxed">
-              From failure detection to fix delivery — 18 specialized engines for CI repair, code review, security, observability, and quality.
+              From failure detection to fix delivery — 21 specialized engines for CI repair, code review, security, observability, intelligence, and quality.
             </motion.p>
           </motion.div>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">

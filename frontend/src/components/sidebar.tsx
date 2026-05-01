@@ -24,6 +24,8 @@ import {
   Terminal,
   FileCode,
   GitPullRequest,
+  Dna,
+  Network,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +49,8 @@ const NAV_SECTIONS = [
     title: "CI Brain",
     items: [
       { href: "/dashboard/ci-brain", label: "CI Intelligence", icon: Brain },
+      { href: "/dashboard/failure-genome", label: "Failure Genome", icon: Dna },
+      { href: "/dashboard/network-intelligence", label: "Network Intel", icon: Network },
       { href: "/dashboard/insights", label: "Insights", icon: Fingerprint },
       { href: "/dashboard/flaky-tests", label: "Flaky Tests", icon: FlaskConical },
       { href: "/dashboard/autopsy", label: "Autopsy Reports", icon: FileSearch },
@@ -72,6 +76,7 @@ const NAV_SECTIONS = [
   {
     title: "Configure",
     items: [
+      { href: "/dashboard/org-memory", label: "Org Memory", icon: Brain },
       { href: "/dashboard/byo-key", label: "BYO Key", icon: Key },
       { href: "/dashboard/cookbook", label: "Cookbook", icon: Terminal },
       { href: "/dashboard/settings", label: "Settings", icon: Settings },
