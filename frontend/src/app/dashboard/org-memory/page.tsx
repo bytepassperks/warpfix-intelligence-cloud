@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Brain, BookOpen, FileCode2, Download, Upload, Plus, Check,
-  X, Pencil, GitBranch, Users, Settings, Lightbulb,
+  X, Pencil, GitBranch, Users, Settings, Lightbulb, Loader2,
 } from "lucide-react";
+import { API_URL } from "@/lib/utils";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -15,57 +16,40 @@ const fadeUp = {
   }),
 };
 
-const MEMORY_STATS = [
-  { label: "Learned Preferences", value: "47", icon: Brain, color: "text-indigo-600" },
-  { label: "PR Feedback Signals", value: "312", icon: GitBranch, color: "text-blue-600" },
-  { label: "Team Members Contributing", value: "8", icon: Users, color: "text-emerald-600" },
-  { label: "Accuracy Improvement", value: "+34%", icon: Lightbulb, color: "text-amber-600" },
-];
-
-const ORG_PREFERENCES = [
-  {
-    id: "pref_1", category: "Package Manager",
-    rule: "Always prefer pnpm over npm for dependency fixes",
-    source: "Learned from 12 PR edits", confidence: 98, lastUsed: "2 hours ago",
-    examples: ["pnpm install instead of npm install", "pnpm add instead of npm install --save"],
-  },
-  {
-    id: "pref_2", category: "Linting",
-    rule: "Use --fix for ESLint errors, never --disable-next-line",
-    source: "Learned from 8 PR rejections", confidence: 95, lastUsed: "4 hours ago",
-    examples: ["eslint --fix src/", "Apply auto-fixable rules directly"],
-  },
-  {
-    id: "pref_3", category: "Testing",
-    rule: "Jest tests use describe/it pattern with explicit assertions",
-    source: "Inferred from .eslintrc + 5 PR edits", confidence: 89, lastUsed: "1 day ago",
-    examples: ["describe('Component', () => { it('should ...', () => { expect(...) }) })"],
-  },
-  {
-    id: "pref_4", category: "Docker",
-    rule: "Dockerfile base image updates require manual sign-off (never auto-merge)",
-    source: "Learned from 3 PR rejections", confidence: 100, lastUsed: "3 days ago",
-    examples: ["Flag as 'review-required' when FROM line changes"],
-  },
-  {
-    id: "pref_5", category: "TypeScript",
-    rule: "Prefer explicit return types on exported functions",
-    source: "Inferred from tsconfig strict mode + 4 PR edits", confidence: 82, lastUsed: "6 hours ago",
-    examples: ["export function getName(): string { ... }"],
-  },
-  {
-    id: "pref_6", category: "CI Config",
-    rule: "GitHub Actions should use pinned action versions (not @latest)",
-    source: "Learned from 2 PR edits", confidence: 91, lastUsed: "2 days ago",
-    examples: ["uses: actions/checkout@v4", "uses: actions/setup-node@v4"],
-  },
-  {
-    id: "pref_7", category: "Flaky Tests",
-    rule: "Tests in src/components/__tests__/DatePicker.test.tsx are known flaky — skip quarantine",
-    source: "Team annotation", confidence: 100, lastUsed: "1 day ago",
-    examples: ["Auto-retry up to 3 times before reporting failure"],
-  },
-];
+interface OrgMemoryData {
+  overview: {
+    totalPreferences: number;
+    totalApplications: number;
+    avgConfidence: number;
+    categories: number;
+    feedbackSignals: number;
+  };
+  preferences: {
+    id: string;
+    category: string;
+    rule: string;
+    confidence: number;
+    source: string;
+    times_applied: number;
+    last_used_at: string;
+    created_at: string;
+  }[];
+  categories: {
+    category: string;
+    rules_count: string;
+    avg_confidence: string;
+    total_applications: string;
+  }[];
+  feedbackLog: {
+    id: string;
+    rule: string;
+    category: string;
+    context: string;
+    source: string;
+    times_applied: number;
+    created_at: string;
+  }[];
+}
 
 const IMPORTED_CONFIGS = [
   { name: ".eslintrc.json", type: "ESLint", rules: 42, status: "imported" },
@@ -76,18 +60,56 @@ const IMPORTED_CONFIGS = [
   { name: ".github/dependabot.yml", type: "Dependabot", rules: 3, status: "available" },
 ];
 
-const FEEDBACK_LOG = [
-  { action: "PR modified", pr: "#287", detail: "Changed npm install → pnpm install", date: "2 hours ago", user: "alexchen" },
-  { action: "PR rejected", pr: "#284", detail: "Dockerfile base image change needs review", date: "1 day ago", user: "sarahdev" },
-  { action: "PR merged as-is", pr: "#281", detail: "ESLint fix applied correctly", date: "1 day ago", user: "alexchen" },
-  { action: "PR modified", pr: "#279", detail: "Added explicit return type to export", date: "2 days ago", user: "mikejr" },
-  { action: "PR rejected", pr: "#276", detail: "Used eslint-disable instead of --fix", date: "3 days ago", user: "sarahdev" },
-];
-
 export default function OrgMemoryPage() {
   const [activeTab, setActiveTab] = useState<"preferences" | "imports" | "feedback">("preferences");
   const [expandedPref, setExpandedPref] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [data, setData] = useState<OrgMemoryData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch(`${API_URL}/api/intelligence/org-memory`, { credentials: "include" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        setData(json);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+          Failed to load Org Memory data: {error || "No data available"}
+        </div>
+      </div>
+    );
+  }
+
+  const { overview, preferences, categories, feedbackLog } = data;
+
+  const statsCards = [
+    { label: "Learned Preferences", value: overview.totalPreferences.toLocaleString(), icon: Brain, color: "text-indigo-600" },
+    { label: "PR Feedback Signals", value: overview.feedbackSignals.toLocaleString(), icon: GitBranch, color: "text-blue-600" },
+    { label: "Categories", value: overview.categories.toLocaleString(), icon: Users, color: "text-emerald-600" },
+    { label: "Avg Confidence", value: `${overview.avgConfidence}%`, icon: Lightbulb, color: "text-amber-600" },
+  ];
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
@@ -119,7 +141,7 @@ export default function OrgMemoryPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {MEMORY_STATS.map((s, i) => (
+        {statsCards.map((s, i) => (
           <motion.div key={s.label} initial="hidden" whileInView="visible" viewport={{ once: true }}
             variants={fadeUp} custom={i}
             className="p-4 rounded-xl border border-[var(--border-default)] bg-white">
@@ -139,10 +161,10 @@ export default function OrgMemoryPage() {
           <div>
             <p className="text-sm font-medium text-indigo-900">Your Team&apos;s CI Intelligence</p>
             <p className="text-xs text-indigo-700 mt-1">
-              WarpFix has learned <strong>47 org-specific preferences</strong> from your team&apos;s PR feedback.
+              WarpFix has learned <strong>{overview.totalPreferences} org-specific preferences</strong> from your team&apos;s PR feedback,
+              applied <strong>{overview.totalApplications} times</strong> with {overview.avgConfidence}% average confidence.
               Every time a developer modifies, rejects, or approves a WarpFix PR, the system captures that signal
-              and uses it to improve future fixes. This accumulated memory is unique to your organization —
-              a competitor starting fresh would have none of it.
+              and uses it to improve future fixes. This accumulated memory is unique to your organization.
             </p>
           </div>
         </div>
@@ -171,7 +193,7 @@ export default function OrgMemoryPage() {
       {activeTab === "preferences" && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Org Preferences</h2>
+            <h2 className="text-lg font-semibold">Org Preferences ({preferences.length})</h2>
             <button onClick={() => setShowAddForm(!showAddForm)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
               <Plus className="w-3.5 h-3.5" />
@@ -205,7 +227,7 @@ export default function OrgMemoryPage() {
             </div>
           )}
 
-          {ORG_PREFERENCES.map((pref) => (
+          {preferences.map((pref) => (
             <div key={pref.id}
               className="rounded-xl border border-[var(--border-default)] bg-white overflow-hidden">
               <button
@@ -224,24 +246,38 @@ export default function OrgMemoryPage() {
                     }`}>{pref.confidence}% confidence</span>
                   </div>
                   <p className="text-sm font-medium">{pref.rule}</p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">{pref.source} · Last used {pref.lastUsed}</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">
+                    Source: {pref.source} &middot; Applied {pref.times_applied} times &middot; Last used {new Date(pref.last_used_at).toLocaleDateString()}
+                  </p>
                 </div>
                 <Pencil className="w-4 h-4 text-[var(--text-secondary)] ml-2" />
               </button>
               {expandedPref === pref.id && (
                 <div className="p-4 border-t border-[var(--border-default)] bg-[var(--bg-secondary)]">
-                  <div className="text-xs font-medium text-[var(--text-secondary)] mb-2">Examples</div>
-                  <div className="space-y-1">
-                    {pref.examples.map((ex, i) => (
-                      <code key={i} className="block text-xs bg-white p-2 rounded border border-[var(--border-default)] font-mono">
-                        {ex}
-                      </code>
-                    ))}
+                  <div className="grid grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <span className="text-[var(--text-secondary)]">Source</span>
+                      <div className="font-semibold mt-1">{pref.source}</div>
+                    </div>
+                    <div>
+                      <span className="text-[var(--text-secondary)]">Times Applied</span>
+                      <div className="font-semibold mt-1">{pref.times_applied}</div>
+                    </div>
+                    <div>
+                      <span className="text-[var(--text-secondary)]">Created</span>
+                      <div className="font-semibold mt-1">{new Date(pref.created_at).toLocaleDateString()}</div>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
           ))}
+
+          {preferences.length === 0 && (
+            <div className="py-8 text-center text-sm text-[var(--text-tertiary)]">
+              No preferences learned yet. Preferences are captured from PR feedback over time.
+            </div>
+          )}
         </div>
       )}
 
@@ -263,7 +299,7 @@ export default function OrgMemoryPage() {
                   <FileCode2 className="w-4 h-4 text-[var(--text-secondary)]" />
                   <div>
                     <p className="text-sm font-mono font-medium">{cfg.name}</p>
-                    <p className="text-xs text-[var(--text-secondary)]">{cfg.type} · {cfg.rules} rules</p>
+                    <p className="text-xs text-[var(--text-secondary)]">{cfg.type} &middot; {cfg.rules} rules</p>
                   </div>
                 </div>
                 {cfg.status === "imported" ? (
@@ -291,7 +327,7 @@ org_preferences:
   linting_strategy: autofix_only
   docker_base_image_policy: require_review
   test_pattern: describe_it
-  
+
 known_flaky_tests:
   - path: src/components/__tests__/DatePicker.test.tsx
     strategy: retry_3x
@@ -314,36 +350,64 @@ imported_configs:
           <p className="text-sm text-[var(--text-secondary)]">
             Every PR interaction teaches WarpFix your team&apos;s preferences.
           </p>
-          <div className="rounded-xl border border-[var(--border-default)] overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[var(--bg-secondary)]">
-                  <th className="text-left p-3 font-medium">Action</th>
-                  <th className="text-left p-3 font-medium">PR</th>
-                  <th className="text-left p-3 font-medium">Detail</th>
-                  <th className="text-left p-3 font-medium">By</th>
-                  <th className="text-right p-3 font-medium">When</th>
-                </tr>
-              </thead>
-              <tbody>
-                {FEEDBACK_LOG.map((log, i) => (
-                  <tr key={i} className="border-t border-[var(--border-default)]">
-                    <td className="p-3">
-                      <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                        log.action === "PR rejected" ? "bg-red-100 text-red-700" :
-                        log.action === "PR modified" ? "bg-amber-100 text-amber-700" :
-                        "bg-emerald-100 text-emerald-700"
-                      }`}>{log.action}</span>
-                    </td>
-                    <td className="p-3 font-mono text-xs">{log.pr}</td>
-                    <td className="p-3 text-[var(--text-secondary)]">{log.detail}</td>
-                    <td className="p-3 font-medium">{log.user}</td>
-                    <td className="p-3 text-right text-[var(--text-secondary)]">{log.date}</td>
+
+          {feedbackLog.length > 0 ? (
+            <div className="rounded-xl border border-[var(--border-default)] overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[var(--bg-secondary)]">
+                    <th className="text-left p-3 font-medium">Category</th>
+                    <th className="text-left p-3 font-medium">Rule</th>
+                    <th className="text-left p-3 font-medium">Source</th>
+                    <th className="text-right p-3 font-medium">Applied</th>
+                    <th className="text-right p-3 font-medium">When</th>
                   </tr>
+                </thead>
+                <tbody>
+                  {feedbackLog.map((log) => (
+                    <tr key={log.id} className="border-t border-[var(--border-default)]">
+                      <td className="p-3">
+                        <span className="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-medium">
+                          {log.category}
+                        </span>
+                      </td>
+                      <td className="p-3 text-[var(--text-secondary)] max-w-xs truncate">{log.rule}</td>
+                      <td className="p-3 text-xs">{log.source}</td>
+                      <td className="p-3 text-right font-medium">{log.times_applied}x</td>
+                      <td className="p-3 text-right text-[var(--text-secondary)]">{new Date(log.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-sm text-[var(--text-tertiary)]">
+              No feedback signals yet. These appear as your team interacts with WarpFix PRs.
+            </div>
+          )}
+
+          {/* Category breakdown */}
+          {categories.length > 0 && (
+            <div className="rounded-xl border border-[var(--border-default)] overflow-hidden">
+              <div className="px-4 py-3 bg-[var(--bg-secondary)] border-b border-[var(--border-default)]">
+                <span className="text-sm font-semibold">Preference Categories</span>
+              </div>
+              <div className="divide-y divide-[var(--border-default)]">
+                {categories.map((cat) => (
+                  <div key={cat.category} className="px-4 py-3 flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-medium">{cat.category}</span>
+                      <span className="text-xs text-[var(--text-secondary)] ml-2">{cat.rules_count} rules</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs">
+                      <span>{cat.avg_confidence}% avg confidence</span>
+                      <span className="font-semibold">{cat.total_applications} applied</span>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

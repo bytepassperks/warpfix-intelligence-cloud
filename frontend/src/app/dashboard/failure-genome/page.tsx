@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dna, TrendingUp, Globe, Hash, Clock, BarChart3,
-  ChevronDown, ChevronUp, ArrowUpRight, Shield, Layers,
+  ChevronDown, ChevronUp, ArrowUpRight, Shield, Layers, Loader2,
 } from "lucide-react";
+import { API_URL } from "@/lib/utils";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -15,78 +16,112 @@ const fadeUp = {
   }),
 };
 
-const GENOME_STATS = [
-  { label: "Total Fingerprints", value: "12,847", icon: Dna, change: "+342 this month", color: "text-violet-600" },
-  { label: "Unique Error Patterns", value: "4,219", icon: Hash, change: "+89 new patterns", color: "text-blue-600" },
-  { label: "Cross-Repo Matches", value: "67,431", icon: Globe, change: "5.2x avg reuse", color: "text-emerald-600" },
-  { label: "Avg Fix Time (cached)", value: "0.8s", icon: Clock, change: "vs 6.2min manual", color: "text-amber-600" },
-];
+const CATEGORY_COLORS: Record<string, string> = {
+  type_error: "bg-blue-500",
+  runtime_error: "bg-red-500",
+  build_error: "bg-amber-500",
+  lint_error: "bg-emerald-500",
+  dependency_error: "bg-purple-500",
+  test_failure: "bg-orange-500",
+  infra_error: "bg-cyan-500",
+  security_error: "bg-rose-500",
+  import_error: "bg-indigo-500",
+};
 
-const TOP_FINGERPRINTS = [
-  {
-    hash: "fp_e8a3f2c1", pattern: "TypeError: Cannot read properties of undefined",
-    framework: "React/Next.js", category: "runtime_error",
-    matches: 2847, repos: 342, medianFixTime: "0.6s", autoResolved: 94,
-    trend: "stable", lastSeen: "2 hours ago",
-    topFix: "Add optional chaining or null check before property access",
-  },
-  {
-    hash: "fp_b7d4e912", pattern: "Module not found: Can't resolve",
-    framework: "Webpack/Vite", category: "build_error",
-    matches: 1923, repos: 289, medianFixTime: "1.2s", autoResolved: 87,
-    trend: "rising", lastSeen: "45 minutes ago",
-    topFix: "Install missing dependency or fix import path",
-  },
-  {
-    hash: "fp_c1a9f3e5", pattern: "ESLint: Unexpected token",
-    framework: "ESLint", category: "lint_error",
-    matches: 1654, repos: 412, medianFixTime: "0.3s", autoResolved: 99,
-    trend: "declining", lastSeen: "1 hour ago",
-    topFix: "Auto-fix via ESLint --fix (zero LLM cost)",
-  },
-  {
-    hash: "fp_d2b8c4f7", pattern: "ENOMEM: not enough memory",
-    framework: "Node.js/Docker", category: "resource_error",
-    matches: 892, repos: 156, medianFixTime: "2.1s", autoResolved: 71,
-    trend: "rising", lastSeen: "3 hours ago",
-    topFix: "Increase heap size or optimize memory-intensive operations",
-  },
-  {
-    hash: "fp_a5e7d1b3", pattern: "TS2345: Argument of type .* is not assignable",
-    framework: "TypeScript", category: "type_error",
-    matches: 3241, repos: 521, medianFixTime: "1.8s", autoResolved: 82,
-    trend: "stable", lastSeen: "30 minutes ago",
-    topFix: "Add proper type assertion or update function signature",
-  },
-  {
-    hash: "fp_f9c2a4d6", pattern: "ENOENT: no such file or directory",
-    framework: "Node.js/CI", category: "filesystem_error",
-    matches: 1187, repos: 234, medianFixTime: "0.9s", autoResolved: 91,
-    trend: "declining", lastSeen: "5 hours ago",
-    topFix: "Create missing directory or fix path reference",
-  },
-];
+const CATEGORY_BADGE: Record<string, string> = {
+  type_error: "bg-blue-100 text-blue-700",
+  runtime_error: "bg-red-100 text-red-700",
+  build_error: "bg-amber-100 text-amber-700",
+  lint_error: "bg-emerald-100 text-emerald-700",
+  dependency_error: "bg-purple-100 text-purple-700",
+  test_failure: "bg-orange-100 text-orange-700",
+  infra_error: "bg-cyan-100 text-cyan-700",
+  security_error: "bg-rose-100 text-rose-700",
+  import_error: "bg-indigo-100 text-indigo-700",
+};
 
-const MONTHLY_INDEX = [
-  { month: "Apr 2026", newPatterns: 342, totalMatches: 8921, avgConfidence: 87, topCategory: "type_error" },
-  { month: "Mar 2026", newPatterns: 298, totalMatches: 7843, avgConfidence: 85, topCategory: "build_error" },
-  { month: "Feb 2026", newPatterns: 267, totalMatches: 6512, avgConfidence: 83, topCategory: "runtime_error" },
-  { month: "Jan 2026", newPatterns: 231, totalMatches: 5234, avgConfidence: 81, topCategory: "lint_error" },
-];
-
-const CATEGORY_BREAKDOWN = [
-  { category: "Type Errors", count: 3241, pct: 25, color: "bg-blue-500" },
-  { category: "Runtime Errors", count: 2847, pct: 22, color: "bg-red-500" },
-  { category: "Build Errors", count: 2156, pct: 17, color: "bg-amber-500" },
-  { category: "Lint Errors", count: 1892, pct: 15, color: "bg-emerald-500" },
-  { category: "Filesystem Errors", count: 1187, pct: 9, color: "bg-purple-500" },
-  { category: "Resource Errors", count: 892, pct: 7, color: "bg-orange-500" },
-  { category: "Other", count: 632, pct: 5, color: "bg-gray-400" },
-];
+interface GenomeData {
+  overview: {
+    totalFingerprints: number;
+    uniqueCategories: number;
+    totalMatches: number;
+    avgConfidence: number;
+  };
+  fingerprints: {
+    id: string;
+    hash: string;
+    error_pattern: string;
+    dependency_context: { framework?: string; category?: string } | null;
+    resolution_confidence: number;
+    times_matched: number;
+    last_matched_at: string;
+    created_at: string;
+  }[];
+  categories: {
+    category: string;
+    count: string;
+    total_matches: string;
+    avg_confidence: string;
+  }[];
+  monthlyIndex: {
+    month_year: string;
+    new_patterns: number;
+    total_matches: number;
+    avg_confidence: number;
+    top_category: string;
+  }[];
+}
 
 export default function FailureGenomePage() {
   const [expandedFp, setExpandedFp] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"index" | "explorer" | "categories">("index");
+  const [data, setData] = useState<GenomeData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch(`${API_URL}/api/intelligence/failure-genome`, { credentials: "include" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        setData(json);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+          Failed to load Failure Genome data: {error || "No data available"}
+        </div>
+      </div>
+    );
+  }
+
+  const { overview, fingerprints, categories, monthlyIndex } = data;
+  const totalCatMatches = categories.reduce((s, c) => s + parseInt(c.total_matches), 0);
+
+  const statsCards = [
+    { label: "Total Fingerprints", value: overview.totalFingerprints.toLocaleString(), icon: Dna, change: monthlyIndex[0] ? `+${monthlyIndex[0].new_patterns} this month` : "", color: "text-violet-600" },
+    { label: "Unique Categories", value: overview.uniqueCategories.toLocaleString(), icon: Hash, change: `${categories.length} active`, color: "text-blue-600" },
+    { label: "Cross-Repo Matches", value: overview.totalMatches.toLocaleString(), icon: Globe, change: `${overview.totalFingerprints > 0 ? (overview.totalMatches / overview.totalFingerprints).toFixed(1) : 0}x avg reuse`, color: "text-emerald-600" },
+    { label: "Avg Confidence", value: `${overview.avgConfidence}%`, icon: Clock, change: "across all patterns", color: "text-amber-600" },
+  ];
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
@@ -106,7 +141,7 @@ export default function FailureGenomePage() {
 
       {/* Stats */}
       <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {GENOME_STATS.map((s, i) => (
+        {statsCards.map((s, i) => (
           <motion.div key={s.label} variants={fadeUp} custom={i}
             className="p-4 rounded-xl border border-[var(--border-default)] bg-white">
             <div className="flex items-center gap-2 mb-2">
@@ -176,18 +211,18 @@ export default function FailureGenomePage() {
                 </tr>
               </thead>
               <tbody>
-                {MONTHLY_INDEX.map((m) => (
-                  <tr key={m.month} className="border-t border-[var(--border-default)]">
-                    <td className="p-3 font-medium">{m.month}</td>
-                    <td className="p-3 text-right text-violet-600">+{m.newPatterns}</td>
-                    <td className="p-3 text-right">{m.totalMatches.toLocaleString()}</td>
+                {monthlyIndex.map((m) => (
+                  <tr key={m.month_year} className="border-t border-[var(--border-default)]">
+                    <td className="p-3 font-medium">{m.month_year}</td>
+                    <td className="p-3 text-right text-violet-600">+{m.new_patterns}</td>
+                    <td className="p-3 text-right">{m.total_matches.toLocaleString()}</td>
                     <td className="p-3 text-right">
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        m.avgConfidence >= 85 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                      }`}>{m.avgConfidence}%</span>
+                        m.avg_confidence >= 85 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                      }`}>{m.avg_confidence}%</span>
                     </td>
                     <td className="p-3 text-right">
-                      <span className="px-2 py-0.5 rounded bg-gray-100 text-xs">{m.topCategory.replace("_", " ")}</span>
+                      <span className="px-2 py-0.5 rounded bg-gray-100 text-xs">{m.top_category.replace("_", " ")}</span>
                     </td>
                   </tr>
                 ))}
@@ -208,68 +243,63 @@ export default function FailureGenomePage() {
             <Layers className="w-5 h-5 text-violet-600" />
             Top Fingerprints by Match Count
           </h2>
-          {TOP_FINGERPRINTS.map((fp) => (
-            <div key={fp.hash}
-              className="rounded-xl border border-[var(--border-default)] bg-white overflow-hidden">
-              <button
-                onClick={() => setExpandedFp(expandedFp === fp.hash ? null : fp.hash)}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--bg-secondary)] transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <code className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded font-mono">{fp.hash}</code>
-                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                      fp.category === "runtime_error" ? "bg-red-100 text-red-700" :
-                      fp.category === "build_error" ? "bg-amber-100 text-amber-700" :
-                      fp.category === "type_error" ? "bg-blue-100 text-blue-700" :
-                      fp.category === "lint_error" ? "bg-emerald-100 text-emerald-700" :
-                      "bg-gray-100 text-gray-700"
-                    }`}>{fp.category.replace("_", " ")}</span>
-                    <span className={`text-xs ${
-                      fp.trend === "rising" ? "text-red-600" : fp.trend === "declining" ? "text-emerald-600" : "text-gray-500"
-                    }`}>
-                      {fp.trend === "rising" ? "↑ rising" : fp.trend === "declining" ? "↓ declining" : "→ stable"}
-                    </span>
+          {fingerprints.slice(0, 20).map((fp) => {
+            const ctx = fp.dependency_context || {};
+            const category = ctx.category || "unknown";
+            const framework = ctx.framework || "unknown";
+            return (
+              <div key={fp.id}
+                className="rounded-xl border border-[var(--border-default)] bg-white overflow-hidden">
+                <button
+                  onClick={() => setExpandedFp(expandedFp === fp.hash ? null : fp.hash)}
+                  className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--bg-secondary)] transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <code className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded font-mono">{fp.hash.slice(0, 12)}</code>
+                      <span className={`text-xs px-2 py-0.5 rounded font-medium ${CATEGORY_BADGE[category] || "bg-gray-100 text-gray-700"}`}>
+                        {category.replace("_", " ")}
+                      </span>
+                    </div>
+                    <p className="text-sm font-mono text-[var(--text-primary)] truncate">{fp.error_pattern}</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">
+                      {framework} &middot; Last matched {new Date(fp.last_matched_at).toLocaleDateString()}
+                    </p>
                   </div>
-                  <p className="text-sm font-mono text-[var(--text-primary)] truncate">{fp.pattern}</p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">{fp.framework} · Last seen {fp.lastSeen}</p>
-                </div>
-                <div className="flex items-center gap-4 ml-4">
-                  <div className="text-right">
-                    <div className="text-lg font-bold">{fp.matches.toLocaleString()}</div>
-                    <div className="text-xs text-[var(--text-secondary)]">matches</div>
+                  <div className="flex items-center gap-4 ml-4">
+                    <div className="text-right">
+                      <div className="text-lg font-bold">{fp.times_matched.toLocaleString()}</div>
+                      <div className="text-xs text-[var(--text-secondary)]">matches</div>
+                    </div>
+                    {expandedFp === fp.hash ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </div>
-                  {expandedFp === fp.hash ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </div>
-              </button>
-              {expandedFp === fp.hash && (
-                <div className="p-4 border-t border-[var(--border-default)] bg-[var(--bg-secondary)]">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div>
-                      <div className="text-xs text-[var(--text-secondary)]">Repos Affected</div>
-                      <div className="text-lg font-semibold">{fp.repos}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-[var(--text-secondary)]">Median Fix Time</div>
-                      <div className="text-lg font-semibold">{fp.medianFixTime}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-[var(--text-secondary)]">Auto-Resolved</div>
-                      <div className="text-lg font-semibold text-emerald-600">{fp.autoResolved}%</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-[var(--text-secondary)]">Reuse Factor</div>
-                      <div className="text-lg font-semibold">{(fp.matches / fp.repos).toFixed(1)}x</div>
+                </button>
+                {expandedFp === fp.hash && (
+                  <div className="p-4 border-t border-[var(--border-default)] bg-[var(--bg-secondary)]">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div>
+                        <div className="text-xs text-[var(--text-secondary)]">Confidence</div>
+                        <div className="text-lg font-semibold text-emerald-600">{fp.resolution_confidence}%</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-[var(--text-secondary)]">Total Matches</div>
+                        <div className="text-lg font-semibold">{fp.times_matched.toLocaleString()}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-[var(--text-secondary)]">First Seen</div>
+                        <div className="text-lg font-semibold">{new Date(fp.created_at).toLocaleDateString()}</div>
+                      </div>
                     </div>
                   </div>
-                  <div className="p-3 rounded-lg bg-white border border-[var(--border-default)]">
-                    <div className="text-xs font-medium text-[var(--text-secondary)] mb-1">Most Common Fix</div>
-                    <p className="text-sm">{fp.topFix}</p>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
+            );
+          })}
+          {fingerprints.length === 0 && (
+            <div className="py-8 text-center text-sm text-[var(--text-tertiary)]">
+              No fingerprints yet. Patterns will appear here as WarpFix processes CI failures.
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -278,18 +308,23 @@ export default function FailureGenomePage() {
         <div className="space-y-6">
           <h2 className="text-lg font-semibold">Failure Categories</h2>
           <div className="space-y-3">
-            {CATEGORY_BREAKDOWN.map((cat) => (
-              <div key={cat.category} className="flex items-center gap-4">
-                <div className="w-32 text-sm font-medium">{cat.category}</div>
-                <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
-                  <div className={`h-full ${cat.color} rounded-full flex items-center justify-end pr-2`}
-                    style={{ width: `${cat.pct}%` }}>
-                    {cat.pct >= 10 && <span className="text-[10px] text-white font-medium">{cat.pct}%</span>}
+            {categories.map((cat) => {
+              const matches = parseInt(cat.total_matches);
+              const pct = totalCatMatches > 0 ? Math.round((matches / totalCatMatches) * 100) : 0;
+              const barColor = CATEGORY_COLORS[cat.category] || "bg-gray-400";
+              return (
+                <div key={cat.category} className="flex items-center gap-4">
+                  <div className="w-36 text-sm font-medium capitalize">{cat.category.replace("_", " ")}</div>
+                  <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+                    <div className={`h-full ${barColor} rounded-full flex items-center justify-end pr-2`}
+                      style={{ width: `${Math.max(pct, 3)}%` }}>
+                      {pct >= 8 && <span className="text-[10px] text-white font-medium">{pct}%</span>}
+                    </div>
                   </div>
+                  <div className="w-20 text-right text-sm text-[var(--text-secondary)]">{matches.toLocaleString()}</div>
                 </div>
-                <div className="w-16 text-right text-sm text-[var(--text-secondary)]">{cat.count.toLocaleString()}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="p-4 rounded-xl bg-blue-50 border border-blue-200">
@@ -298,8 +333,8 @@ export default function FailureGenomePage() {
               <div>
                 <p className="text-sm font-medium text-blue-900">Data Flywheel Effect</p>
                 <p className="text-xs text-blue-700 mt-1">
-                  Every CI failure processed makes WarpFix smarter. With {GENOME_STATS[0].value} fingerprints across
-                  {" "}{GENOME_STATS[2].value} matches, WarpFix has a fix accuracy that competitors starting from zero
+                  Every CI failure processed makes WarpFix smarter. With {overview.totalFingerprints.toLocaleString()} fingerprints across
+                  {" "}{overview.totalMatches.toLocaleString()} matches, WarpFix has a fix accuracy that competitors starting from zero
                   would need 2-3 years of active adoption to replicate. Your fixes improve because the network grows.
                 </p>
               </div>
@@ -320,7 +355,7 @@ export default function FailureGenomePage() {
             <div className="p-4 rounded-xl border border-[var(--border-default)]">
               <div className="flex items-center gap-2 mb-2">
                 <Globe className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium">Anonymous & Secure</span>
+                <span className="text-sm font-medium">Anonymous and Secure</span>
               </div>
               <p className="text-xs text-[var(--text-secondary)]">
                 All patterns are normalized and anonymized. No repo names, file paths, or code content

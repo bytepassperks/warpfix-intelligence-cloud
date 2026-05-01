@@ -277,6 +277,68 @@ async function runMigrations() {
     CREATE INDEX IF NOT EXISTS idx_promo_redemptions_promo ON promo_redemptions(promo_id);
     CREATE INDEX IF NOT EXISTS idx_promo_redemptions_user ON promo_redemptions(user_id);
     CREATE INDEX IF NOT EXISTS idx_admin_activity_log_admin ON admin_activity_log(admin_id);
+
+    -- CI Brain: test reliability tracking
+    CREATE TABLE IF NOT EXISTS test_runs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      repository_id UUID REFERENCES repositories(id) ON DELETE CASCADE,
+      test_name VARCHAR(512) NOT NULL,
+      test_file VARCHAR(512),
+      status VARCHAR(50) NOT NULL,
+      duration_ms INTEGER,
+      error_message TEXT,
+      branch VARCHAR(255),
+      commit_sha VARCHAR(40),
+      workflow_run_id BIGINT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- Org preferences learned from PR feedback
+    CREATE TABLE IF NOT EXISTS org_preferences (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      category VARCHAR(100) NOT NULL,
+      rule TEXT NOT NULL,
+      confidence INTEGER DEFAULT 50,
+      source VARCHAR(100) DEFAULT 'pr_feedback',
+      times_applied INTEGER DEFAULT 0,
+      last_used_at TIMESTAMPTZ DEFAULT NOW(),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- Network-wide aggregated prediction data
+    CREATE TABLE IF NOT EXISTS network_predictions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      pattern_type VARCHAR(100) NOT NULL,
+      description TEXT NOT NULL,
+      probability INTEGER NOT NULL,
+      category VARCHAR(100),
+      based_on_prs INTEGER DEFAULT 0,
+      based_on_repos INTEGER DEFAULT 0,
+      times_prevented INTEGER DEFAULT 0,
+      suggestion TEXT,
+      last_triggered_at TIMESTAMPTZ DEFAULT NOW(),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- Failure genome monthly index
+    CREATE TABLE IF NOT EXISTS genome_monthly_stats (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      month_year VARCHAR(20) NOT NULL,
+      new_patterns INTEGER DEFAULT 0,
+      total_matches INTEGER DEFAULT 0,
+      avg_confidence INTEGER DEFAULT 0,
+      top_category VARCHAR(100),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_test_runs_repo ON test_runs(repository_id);
+    CREATE INDEX IF NOT EXISTS idx_test_runs_name ON test_runs(test_name);
+    CREATE INDEX IF NOT EXISTS idx_test_runs_status ON test_runs(status);
+    CREATE INDEX IF NOT EXISTS idx_org_preferences_user ON org_preferences(user_id);
+    CREATE INDEX IF NOT EXISTS idx_org_preferences_category ON org_preferences(category);
+    CREATE INDEX IF NOT EXISTS idx_network_predictions_type ON network_predictions(pattern_type);
+    CREATE INDEX IF NOT EXISTS idx_genome_monthly_month ON genome_monthly_stats(month_year);
   `;
 
   try {
