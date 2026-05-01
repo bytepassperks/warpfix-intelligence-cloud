@@ -8,9 +8,9 @@ router.get('/github', passport.authenticate('github', { scope: ['user:email', 'r
 router.get('/github/callback', (req, res, next) => {
   passport.authenticate('github', (err, user, info) => {
     if (err) {
-      logger.error('OAuth callback error', { error: err.message, stack: err.stack });
+      logger.error('OAuth callback error', { error: err.message, stack: err.stack, code: err.code, statusCode: err.statusCode, oauthError: err.oauthError });
       return res.redirect(
-        `${process.env.APP_BASE_URL || 'http://localhost:3000'}/auth-error?error=oauth_error`
+        `${process.env.APP_BASE_URL || 'http://localhost:3000'}/auth-error?error=oauth_error&detail=${encodeURIComponent(err.message || 'unknown')}`
       );
     }
     if (!user) {
