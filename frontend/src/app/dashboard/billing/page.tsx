@@ -20,6 +20,7 @@ const PLANS = [
     description: "Basic CI repair",
     features: ["3 repairs / month", "1 repository", "Community support"],
     highlighted: false,
+    tier: 0,
   },
   {
     name: "Pro",
@@ -28,6 +29,7 @@ const PLANS = [
     description: "Unlimited repairs",
     features: ["Unlimited repairs", "Unlimited repos", "Sandbox validation", "Dependency radar", "Priority support"],
     highlighted: true,
+    tier: 1,
   },
   {
     name: "Team",
@@ -36,8 +38,11 @@ const PLANS = [
     description: "Org-level intelligence",
     features: ["Everything in Pro", "Shared fingerprints", "Team memory", "SSO", "Admin dashboard"],
     highlighted: false,
+    tier: 2,
   },
 ];
+
+const TIER_ORDER: Record<string, number> = { free: 0, pro: 1, team: 2 };
 
 export default function BillingPage() {
   const { user, loading: userLoading } = useUser();
@@ -234,6 +239,9 @@ export default function BillingPage() {
       <div className="grid md:grid-cols-3 gap-4">
         {PLANS.map((plan, i) => {
           const isCurrent = sub?.current_plan === plan.name.toLowerCase();
+          const currentTier = TIER_ORDER[sub?.current_plan || "free"] ?? 0;
+          const isDowngrade = plan.tier < currentTier;
+          const isUpgrade = plan.tier > currentTier;
           return (
             <motion.div
               key={plan.name}
@@ -273,6 +281,10 @@ export default function BillingPage() {
                   <>
                     <Check className="w-3.5 h-3.5" />
                     Current Plan
+                  </>
+                ) : isDowngrade ? (
+                  <>
+                    Downgrade
                   </>
                 ) : (
                   <>
@@ -314,10 +326,12 @@ export default function BillingPage() {
             >
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="w-5 h-5 text-[var(--brand)]" />
-                <h3 className="text-lg font-bold">Upgrade to {upgradeModal}</h3>
+                <h3 className="text-lg font-bold">
+                  {(TIER_ORDER[upgradeModal.toLowerCase()] ?? 0) < (TIER_ORDER[sub?.current_plan || 'free'] ?? 0) ? 'Downgrade' : 'Upgrade'} to {upgradeModal}
+                </h3>
               </div>
               <p className="text-[13px] text-[var(--text-secondary)] mb-6">
-                Connect your GitHub account to complete the upgrade to the {upgradeModal} plan. You&apos;ll be redirected to set up payment.
+                Connect your GitHub account to complete the switch to the {upgradeModal} plan. You&apos;ll be redirected to set up payment.
               </p>
               <div className="flex gap-3">
                 <button

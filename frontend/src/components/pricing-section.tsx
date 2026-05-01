@@ -19,9 +19,9 @@ const PLANS = [
   },
   {
     name: "Pro",
-    price: "999",
-    currency: "INR",
-    period: "/month",
+    price: "$12",
+    currency: "",
+    period: "/mo",
     description: "Unlimited repairs for serious developers",
     features: [
       "Unlimited repairs",
@@ -37,9 +37,9 @@ const PLANS = [
   },
   {
     name: "Team",
-    price: "2,999",
-    currency: "INR",
-    period: "/month",
+    price: "$36",
+    currency: "",
+    period: "/mo",
     description: "Org-level shared repair intelligence",
     features: [
       "Everything in Pro",

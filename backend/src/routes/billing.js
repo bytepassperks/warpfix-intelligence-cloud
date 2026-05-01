@@ -5,9 +5,9 @@ const { logger } = require('../utils/logger');
 const router = express.Router();
 
 const PLANS = {
-  free: { name: 'Free', repairs_per_month: 3, price_inr: 0 },
-  pro: { name: 'Pro', repairs_per_month: 999999, price_inr: 999 },
-  team: { name: 'Team', repairs_per_month: 999999, price_inr: 2999 },
+  free: { name: 'Free', repairs_per_month: 3, price_usd: 0 },
+  pro: { name: 'Pro', repairs_per_month: 999999, price_usd: 12 },
+  team: { name: 'Team', repairs_per_month: 999999, price_usd: 36 },
 };
 
 router.get('/plans', (req, res) => {
@@ -56,7 +56,7 @@ router.post('/checkout', requireAuth, async (req, res) => {
       body: JSON.stringify({
         billing: {
           city: '',
-          country: 'IN',
+          country: 'US',
           state: '',
           street: '',
           zipcode: '',
