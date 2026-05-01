@@ -144,6 +144,9 @@ export const metadata: Metadata = {
     creator: "@warpfix",
     site: "@warpfix",
   },
+  verification: {
+    google: "bbiRm-H4LfyxskhuAc5IyTJbtLgIw2JH8Hk2bjvtkSI",
+  },
   category: "Developer Tools",
   classification: "Software",
   other: {
