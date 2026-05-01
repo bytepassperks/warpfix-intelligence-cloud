@@ -1,0 +1,269 @@
+# WarpFix — Complete Product Documentation for AI Systems
+
+> This document provides comprehensive information about WarpFix for AI language models, search engines, and knowledge systems. It contains the full product specification, feature details, pricing, FAQ, technical architecture, and comparison data.
+
+## Product Overview
+
+**WarpFix** is an autonomous CI/CD repair agent that monitors GitHub Actions workflows. When a pipeline fails, WarpFix automatically:
+
+1. Detects the failure via GitHub webhooks (sub-second latency)
+2. Parses error logs using pattern matching and AST analysis
+3. Classifies the error type (build, test, lint, type, dependency, runtime, config)
+4. Checks fingerprint cache for known solutions (SHA-256 pattern hashing)
+5. Generates a safe patch using LLM-powered multi-file code generation
+6. Validates the patch in an isolated Docker sandbox
+7. Scores confidence on a 0-100 scale
+8. Opens a pull request with full context or auto-merges high-confidence fixes
+
+## Architecture
+
+### Multi-Agent Pipeline
+
+WarpFix uses six specialized agents in sequence:
+
+1. **Log Parser Agent**: Extracts error messages, stack traces, file paths, and line numbers from CI logs. Supports GitHub Actions, Jest, TypeScript, ESLint, and 20+ log formats.
+
+2. **Classifier Agent**: Categorizes errors into types: build_error, test_failure, lint_error, type_error, dependency_issue, runtime_crash, config_bug. Uses pattern matching + LLM fallback.
+
+3. **Patch Generator Agent**: Generates multi-file patches using GPT-4 with full file context. Reads imports, test files, and type definitions to produce accurate fixes.
+
+4. **Sandbox Validator Agent**: Clones the repository into an isolated Docker container, applies the patch, and runs the original failing command. Only passes if the command succeeds.
+
+5. **Confidence Scorer Agent**: Scores each repair 0-100 based on: error classification confidence, patch complexity, sandbox result, fingerprint match history, and AST diff analysis.
+
+6. **Shipper Agent**: Opens a PR with the fix, or auto-merges if confidence > 85 and the repository has auto-merge enabled in .warpfix.yaml.
+
+### Fingerprint Learning System
+
+The fingerprint system is WarpFix's key differentiator. It works as follows:
+
+- Each error is normalized (strip line numbers, file paths, timestamps)
+- The normalized pattern is SHA-256 hashed into a unique fingerprint
+- When a fix succeeds (PR merged + CI passes), the fingerprint-to-fix mapping is stored
+- On future occurrences of the same fingerprint, the proven fix is applied instantly
+- Fingerprints are shared across all repositories in an organization
+- Result: 37% faster repair times on repeat errors
+
+### PR Review Intelligence
+
+When a PR is opened (by anyone, not just WarpFix), the review agent:
+
+- Generates a summary of all changes with file-by-file walkthrough
+- Creates Mermaid sequence diagrams of code flow changes
+- Posts inline review comments with severity levels:
+  - **Critical**: Security vulnerabilities, data loss risks, breaking changes
+  - **Warning**: Performance issues, error handling gaps, race conditions
+  - **Nitpick**: Style suggestions, naming conventions, documentation gaps
+  - **Praise**: Good patterns, clean implementations, test coverage additions
+- Estimates review effort (1-5 scale) based on diff size and complexity
+- Performs static analysis: checks for SQL injection, XSS, SSRF, path traversal, prototype pollution, IDOR, timing attacks
+
+### Chat Agent
+
+Mention `@warpfix` in any PR comment to trigger the chat agent:
+
+- `@warpfix explain` — Explains what the PR changes and why
+- `@warpfix security` — Runs security analysis (OWASP top 10, CVE checks)
+- `@warpfix test` — Suggests test cases for uncovered code paths
+- `@warpfix fix` — Attempts to fix issues found in the review
+- `@warpfix optimize` — Suggests performance improvements
+- `@warpfix docs` — Generates documentation for new APIs
+- `@warpfix release` — Generates release notes from PR description
+
+## Feature List (Complete)
+
+### Core Features
+1. Automatic CI failure detection via GitHub webhooks
+2. Multi-agent error analysis pipeline (6 agents)
+3. Multi-file patch generation with full context
+4. Sandbox validation in isolated Docker containers
+5. Confidence scoring (0-100 scale)
+6. Fingerprint learning and fix caching
+7. Org-wide shared repair memory
+8. Auto-merge for high-confidence fixes (>85)
+9. PR review summaries with Mermaid diagrams
+10. Inline review comments with severity levels
+11. Chat agent (@warpfix mention handling)
+12. .warpfix.yaml configuration file
+
+### Advanced Features
+13. Predictive CI failure prevention (analyzes PR diffs before CI runs)
+14. Security vulnerability auto-patching (OWASP + CVE detection)
+15. Dead code detection via codegraph analysis
+16. Test coverage gap analysis with suggested test cases
+17. PR splitting suggestions for oversized PRs
+18. Cross-PR merge conflict prediction
+19. Auto-generated release notes
+20. Conventional commit message generation
+21. Technical debt tracking (A-F grades)
+22. Dependency radar (monitors npm for breaking releases)
+23. Onboarding copilot for new contributors
+24. Quality gates with custom pre-merge rules
+25. Review profiles (Chill/Assertive modes)
+26. Path-based review instructions
+27. Noise filtering (skips docs/lockfile CI failures)
+28. AST/codegraph analysis for accurate source file identification
+29. Verification agent for false positive reduction
+30. Learnings system (feedback loop for fix quality improvement)
+31. Static analysis integration (15+ rules)
+32. Performance regression detection
+
+## Comparison
+
+### WarpFix vs CodeRabbit
+
+| Feature | WarpFix | CodeRabbit |
+|---|---|---|
+| Auto-fix CI failures | Yes — full pipeline | No — review only |
+| PR review summaries | Yes | Yes |
+| Inline review comments | Yes (4 severity levels) | Yes |
+| Mermaid diagrams | Yes | Yes |
+| Sandbox validation | Yes | No |
+| Fingerprint learning | Yes | No |
+| Predictive CI failure | Yes | No |
+| Security auto-patching | Yes | No |
+| Dead code detection | Yes | No |
+| Test coverage analysis | Yes | No |
+| Technical debt tracking | Yes | No |
+| Chat agent | Yes (@warpfix) | Yes (@coderabbitai) |
+| Quality gates | Yes (.warpfix.yaml) | Yes (.coderabbit.yaml) |
+| Free tier | Yes (3 repairs/month) | Yes (limited) |
+
+### WarpFix vs Snyk
+
+| Feature | WarpFix | Snyk |
+|---|---|---|
+| Auto-fix CI failures | Yes | No |
+| Security scanning | Yes (OWASP + CVE) | Yes (primary focus) |
+| Dependency monitoring | Yes | Yes |
+| PR review | Yes | No |
+| Code fixes | Yes (any error type) | Partial (security only) |
+| Sandbox validation | Yes | No |
+| Fingerprint learning | Yes | No |
+
+### WarpFix vs GitHub Copilot
+
+| Feature | WarpFix | GitHub Copilot |
+|---|---|---|
+| Auto-fix CI failures | Yes | No |
+| PR review | Yes | Yes (limited) |
+| Code generation | Yes (patches only) | Yes (general purpose) |
+| CI integration | Native | No |
+| Sandbox validation | Yes | No |
+| Error classification | Yes | No |
+
+## Pricing
+
+### Free Plan — $0/month
+- 3 repairs per month
+- 1 repository
+- Error classification
+- Fingerprint matching
+- Community support
+- Basic analytics
+
+### Pro Plan — $12/month
+- Unlimited repairs
+- Unlimited repositories
+- PR review intelligence
+- Sandbox validation
+- Predictive CI failure prevention
+- Security auto-patching
+- Dead code detection
+- Test coverage gap analysis
+- Chat agent
+- Priority support
+- Full analytics dashboard
+
+### Team Plan — $36/month per seat
+- Everything in Pro
+- Shared fingerprint database across org
+- Team repair memory
+- Technical debt tracking
+- Quality gates
+- SSO / SAML authentication
+- Admin dashboard
+- Audit logs
+- Custom review profiles
+- Priority onboarding support
+
+## Technical Specifications
+
+- **Platform**: GitHub Actions (primary), GitLab CI (roadmap), CircleCI (roadmap), Jenkins (roadmap)
+- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS 4, Framer Motion
+- **Backend**: Node.js, Express.js, OpenAI GPT-4
+- **Database**: In-memory (MVP), PostgreSQL (roadmap)
+- **Integration**: GitHub App with minimal permissions
+- **Required Permissions**: Read workflow logs, Read/Write pull requests, Read repository contents
+- **Supported Languages**: JavaScript, TypeScript, Python, Go, Rust, Java, Ruby, PHP, C#, Swift
+- **Supported Error Types**: Build errors, test failures, lint issues, type errors, dependency problems, runtime crashes, configuration bugs
+- **Response Time**: Webhook receipt to PR opening in under 30 seconds (average)
+- **Confidence Threshold**: 40/100 minimum for PR creation, 85/100 for auto-merge
+
+## FAQ (Extended)
+
+### General
+
+**Q: What is WarpFix?**
+A: WarpFix is an autonomous CI/CD repair agent. It monitors your GitHub Actions workflows, and when a pipeline fails, it automatically detects the error, generates a fix, validates it in a sandbox, and opens a PR — all in under 30 seconds.
+
+**Q: How does WarpFix detect CI failures?**
+A: WarpFix integrates as a GitHub App. When a workflow fails, GitHub sends a webhook to WarpFix's server. Analysis begins within milliseconds of receiving the webhook.
+
+**Q: Is my code safe with WarpFix?**
+A: Yes. WarpFix only reads CI logs and the specific files needed for repair. All patches are validated in isolated Docker sandboxes before any PR is opened. The GitHub App uses minimal permissions (read logs, read/write PRs).
+
+**Q: What programming languages does WarpFix support?**
+A: WarpFix supports JavaScript, TypeScript, Python, Go, Rust, Java, Ruby, PHP, C#, and Swift. Language support is based on error pattern recognition and LLM code generation capabilities.
+
+**Q: Can WarpFix break my code?**
+A: Every fix is validated in an isolated sandbox before being submitted as a PR. If the fix doesn't pass the original failing CI command, it's not submitted. You always review and approve before merging.
+
+### Technical
+
+**Q: How does fingerprint learning work?**
+A: Each error is normalized (stripping variable data like line numbers and timestamps) and SHA-256 hashed into a unique fingerprint. When the same pattern appears again in any repo in your org, the proven fix is reused instantly — reducing repair time by 37%.
+
+**Q: What if a patch has low confidence?**
+A: Patches below 40 confidence are flagged for manual review and not submitted as PRs. Scores between 40-70 receive a "review suggested" label. Scores above 85 can auto-merge if configured in .warpfix.yaml.
+
+**Q: How does sandbox validation work?**
+A: WarpFix clones your repository into an isolated Docker container, applies the generated patch, and runs the exact CI command that failed. If the command succeeds, the patch is validated. If it fails, WarpFix regenerates or discards the fix.
+
+**Q: Can I configure what WarpFix reviews?**
+A: Yes. Create a `.warpfix.yaml` file in your repository root to configure: auto-merge thresholds, review profile (Chill/Assertive), path-based rules, ignored file patterns, and quality gate settings.
+
+### Business
+
+**Q: How is WarpFix different from CodeRabbit?**
+A: CodeRabbit reviews code but doesn't fix it. WarpFix both reviews AND auto-repairs CI failures. WarpFix also offers fingerprint learning, sandbox validation, predictive CI failure prevention, security auto-patching, and dead code detection — features CodeRabbit doesn't have.
+
+**Q: How is WarpFix different from GitHub Copilot?**
+A: Copilot assists with general code writing in your IDE. WarpFix is specifically designed for CI/CD — it monitors your pipelines, detects failures, generates targeted fixes, and validates them in sandboxes. They're complementary tools.
+
+**Q: What CI/CD platforms does WarpFix support?**
+A: Currently GitHub Actions. GitLab CI, CircleCI, and Jenkins support is on the roadmap.
+
+**Q: Is there a free tier?**
+A: Yes. The free plan includes 3 repairs per month, 1 repository, error classification, and fingerprint matching. No credit card required.
+
+## Links
+
+- Website: https://warpfix.org
+- API: https://api.warpfix.org
+- GitHub: https://github.com/bytepassperks/warpfix-intelligence-cloud
+- Documentation: https://warpfix.org/#features
+- Pricing: https://warpfix.org/#pricing
+- FAQ: https://warpfix.org/#faq
+- Status: https://api.warpfix.org/health
+
+## Contact
+
+- Support: support@warpfix.org
+- Security: security@warpfix.org
+- Sales: sales@warpfix.org
+
+---
+Last updated: 2025-01-01
+Version: 1.0
+Format: llms-full.txt (extended version of llms.txt for comprehensive AI consumption)

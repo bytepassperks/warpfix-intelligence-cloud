@@ -6,8 +6,8 @@ const router = express.Router();
 
 const PLANS = {
   free: { name: 'Free', repairs_per_month: 3, price_inr: 0 },
-  pro: { name: 'Pro', repairs_per_month: Infinity, price_inr: 999 },
-  team: { name: 'Team', repairs_per_month: Infinity, price_inr: 2999 },
+  pro: { name: 'Pro', repairs_per_month: 999999, price_inr: 999 },
+  team: { name: 'Team', repairs_per_month: 999999, price_inr: 2999 },
 };
 
 router.get('/plans', (req, res) => {
@@ -91,8 +91,22 @@ router.post('/webhook/dodo', express.raw({ type: 'application/json' }), async (r
   try {
     const secret = process.env.DODO_WEBHOOK_SECRET;
     if (secret) {
+      const crypto = require('crypto');
       const signature = req.headers['x-dodo-signature'];
-      // Verify signature in production
+      if (!signature) {
+        return res.status(401).json({ error: 'Missing webhook signature' });
+      }
+      const bodyStr = Buffer.isBuffer(req.body) ? req.body.toString() : JSON.stringify(req.body);
+      const expected = crypto.createHmac('sha256', secret).update(bodyStr).digest('hex');
+      // Validate signature is valid hex before comparing
+      if (!/^[0-9a-f]+$/i.test(signature) || signature.length !== expected.length) {
+        return res.status(401).json({ error: 'Invalid webhook signature format' });
+      }
+      const sigBuf = Buffer.from(signature, 'hex');
+      const expBuf = Buffer.from(expected, 'hex');
+      if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+        return res.status(401).json({ error: 'Invalid webhook signature' });
+      }
     }
 
     const event = typeof req.body === 'string' ? JSON.parse(req.body) :
@@ -108,9 +122,10 @@ router.post('/webhook/dodo', express.raw({ type: 'application/json' }), async (r
          FROM users u WHERE u.email = $5`,
         [sub.subscription_id, sub.product_id, sub.current_period_start, sub.current_period_end, sub.customer.email]
       );
+      const plan = sub.product_id === (process.env.DODO_PRO_PRODUCT_ID || 'pdt_0Ndi5McnUkYnmcneC5Lc7') ? 'pro' : 'team';
       await query(
         "UPDATE users SET plan = $1 WHERE email = $2",
-        [sub.product_id, sub.customer.email]
+        [plan, sub.customer.email]
       );
     }
 

@@ -24,8 +24,8 @@ const FAQS = [
     a: "WarpFix uses Claude via the Pagegrid proxy for intelligent log parsing, error classification, and patch generation. Quick pattern matching handles common errors without LLM calls.",
   },
   {
-    q: "Can I use WarpFix without Warp terminal?",
-    a: "Yes! While the terminal commands are the primary interface, WarpFix also provides a web dashboard and REST API. The GitHub App works automatically for webhook-triggered repairs.",
+    q: "How do I use the WarpFix CLI?",
+    a: "Install with npx warpfix or npm i -g warpfix. Then run warpfix login to authenticate. Commands: warpfix doctor, warpfix fix-ci, warpfix fix-tests, warpfix fix-deps. Works in any terminal — no special setup required.",
   },
   {
     q: "What happens if a patch has low confidence?",

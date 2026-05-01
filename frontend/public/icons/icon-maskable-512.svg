@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#635bff" rx="0"/>
+  <rect x="51.2" y="51.2" width="409.6" height="409.6" rx="81.92000000000002" fill="#635bff"/>
+  <g transform="translate(256, 256)">
+    <path d="M-71.67999999999999 -86.01599999999999 L21.503999999999998 -14.335999999999999 L-43.007999999999996 86.01599999999999 L-14.335999999999999 14.335999999999999 L71.67999999999999 -86.01599999999999 L-21.503999999999998 14.335999999999999 L43.007999999999996 -86.01599999999999" fill="none" stroke="white" stroke-width="20.48" stroke-linecap="round" stroke-linejoin="round"/>
+    <text y="2.8672" text-anchor="middle" dominant-baseline="central" fill="white" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="112.64">W</text>
+  </g>
+</svg>

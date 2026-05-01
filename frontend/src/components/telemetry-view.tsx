@@ -8,28 +8,7 @@ interface Metric {
   recorded_at: string;
 }
 
-const DEMO_METRICS: Metric[] = [
-  {
-    metric_type: "repair_completed",
-    metric_value: { type: "fix-ci", confidence: 94, sandbox_passed: true, duration_ms: 12400, fingerprint_reused: true },
-    recorded_at: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    metric_type: "repair_completed",
-    metric_value: { type: "fix-tests", confidence: 78, sandbox_passed: true, duration_ms: 18200, fingerprint_reused: false },
-    recorded_at: new Date(Date.now() - 7200000).toISOString(),
-  },
-  {
-    metric_type: "repair_completed",
-    metric_value: { type: "fix-deps", confidence: 32, sandbox_passed: false, duration_ms: 45000, fingerprint_reused: false },
-    recorded_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    metric_type: "failure_detected",
-    metric_value: { repo: "org/api-service", workflow: "CI", branch: "main" },
-    recorded_at: new Date(Date.now() - 90000000).toISOString(),
-  },
-];
+
 
 export function TelemetryView() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
@@ -38,9 +17,12 @@ export function TelemetryView() {
     fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/dashboard/telemetry`, {
       credentials: "include",
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('API error');
+        return res.json();
+      })
       .then((data) => setMetrics(data.metrics || []))
-      .catch(() => setMetrics(DEMO_METRICS));
+      .catch(() => setMetrics([]));
   }, []);
 
   const repairMetrics = metrics.filter((m) => m.metric_type === "repair_completed");

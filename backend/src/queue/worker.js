@@ -14,6 +14,11 @@ const { validateInSandbox } = require('../agents/sandboxValidator');
 const { computeConfidence } = require('../agents/confidenceEngine');
 const { createPullRequest } = require('../agents/pullRequestAgent');
 const { recordTelemetry } = require('../services/telemetry');
+const { getInstallationOctokit } = require('../services/github');
+const { generatePRReview, formatReviewComment } = require('../agents/reviewAgent');
+const { generateInlineComments, postInlineComments } = require('../agents/inlineReviewAgent');
+const { processMention } = require('../agents/chatAgent');
+const { recordTestResults, checkCrossRepoPattern, aggregateMonthlyStats } = require('../agents/intelligenceGrowth');
 
 async function processRepairJob(job) {
   const { jobId, type, repository, workflow_run, installation_id, user_id, context } = job.data;
@@ -56,6 +61,7 @@ async function processRepairJob(job) {
         classification,
         repository,
         context,
+        installation_id,
       });
     }
 
@@ -76,14 +82,28 @@ async function processRepairJob(job) {
       classification,
     });
 
-    // Step 8: Store failure record
+    // Step 8: Store failure record (auto-create repo if missing)
     let failureId = null;
+    let repoId = null;
     if (repository) {
       const repoResult = await query(
         'SELECT id FROM repositories WHERE github_id = $1',
         [repository.id]
       );
-      const repoId = repoResult.rows[0]?.id;
+      repoId = repoResult.rows[0]?.id;
+
+      if (!repoId) {
+        const insertRepo = await query(
+          `INSERT INTO repositories (github_id, full_name, owner, name, default_branch, installation_id)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT (github_id) DO UPDATE SET updated_at = NOW()
+           RETURNING id`,
+          [repository.id, repository.full_name, repository.owner, repository.name,
+           repository.default_branch, installation_id]
+        );
+        repoId = insertRepo.rows[0]?.id;
+        logger.info('Auto-created repository record', { repoId, full_name: repository.full_name });
+      }
 
       if (repoId) {
         const failureResult = await query(
@@ -96,10 +116,7 @@ async function processRepairJob(job) {
       }
     }
 
-    // Step 9: Store fingerprint
-    const fingerprintId = await storeFingerprint(fingerprint, patch, confidence.score);
-
-    // Step 10: Create PR if confidence is sufficient
+    // Step 9: Create PR if confidence is sufficient
     let prUrl = null;
     let prNumber = null;
     if (confidence.score >= 40 && sandboxResult.passed) {
@@ -116,6 +133,45 @@ async function processRepairJob(job) {
       prNumber = prResult.number;
     }
 
+    // Step 10: Store fingerprint (always — grows the CI Failure Genome regardless of PR)
+    let fingerprintId = null;
+    try {
+      fingerprintId = await storeFingerprint(fingerprint, patch, confidence.score);
+    } catch (fpErr) {
+      logger.debug('Fingerprint storage failed', { error: fpErr.message });
+    }
+
+    // Step 10b: Record test results from CI logs (auto-grows CI Brain data)
+    if (repoId && logData.rawLog) {
+      try {
+        await recordTestResults({
+          rawLog: logData.rawLog,
+          repoId,
+          branch: workflow_run?.head_branch,
+          commitSha: workflow_run?.head_sha,
+          workflowRunId: workflow_run?.id,
+        });
+      } catch (e) {
+        logger.debug('Test result recording failed', { error: e.message });
+      }
+    }
+
+    // Step 10c: Check cross-repo patterns (auto-grows Network Intelligence)
+    if (fingerprint?.hash) {
+      try {
+        await checkCrossRepoPattern(fingerprint.hash, classification);
+      } catch (e) {
+        logger.debug('Cross-repo pattern check failed', { error: e.message });
+      }
+    }
+
+    // Step 10d: Aggregate monthly genome stats
+    try {
+      await aggregateMonthlyStats();
+    } catch (e) {
+      logger.debug('Monthly stats aggregation failed', { error: e.message });
+    }
+
     // Step 11: Store repair record
     const duration = Date.now() - startTime;
     await query(
@@ -123,7 +179,7 @@ async function processRepairJob(job) {
         patch_diff, patch_summary, confidence_score, sandbox_passed,
         pr_number, pr_url, status, engine_used, duration_ms)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-      [failureId, null, user_id, fingerprintId, patch, classification.summary,
+      [failureId, repoId, user_id, fingerprintId, patch, classification.summary,
        confidence.score, sandboxResult.passed, prNumber, prUrl,
        sandboxResult.passed ? 'completed' : 'failed',
        classification.type, duration]
@@ -161,25 +217,175 @@ async function processRepairJob(job) {
   }
 }
 
-// Start worker
-const worker = new Worker('repair-jobs', processRepairJob, {
+// ========== Review Job Processor ==========
+async function processReviewJob(job) {
+  const { jobId, repository, pull_request, installation_id, user_id } = job.data;
+  const startTime = Date.now();
+
+  logger.info('Processing review job', { jobId, pr: pull_request?.number });
+
+  try {
+    const octokit = await getInstallationOctokit(installation_id);
+    const owner = repository.owner;
+    const repo = repository.name;
+    const prNumber = pull_request.number;
+
+    // Fetch PR details and files
+    job.updateProgress(10);
+    const { data: prData } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
+      owner, repo, pull_number: prNumber,
+    });
+
+    job.updateProgress(20);
+    const { data: files } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}/files', {
+      owner, repo, pull_number: prNumber, per_page: 100,
+    });
+
+    // Generate PR review summary
+    job.updateProgress(40);
+    const review = await generatePRReview({ prData, files, repoConfig: null, reviewProfile: 'assertive' });
+
+    // Post review summary + inline comments as a single batched review
+    job.updateProgress(60);
+    const reviewComment = formatReviewComment(review, prData);
+
+    job.updateProgress(75);
+    const inlineComments = await generateInlineComments({
+      files, prData, repoConfig: null, reviewProfile: 'assertive', learnings: [],
+    });
+
+    job.updateProgress(85);
+    await postInlineComments(octokit, owner, repo, prNumber, prData.head.sha, inlineComments, {
+      summaryBody: reviewComment, event: 'COMMENT',
+    });
+
+    // Store review in database
+    const duration = Date.now() - startTime;
+    const criticalCount = inlineComments.filter(c => c.severity === 'critical').length;
+    const warningCount = inlineComments.filter(c => c.severity === 'warning').length;
+    const nitpickCount = inlineComments.filter(c => c.severity === 'nitpick').length;
+    const praiseCount = inlineComments.filter(c => c.severity === 'praise').length;
+
+    try {
+      const reviewData = {
+        file_changes: review.file_changes,
+        sequence_diagram: review.sequence_diagram,
+        risk_factors: review.risk_analysis?.factors,
+        inline_breakdown: { critical: criticalCount, warning: warningCount, nitpick: nitpickCount, praise: praiseCount },
+        files_reviewed: files.length,
+      };
+      await query(
+        `INSERT INTO reviews (repository_id, user_id, pr_number, pr_title, pr_url,
+          summary, review_effort_level, risk_level, inline_comments_count,
+          review_data, duration_ms, status)
+         VALUES (
+           (SELECT id FROM repositories WHERE github_id = $1),
+           $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'completed'
+         )`,
+        [repository.id, user_id, prNumber, prData.title, prData.html_url,
+         review.summary, review.review_effort?.level || 3, review.risk_analysis?.level || 'medium',
+         inlineComments.length, JSON.stringify(reviewData), duration]
+      );
+    } catch (dbErr) {
+      logger.warn('Failed to store review in DB', { error: dbErr.message });
+    }
+
+    job.updateProgress(100);
+    logger.info('Review completed', {
+      pr: prNumber, comments: inlineComments.length,
+      critical: criticalCount, duration,
+    });
+
+    return {
+      status: 'completed',
+      pr_number: prNumber,
+      inline_comments: inlineComments.length,
+      duration_ms: duration,
+    };
+  } catch (err) {
+    logger.error('Review job failed', { jobId, error: err.message, stack: err.stack });
+    throw err;
+  }
+}
+
+// ========== Chat Job Processor ==========
+async function processChatJob(job) {
+  const { jobId, repository, issue_number, comment, installation_id } = job.data;
+  const startTime = Date.now();
+
+  logger.info('Processing chat job', { jobId, issue: issue_number });
+
+  try {
+    const octokit = await getInstallationOctokit(installation_id);
+    const owner = repository.owner;
+    const repo = repository.name;
+
+    // Fetch PR files for context
+    const { data: prData } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
+      owner, repo, pull_number: issue_number,
+    });
+    const { data: files } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}/files', {
+      owner, repo, pull_number: issue_number, per_page: 50,
+    });
+
+    // Process mention through chat agent
+    const response = await processMention({
+      comment: { body: comment.body },
+      prData,
+      files,
+      context: { owner, repo, prNumber: issue_number },
+    });
+
+    // Post response as comment (only if we got a valid response)
+    if (response) {
+      await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
+        owner, repo, issue_number,
+        body: response,
+      });
+    }
+
+    const duration = Date.now() - startTime;
+    logger.info('Chat response posted', { issue: issue_number, duration });
+
+    return { status: 'completed', duration_ms: duration };
+  } catch (err) {
+    logger.error('Chat job failed', { jobId, error: err.message, stack: err.stack });
+    throw err;
+  }
+}
+
+// ========== Start Workers ==========
+const repairWorker = new Worker('repair-jobs', processRepairJob, {
   connection: createRedisConnection(),
   concurrency: 3,
   limiter: { max: 10, duration: 60000 },
 });
 
-worker.on('completed', (job, result) => {
-  logger.info('Job completed', { jobId: job.id, result });
+const reviewWorker = new Worker('review-jobs', processReviewJob, {
+  connection: createRedisConnection(),
+  concurrency: 2,
+  limiter: { max: 5, duration: 60000 },
 });
 
-worker.on('failed', (job, err) => {
-  logger.error('Job failed', { jobId: job?.id, error: err.message });
+const chatWorker = new Worker('chat-jobs', processChatJob, {
+  connection: createRedisConnection(),
+  concurrency: 3,
+  limiter: { max: 20, duration: 60000 },
 });
 
-worker.on('error', (err) => {
-  logger.error('Worker error', { error: err.message });
+[repairWorker, reviewWorker, chatWorker].forEach((w, i) => {
+  const names = ['repair', 'review', 'chat'];
+  w.on('completed', (job, result) => {
+    logger.info(`${names[i]} job completed`, { jobId: job.id, result });
+  });
+  w.on('failed', (job, err) => {
+    logger.error(`${names[i]} job failed`, { jobId: job?.id, error: err.message });
+  });
+  w.on('error', (err) => {
+    logger.error(`${names[i]} worker error`, { error: err.message });
+  });
 });
 
-logger.info('WarpFix repair worker started');
+logger.info('WarpFix workers started (repair + review + chat)');
 
-module.exports = { worker };
+module.exports = { repairWorker, reviewWorker, chatWorker };

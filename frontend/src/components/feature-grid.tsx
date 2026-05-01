@@ -40,8 +40,8 @@ const FEATURES = [
     icon: "🎯",
   },
   {
-    title: "Terminal-First UX",
-    description: "Native Warp terminal commands: /fix-ci, /fix-tests, /fix-deps, /predict-failure. No context switching.",
+    title: "CLI-First UX",
+    description: "Run warpfix doctor, warpfix fix-ci, warpfix fix-tests from any terminal. Zero-dependency Node.js CLI.",
     icon: "⌨️",
   },
 ];

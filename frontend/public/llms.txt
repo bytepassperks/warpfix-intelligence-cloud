@@ -1,0 +1,89 @@
+# WarpFix — Autonomous CI Repair Agent
+
+> WarpFix is an AI-powered CI/CD repair agent that automatically detects failures, generates safe patches, validates them in sandboxes, and opens pull requests. It's a terminal-native intelligence layer for your development pipeline.
+
+## What WarpFix Does
+
+WarpFix monitors your GitHub Actions workflows. When a CI pipeline fails, WarpFix:
+
+1. **Detects the failure** via GitHub webhooks — analysis begins within seconds
+2. **Parses and classifies** the error using a multi-agent AI pipeline (6 specialized agents)
+3. **Checks fingerprint cache** — if this error pattern has been seen before, the proven fix is reused instantly (37% faster)
+4. **Generates a safe patch** using LLM-powered code generation
+5. **Validates in a sandbox** — every patch is tested in an isolated container before any PR is opened
+6. **Scores confidence** — only patches above 40/100 confidence are submitted; high-confidence patches auto-merge
+7. **Opens a PR** with full context: error explanation, diff preview, sandbox results, and confidence score
+
+## Key Features
+
+- **Multi-Agent Pipeline**: Six specialized agents (parser, classifier, patcher, validator, scorer, shipper) work in sequence
+- **Fingerprint Learning**: Error patterns are SHA-256 hashed and cached. Repeat failures get instant fixes
+- **Sandbox Validation**: Isolated Docker containers test every patch before it reaches your codebase
+- **PR Review Intelligence**: Auto-generated summaries, Mermaid sequence diagrams, inline comments with severity levels (Critical/Warning/Nitpick/Praise)
+- **Chat Agent**: Mention @warpfix in any PR comment for security analysis, test suggestions, or code explanations
+- **Dependency Radar**: Monitors npm for breaking releases and deprecated packages before they break CI
+- **Predictive CI Failure**: Analyzes PR diffs before CI runs and predicts failures proactively
+- **Security Auto-Patching**: Detects CVEs and OWASP vulnerabilities, then generates upgrade PRs with migration code
+- **Dead Code Detection**: Uses codegraph analysis to identify unreachable/unused code
+- **Test Coverage Gap Analysis**: Identifies untested code paths and suggests test cases
+- **Technical Debt Tracker**: A-F grading with trends and actionable cleanup plans
+- **Quality Gates**: Custom pre-merge rules via .warpfix.yaml configuration
+
+## How WarpFix Compares
+
+| Feature | WarpFix | CodeRabbit | Snyk |
+|---|---|---|---|
+| Auto-fix CI failures | Yes | No | No |
+| PR review summaries | Yes | Yes | No |
+| Inline review comments | Yes | Yes | No |
+| Sandbox validation | Yes | No | No |
+| Fingerprint learning | Yes | No | No |
+| Predictive CI failure | Yes | No | No |
+| Security auto-patching | Yes | No | Yes |
+| Dead code detection | Yes | No | No |
+| Dependency radar | Yes | No | Yes |
+| Chat agent (@mention) | Yes | Yes | No |
+| Quality gates (YAML) | Yes | Yes | No |
+| Technical debt tracking | Yes | No | No |
+
+## Pricing
+
+- **Free**: $0/month — 3 repairs/month, 1 repository, error classification, fingerprint matching
+- **Pro**: $12/month — Unlimited repairs, PR review intelligence, sandbox validation, predictive CI, security auto-patching, unlimited repos
+- **Team**: $36/month — Everything in Pro plus shared fingerprints, team repair memory, tech debt tracking, SSO, admin dashboard
+
+## Technical Details
+
+- **Platform**: GitHub Actions (GitLab CI, CircleCI, Jenkins coming soon)
+- **Stack**: Next.js frontend, Node.js/Express backend, OpenAI GPT for code generation
+- **Integration**: Install as a GitHub App with minimal permissions (read logs, read/write PRs)
+- **Supported errors**: Build errors, test failures, lint issues, type errors, dependency problems, runtime crashes, configuration bugs
+
+## Links
+
+- Website: https://warpfix.org
+- API: https://api.warpfix.org
+- GitHub: https://github.com/bytepassperks/warpfix-intelligence-cloud
+
+## FAQ
+
+### How does WarpFix detect CI failures?
+WarpFix integrates as a GitHub App. When a workflow fails, GitHub sends a webhook and WarpFix starts analyzing the failure logs immediately.
+
+### Is my code safe?
+WarpFix only reads logs and file contents needed for repair. All patches are validated in isolated sandboxes. The GitHub App uses minimal permissions.
+
+### What errors can WarpFix fix?
+Build errors, test failures, lint issues, type errors, dependency problems, runtime crashes, and configuration bugs.
+
+### How does fingerprint learning work?
+Each error is normalized and hashed into a unique fingerprint. When the same pattern recurs across any repository in your org, the proven fix is reused instantly with high confidence — reducing repair time by 37%.
+
+### What if a patch has low confidence?
+Patches below 40 confidence are flagged for manual review and not opened as PRs. Scores between 40-70 get a "review suggested" label.
+
+### How is WarpFix different from CodeRabbit?
+CodeRabbit reviews code but does not fix it. WarpFix reviews AND auto-repairs CI failures, plus offers predictive CI failure prevention, fingerprint learning, sandbox validation, and security auto-patching.
+
+### What CI/CD platforms does WarpFix support?
+Currently GitHub Actions. GitLab CI, CircleCI, and Jenkins support is on the roadmap.

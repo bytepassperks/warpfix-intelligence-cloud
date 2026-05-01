@@ -59,8 +59,10 @@ async function runMigrations() {
       full_name VARCHAR(512) NOT NULL,
       default_branch VARCHAR(255) DEFAULT 'main',
       language VARCHAR(100),
+      installation_id VARCHAR(255),
       user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-      created_at TIMESTAMPTZ DEFAULT NOW()
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
     );
 
     CREATE TABLE IF NOT EXISTS installations (
@@ -154,6 +156,63 @@ async function runMigrations() {
       recorded_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS reviews (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      repository_id UUID REFERENCES repositories(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      pr_number INTEGER NOT NULL,
+      pr_url TEXT,
+      pr_title TEXT,
+      review_data JSONB,
+      inline_comments_count INTEGER DEFAULT 0,
+      summary TEXT,
+      risk_level VARCHAR(50),
+      review_effort_level INTEGER,
+      status VARCHAR(50) DEFAULT 'completed',
+      duration_ms INTEGER,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS review_comments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      review_id UUID REFERENCES reviews(id) ON DELETE CASCADE,
+      file_path TEXT NOT NULL,
+      line_number INTEGER,
+      severity VARCHAR(50) NOT NULL,
+      category VARCHAR(100),
+      comment TEXT NOT NULL,
+      suggestion TEXT,
+      verified BOOLEAN DEFAULT FALSE,
+      github_comment_id BIGINT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS learnings (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      repository_id UUID REFERENCES repositories(id) ON DELETE CASCADE,
+      rule TEXT NOT NULL,
+      category VARCHAR(100) DEFAULT 'general',
+      context TEXT,
+      source VARCHAR(100) DEFAULT 'manual',
+      active BOOLEAN DEFAULT TRUE,
+      times_applied INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS repo_configs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      repository_id UUID REFERENCES repositories(id) ON DELETE CASCADE,
+      config_yaml TEXT,
+      config_json JSONB,
+      review_profile VARCHAR(50) DEFAULT 'assertive',
+      auto_review BOOLEAN DEFAULT TRUE,
+      auto_repair BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     CREATE INDEX IF NOT EXISTS idx_failures_repository ON failures(repository_id);
     CREATE INDEX IF NOT EXISTS idx_failures_created ON failures(created_at);
     CREATE INDEX IF NOT EXISTS idx_repairs_repository ON repairs(repository_id);
@@ -163,14 +222,162 @@ async function runMigrations() {
     CREATE INDEX IF NOT EXISTS idx_telemetry_user ON telemetry_metrics(user_id);
     CREATE INDEX IF NOT EXISTS idx_telemetry_type ON telemetry_metrics(metric_type);
     CREATE INDEX IF NOT EXISTS idx_dependency_alerts_repo ON dependency_alerts(repository_id);
+    CREATE INDEX IF NOT EXISTS idx_reviews_repository ON reviews(repository_id);
+    CREATE INDEX IF NOT EXISTS idx_reviews_pr ON reviews(pr_number);
+    CREATE INDEX IF NOT EXISTS idx_review_comments_review ON review_comments(review_id);
+    CREATE INDEX IF NOT EXISTS idx_learnings_user ON learnings(user_id);
+    CREATE INDEX IF NOT EXISTS idx_learnings_repo ON learnings(repository_id);
+    CREATE INDEX IF NOT EXISTS idx_repo_configs_repo ON repo_configs(repository_id);
+
+    -- Admin tables
+    CREATE TABLE IF NOT EXISTS admins (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      name VARCHAR(255) DEFAULT '',
+      role VARCHAR(50) DEFAULT 'admin',
+      active BOOLEAN DEFAULT TRUE,
+      last_login_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS promo_codes (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      code VARCHAR(100) UNIQUE NOT NULL,
+      description TEXT DEFAULT '',
+      discount_type VARCHAR(50) DEFAULT 'percentage',
+      discount_value NUMERIC(10,2) DEFAULT 0,
+      plan_override VARCHAR(50),
+      max_redemptions INTEGER,
+      active BOOLEAN DEFAULT TRUE,
+      expires_at TIMESTAMPTZ,
+      created_by UUID REFERENCES admins(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS promo_redemptions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      promo_id UUID REFERENCES promo_codes(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      applied_by UUID REFERENCES admins(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_activity_log (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      admin_id UUID REFERENCES admins(id) ON DELETE SET NULL,
+      action VARCHAR(100) NOT NULL,
+      target_type VARCHAR(50),
+      target_id UUID,
+      details JSONB,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes(code);
+    CREATE INDEX IF NOT EXISTS idx_promo_redemptions_promo ON promo_redemptions(promo_id);
+    CREATE INDEX IF NOT EXISTS idx_promo_redemptions_user ON promo_redemptions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_admin_activity_log_admin ON admin_activity_log(admin_id);
+
+    -- CI Brain: test reliability tracking
+    CREATE TABLE IF NOT EXISTS test_runs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      repository_id UUID REFERENCES repositories(id) ON DELETE CASCADE,
+      test_name VARCHAR(512) NOT NULL,
+      test_file VARCHAR(512),
+      status VARCHAR(50) NOT NULL,
+      duration_ms INTEGER,
+      error_message TEXT,
+      branch VARCHAR(255),
+      commit_sha VARCHAR(40),
+      workflow_run_id BIGINT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- Org preferences learned from PR feedback
+    CREATE TABLE IF NOT EXISTS org_preferences (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      category VARCHAR(100) NOT NULL,
+      rule TEXT NOT NULL,
+      confidence INTEGER DEFAULT 50,
+      source VARCHAR(100) DEFAULT 'pr_feedback',
+      times_applied INTEGER DEFAULT 0,
+      last_used_at TIMESTAMPTZ DEFAULT NOW(),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- Network-wide aggregated prediction data
+    CREATE TABLE IF NOT EXISTS network_predictions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      pattern_type VARCHAR(100) NOT NULL,
+      description TEXT NOT NULL,
+      probability INTEGER NOT NULL,
+      category VARCHAR(100),
+      based_on_prs INTEGER DEFAULT 0,
+      based_on_repos INTEGER DEFAULT 0,
+      times_prevented INTEGER DEFAULT 0,
+      suggestion TEXT,
+      last_triggered_at TIMESTAMPTZ DEFAULT NOW(),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- Failure genome monthly index
+    CREATE TABLE IF NOT EXISTS genome_monthly_stats (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      month_year VARCHAR(20) NOT NULL,
+      new_patterns INTEGER DEFAULT 0,
+      total_matches INTEGER DEFAULT 0,
+      avg_confidence INTEGER DEFAULT 0,
+      top_category VARCHAR(100),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_test_runs_repo ON test_runs(repository_id);
+    CREATE INDEX IF NOT EXISTS idx_test_runs_name ON test_runs(test_name);
+    CREATE INDEX IF NOT EXISTS idx_test_runs_status ON test_runs(status);
+    CREATE INDEX IF NOT EXISTS idx_org_preferences_user ON org_preferences(user_id);
+    CREATE INDEX IF NOT EXISTS idx_org_preferences_category ON org_preferences(category);
+    CREATE INDEX IF NOT EXISTS idx_network_predictions_type ON network_predictions(pattern_type);
+    CREATE INDEX IF NOT EXISTS idx_genome_monthly_month ON genome_monthly_stats(month_year);
   `;
 
   try {
     await pool.query(migrations);
+
+    // Add columns that may be missing from older schema
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TABLE repositories ADD COLUMN IF NOT EXISTS installation_id VARCHAR(255);
+        ALTER TABLE repositories ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS cli_api_key VARCHAR(255);
+      EXCEPTION WHEN OTHERS THEN NULL;
+      END $$;
+    `);
+
+    // Seed default super admin if not exists (uses env vars for credentials)
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (adminEmail && adminPassword) {
+      const bcrypt = require('bcryptjs');
+      const existing = await pool.query('SELECT id FROM admins WHERE email = $1', [adminEmail]);
+      if (existing.rows.length === 0) {
+        const hash = await bcrypt.hash(adminPassword, 12);
+        await pool.query(
+          "INSERT INTO admins (email, password_hash, name, role) VALUES ($1, $2, $3, $4)",
+          [adminEmail, hash, 'Super Admin', 'super_admin']
+        );
+        logger.info('Default super admin seeded');
+      }
+    }
+
     logger.info('Database migrations completed successfully');
   } catch (err) {
     logger.error('Migration failed', { error: err.message });
   }
 }
 
-module.exports = { pool, query, initDatabase };
+function getPool() {
+  return pool;
+}
+
+module.exports = { pool, query, initDatabase, getPool };

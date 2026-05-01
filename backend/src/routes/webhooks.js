@@ -1,8 +1,9 @@
 const express = require('express');
 const crypto = require('crypto');
 const { logger } = require('../utils/logger');
-const { enqueueRepairJob } = require('../queue/producer');
+const { enqueueRepairJob, enqueueReviewJob, enqueueChatJob } = require('../queue/producer');
 const { query } = require('../models/database');
+const { captureOrgPreference, detectPreferenceFromPREdit } = require('../agents/intelligenceGrowth');
 const router = express.Router();
 
 function verifyGitHubSignature(req, res, next) {
@@ -24,7 +25,9 @@ function verifyGitHubSignature(req, res, next) {
     .update(Buffer.isBuffer(req.body) ? req.body : body)
     .digest('hex');
 
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+  const sigBuf = Buffer.from(signature);
+  const expBuf = Buffer.from(expected);
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
     return res.status(401).json({ error: 'Invalid signature' });
   }
 
@@ -49,11 +52,33 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
           const run = payload.workflow_run;
           const repo = payload.repository;
 
+          // Skip warpfix branches to prevent repair loops
+          if (run.head_branch && run.head_branch.startsWith('warpfix/')) {
+            logger.info('Skipping warpfix branch failure (prevent repair loop)', {
+              branch: run.head_branch,
+              repo: repo.full_name,
+            });
+            break;
+          }
+
           logger.info('CI failure detected', {
             repo: repo.full_name,
             workflow: run.name,
             branch: run.head_branch,
           });
+
+          // Look up user_id from installation
+          let userId = null;
+          const installId = payload.installation?.id;
+          if (installId) {
+            const instResult = await query(
+              `SELECT u.id FROM installations i
+               JOIN users u ON u.username = i.account_login
+               WHERE i.installation_id = $1`,
+              [installId]
+            );
+            userId = instResult.rows[0]?.id || null;
+          }
 
           await enqueueRepairJob({
             type: 'ci_failure',
@@ -72,7 +97,8 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
               logs_url: run.logs_url,
               jobs_url: run.jobs_url,
             },
-            installation_id: payload.installation?.id,
+            installation_id: installId,
+            user_id: userId,
           });
         }
         break;
@@ -96,9 +122,135 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
         break;
       }
 
+      case 'pull_request': {
+        const pr = payload.pull_request;
+        const repo = payload.repository;
+        const installId = payload.installation?.id;
+
+        // Capture org preferences when a WarpFix PR is closed/merged with edits
+        if (payload.action === 'closed' && pr.merged && pr.head?.ref?.startsWith('warpfix/')) {
+          logger.info('WarpFix PR merged — checking for org preference signals', {
+            repo: repo.full_name, pr: pr.number,
+          });
+
+          let userId = null;
+          if (installId) {
+            const instResult = await query(
+              `SELECT u.id FROM installations i JOIN users u ON u.username = i.account_login WHERE i.installation_id = $1`,
+              [installId]
+            );
+            userId = instResult.rows[0]?.id || null;
+          }
+
+          if (userId) {
+            const repair = await query(
+              'SELECT patch_diff, engine_used FROM repairs WHERE pr_number = $1 ORDER BY created_at DESC LIMIT 1',
+              [pr.number]
+            );
+            if (repair.rows[0]) {
+              await detectPreferenceFromPREdit({
+                userId,
+                originalPatch: repair.rows[0].patch_diff,
+                mergedPatch: pr.body || '',
+                classification: { type: repair.rows[0].engine_used },
+              });
+            }
+
+            await captureOrgPreference({
+              userId,
+              category: 'Workflow',
+              rule: `Team merged WarpFix PR #${pr.number} — auto-repair accepted for ${repo.name}`,
+              source: 'pr_merge',
+              confidence: 60,
+            });
+          }
+        }
+
+        if (payload.action === 'opened' || payload.action === 'synchronize') {
+          // Skip warpfix's own PRs
+          if (pr.head?.ref?.startsWith('warpfix/')) {
+            logger.info('Skipping review for warpfix PR', { branch: pr.head.ref });
+            break;
+          }
+
+          logger.info('PR opened/updated — enqueuing review', {
+            repo: repo.full_name, pr: pr.number, action: payload.action,
+          });
+
+          // Look up user_id
+          let userId = null;
+          if (installId) {
+            const instResult = await query(
+              `SELECT u.id FROM installations i
+               JOIN users u ON u.username = i.account_login
+               WHERE i.installation_id = $1`,
+              [installId]
+            );
+            userId = instResult.rows[0]?.id || null;
+          }
+
+          await enqueueReviewJob({
+            type: 'pr_review',
+            repository: {
+              id: repo.id,
+              full_name: repo.full_name,
+              owner: repo.owner.login,
+              name: repo.name,
+              default_branch: repo.default_branch,
+            },
+            pull_request: {
+              number: pr.number,
+              title: pr.title,
+              body: pr.body,
+              head_ref: pr.head?.ref,
+              head_sha: pr.head?.sha,
+              base_ref: pr.base?.ref,
+              user_login: pr.user?.login,
+              html_url: pr.html_url,
+            },
+            installation_id: installId,
+            user_id: userId,
+          });
+        }
+        break;
+      }
+
+      case 'issue_comment': {
+        // Handle @warpfix mentions in PR comments
+        if (payload.action === 'created' && payload.issue?.pull_request) {
+          const body = payload.comment?.body || '';
+          if (/@warpfix/i.test(body)) {
+            const repo = payload.repository;
+            const installId = payload.installation?.id;
+
+            logger.info('@warpfix mention detected', {
+              repo: repo.full_name, pr: payload.issue.number,
+            });
+
+            await enqueueChatJob({
+              type: 'chat_mention',
+              repository: {
+                id: repo.id,
+                full_name: repo.full_name,
+                owner: repo.owner.login,
+                name: repo.name,
+                default_branch: repo.default_branch,
+              },
+              issue_number: payload.issue.number,
+              comment: {
+                id: payload.comment.id,
+                body: payload.comment.body,
+                user_login: payload.comment.user?.login,
+              },
+              installation_id: installId,
+            });
+          }
+        }
+        break;
+      }
+
       case 'push':
-      case 'pull_request':
-        logger.info(`${event} event received`, { repo: payload.repository?.full_name });
+        logger.info('Push event received', { repo: payload.repository?.full_name });
         break;
 
       default:

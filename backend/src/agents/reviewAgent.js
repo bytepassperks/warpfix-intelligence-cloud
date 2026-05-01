@@ -1,0 +1,139 @@
+const { logger } = require('../utils/logger');
+const { callLLM } = require('../services/llm');
+
+/**
+ * PR Review Agent — generates CodeRabbit-level PR reviews:
+ * - Auto-generated PR summary
+ * - File change walkthrough table
+ * - Mermaid sequence diagrams
+ * - Estimated review effort
+ * - Suggested labels & reviewers
+ * - Risk analysis
+ */
+
+async function generatePRReview({ prData, files, repoConfig, reviewProfile }) {
+  const profile = reviewProfile || 'assertive'; // 'chill' or 'assertive'
+  const strictness = profile === 'chill'
+    ? 'Be lenient. Only flag critical issues. Ignore style nitpicks.'
+    : 'Be thorough. Flag all issues including style, naming, and potential bugs.';
+
+  const filesSummary = files.map(f => ({
+    filename: f.filename,
+    status: f.status,
+    additions: f.additions,
+    deletions: f.deletions,
+    patch: f.patch?.substring(0, 3000),
+  }));
+
+  const prompt = `Analyze this pull request and generate a comprehensive review.
+
+## PR Details
+- **Title:** ${prData.title}
+- **Author:** ${prData.user?.login}
+- **Base:** ${prData.base?.ref} ← **Head:** ${prData.head?.ref}
+- **Description:** ${prData.body?.substring(0, 2000) || 'No description'}
+
+## Changed Files (${files.length} files)
+${filesSummary.map(f => `- ${f.filename} (${f.status}: +${f.additions}/-${f.deletions})`).join('\n')}
+
+## Diffs
+${filesSummary.map(f => `### ${f.filename}\n\`\`\`diff\n${f.patch || 'binary'}\n\`\`\``).join('\n\n')}
+
+Generate a JSON response with this EXACT structure:
+{
+  "summary": "2-3 sentence summary of what this PR does",
+  "walkthrough": "Detailed walkthrough of changes in paragraph form",
+  "file_changes": [
+    {"file": "path/to/file", "change_summary": "Brief description of change", "impact": "high|medium|low"}
+  ],
+  "sequence_diagram": "Mermaid sequenceDiagram code showing the flow of changes (or null if not applicable)",
+  "review_effort": {"level": 1-5, "label": "Minimal|Small|Moderate|Large|Critical", "estimated_minutes": number},
+  "risk_analysis": {"level": "low|medium|high|critical", "factors": ["list of risk factors"]},
+  "suggested_labels": ["list of labels"],
+  "suggested_reviewers_criteria": ["e.g. 'someone familiar with auth module'"],
+  "key_observations": ["important things reviewer should know"]
+}`;
+
+  const result = await callLLM({
+    system: `You are an expert code reviewer. ${strictness} Output ONLY valid JSON.`,
+    user: prompt,
+    maxTokens: 4000,
+  });
+
+  try {
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON found in LLM response');
+    return JSON.parse(jsonMatch[0]);
+  } catch (err) {
+    logger.error('Failed to parse review response', { error: err.message });
+    return {
+      summary: 'Review generation failed — could not parse LLM response.',
+      walkthrough: result.substring(0, 500),
+      file_changes: filesSummary.map(f => ({
+        file: f.filename, change_summary: `${f.status}: +${f.additions}/-${f.deletions}`, impact: 'medium',
+      })),
+      sequence_diagram: null,
+      review_effort: { level: 3, label: 'Moderate', estimated_minutes: 20 },
+      risk_analysis: { level: 'medium', factors: ['Auto-detection failed'] },
+      suggested_labels: [],
+      suggested_reviewers_criteria: [],
+      key_observations: [],
+    };
+  }
+}
+
+function formatReviewComment(review, prData) {
+  let comment = `## 🔍 WarpFix PR Review\n\n`;
+  comment += `> ${review.summary}\n\n`;
+
+  // Walkthrough
+  comment += `<details>\n<summary>📖 Walkthrough</summary>\n\n${review.walkthrough}\n\n</details>\n\n`;
+
+  // File changes table
+  comment += `### 📁 File Changes\n\n`;
+  comment += `| File | Change | Impact |\n|------|--------|--------|\n`;
+  for (const fc of review.file_changes || []) {
+    const icon = fc.impact === 'high' ? '🔴' : fc.impact === 'medium' ? '🟡' : '🟢';
+    comment += `| \`${fc.file}\` | ${fc.change_summary} | ${icon} ${fc.impact} |\n`;
+  }
+  comment += '\n';
+
+  // Sequence diagram
+  if (review.sequence_diagram) {
+    comment += `<details>\n<summary>📊 Sequence Diagram</summary>\n\n\`\`\`mermaid\n${review.sequence_diagram}\n\`\`\`\n\n</details>\n\n`;
+  }
+
+  // Review effort + Risk in a compact format
+  const effort = review.review_effort || {};
+  const risk = review.risk_analysis || {};
+  const riskIcon = { low: '🟢', medium: '🟡', high: '🟠', critical: '🔴' }[risk.level] || '⚪';
+  const effortBar = '█'.repeat(effort.level || 0) + '░'.repeat(5 - (effort.level || 0));
+
+  comment += `### ⏱ Review Effort & Risk\n\n`;
+  comment += `| Metric | Value |\n|--------|-------|\n`;
+  comment += `| **Effort** | ${effortBar} ${effort.level}/5 (${effort.label}) · ~${effort.estimated_minutes}min |\n`;
+  comment += `| **Risk** | ${riskIcon} ${(risk.level || 'unknown').toUpperCase()} |\n\n`;
+
+  if (risk.factors?.length) {
+    comment += `<details>\n<summary>Risk Factors</summary>\n\n`;
+    comment += risk.factors.map(f => `- ${f}`).join('\n') + '\n\n';
+    comment += `</details>\n\n`;
+  }
+
+  // Suggested labels
+  if (review.suggested_labels?.length) {
+    comment += `**Labels:** ${review.suggested_labels.map(l => `\`${l}\``).join(' ')}\n\n`;
+  }
+
+  // Key observations
+  if (review.key_observations?.length) {
+    comment += `### 💡 Key Observations\n\n`;
+    comment += review.key_observations.map(o => `> ${o}`).join('\n>\n') + '\n\n';
+  }
+
+  comment += `---\n<sub>🤖 Reviewed by <a href="https://warpfix.org">WarpFix</a> — AI-Powered Code Review + CI Repair · <a href="https://warpfix.org/security">Security</a></sub>`;
+
+  return comment;
+}
+
+module.exports = { generatePRReview, formatReviewComment };

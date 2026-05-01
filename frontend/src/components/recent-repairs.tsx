@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Wrench, ExternalLink } from "lucide-react";
+import { Badge, ConfidenceBadge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SkeletonTable } from "@/components/ui/skeleton";
+import { API_URL, formatRelativeTime } from "@/lib/utils";
 
 interface Repair {
   id: string;
@@ -14,120 +20,110 @@ interface Repair {
   error_message: string;
 }
 
-const DEMO_REPAIRS: Repair[] = [
-  {
-    id: "1",
-    status: "completed",
-    confidence_score: 94,
-    sandbox_passed: true,
-    pr_url: "https://github.com/org/repo/pull/287",
-    engine_used: "dependency_error",
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    repo_name: "org/frontend-app",
-    error_message: 'Cannot find module "@/lib/auth"',
-  },
-  {
-    id: "2",
-    status: "completed",
-    confidence_score: 78,
-    sandbox_passed: true,
-    pr_url: "https://github.com/org/repo/pull/285",
-    engine_used: "test_failure",
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-    repo_name: "org/api-service",
-    error_message: "Expected 200, received 404",
-  },
-  {
-    id: "3",
-    status: "failed",
-    confidence_score: 32,
-    sandbox_passed: false,
-    pr_url: null,
-    engine_used: "build_error",
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    repo_name: "org/shared-lib",
-    error_message: "SyntaxError: Unexpected token",
-  },
-];
-
 export function RecentRepairs() {
-  const [repairs, setRepairs] = useState<Repair[]>([]);
+  const [repairs, setRepairs] = useState<Repair[] | null>(null);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/repairs`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
+    fetch(`${API_URL}/api/repairs`, { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("API error");
+        return res.json();
+      })
       .then((data) => setRepairs(data.repairs || []))
-      .catch(() => setRepairs(DEMO_REPAIRS));
+      .catch(() => {
+        fetch(`${API_URL}/api/dashboard/public-stats`)
+          .then((res) => (res.ok ? res.json() : Promise.reject()))
+          .then((data) => {
+            const mapped = (data.recent_repairs || []).map((r: Record<string, unknown>) => ({
+              id: r.id,
+              status: r.sandbox_passed ? "completed" : "failed",
+              confidence_score: (r.confidence_score as number) || 0,
+              sandbox_passed: r.sandbox_passed,
+              pr_url: r.pr_url,
+              engine_used: (r.error_classification as string) || "unknown",
+              created_at: r.created_at as string,
+              repo_name: (r.repo_name as string) || (r.repo_full_name as string) || "-",
+              error_message: (r.error_summary as string) || (r.error_message as string) || "-",
+            }));
+            setRepairs(mapped);
+          })
+          .catch(() => setRepairs([]));
+      });
   }, []);
+
+  if (repairs === null) return <SkeletonTable rows={4} />;
 
   if (repairs.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">
-        No repairs yet. Run <code className="text-primary">/fix-ci</code> to get started.
-      </div>
+      <EmptyState
+        icon={Wrench}
+        title="No repairs yet"
+        description="Repairs appear when CI failures are detected on repos with WarpFix installed. Run /fix-ci to get started."
+        action={{ label: "Connect Repository", href: "/dashboard/repositories" }}
+      />
     );
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <table className="w-full text-sm">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="bg-white rounded-lg border border-[var(--border-default)] overflow-hidden"
+    >
+      <table className="w-full text-[13px]">
         <thead>
-          <tr className="border-b border-border text-muted-foreground">
-            <th className="text-left p-4 font-medium">Repository</th>
-            <th className="text-left p-4 font-medium">Error</th>
-            <th className="text-left p-4 font-medium">Type</th>
-            <th className="text-left p-4 font-medium">Confidence</th>
-            <th className="text-left p-4 font-medium">Status</th>
-            <th className="text-left p-4 font-medium">PR</th>
+          <tr className="border-b border-[var(--border-default)] bg-[var(--bg-secondary)]">
+            <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">Repository</th>
+            <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">Error</th>
+            <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">Type</th>
+            <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">Confidence</th>
+            <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">Status</th>
+            <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">PR</th>
+            <th className="text-left py-3 px-5 font-medium text-[var(--text-secondary)]">Time</th>
           </tr>
         </thead>
         <tbody>
           {repairs.map((repair) => (
-            <tr key={repair.id} className="border-b border-border/50 hover:bg-muted/30">
-              <td className="p-4 font-mono text-xs">{repair.repo_name}</td>
-              <td className="p-4 max-w-[200px] truncate">{repair.error_message}</td>
-              <td className="p-4">
-                <span className="px-2 py-1 bg-muted rounded text-xs">{repair.engine_used}</span>
+            <tr
+              key={repair.id}
+              className="border-b border-[var(--border-default)] last:border-0 hover:bg-[var(--bg-secondary)] transition-colors"
+            >
+              <td className="py-3 px-5 font-mono text-xs">{repair.repo_name}</td>
+              <td className="py-3 px-5 max-w-[240px] truncate text-[var(--text-secondary)]">
+                {repair.error_message}
               </td>
-              <td className="p-4">
-                <span
-                  className={
-                    repair.confidence_score >= 70
-                      ? "text-success"
-                      : repair.confidence_score >= 40
-                      ? "text-warning"
-                      : "text-danger"
-                  }
-                >
-                  {repair.confidence_score}/100
-                </span>
+              <td className="py-3 px-5">
+                <Badge>{repair.engine_used}</Badge>
               </td>
-              <td className="p-4">
-                <span
-                  className={`px-2 py-1 rounded text-xs ${
-                    repair.status === "completed"
-                      ? "bg-success/10 text-success"
-                      : "bg-danger/10 text-danger"
-                  }`}
-                >
+              <td className="py-3 px-5">
+                <ConfidenceBadge score={repair.confidence_score} />
+              </td>
+              <td className="py-3 px-5">
+                <Badge variant={repair.status === "completed" ? "success" : "error"}>
                   {repair.status}
-                </span>
+                </Badge>
               </td>
-              <td className="p-4">
+              <td className="py-3 px-5">
                 {repair.pr_url ? (
-                  <a href={repair.pr_url} className="text-primary hover:underline text-xs">
-                    View PR
+                  <a
+                    href={repair.pr_url}
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex items-center gap-1 text-[var(--brand)] hover:underline"
+                  >
+                    View <ExternalLink className="w-3 h-3" />
                   </a>
                 ) : (
-                  <span className="text-muted-foreground text-xs">—</span>
+                  <span className="text-[var(--text-tertiary)]">—</span>
                 )}
+              </td>
+              <td className="py-3 px-5 text-[var(--text-tertiary)]">
+                {formatRelativeTime(repair.created_at)}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+    </motion.div>
   );
 }

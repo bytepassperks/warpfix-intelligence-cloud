@@ -9,7 +9,7 @@ async function parseLog({ type, repository, workflow_run, installation_id, conte
   let stackTrace = '';
 
   if (type === 'ci_failure' && workflow_run) {
-    rawLog = await fetchCILogs(workflow_run, installation_id);
+    rawLog = await fetchCILogs(workflow_run, installation_id, repository);
   } else if (context?.error_output) {
     rawLog = context.error_output;
   }
@@ -51,14 +51,13 @@ async function parseLog({ type, repository, workflow_run, installation_id, conte
   };
 }
 
-async function fetchCILogs(workflowRun, installationId) {
+async function fetchCILogs(workflowRun, installationId, repository) {
   try {
     const { getInstallationOctokit } = require('../services/github');
     const octokit = await getInstallationOctokit(installationId);
 
-    const [owner, repo] = workflowRun.repository
-      ? [workflowRun.repository.owner, workflowRun.repository.name]
-      : ['', ''];
+    const owner = repository?.owner || '';
+    const repo = repository?.name || '';
 
     const jobs = await octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs', {
       owner,

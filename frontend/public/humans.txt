@@ -1,0 +1,26 @@
+/* TEAM */
+Product: WarpFix — Autonomous CI Repair Agent
+Site: https://warpfix.org
+Contact: support@warpfix.org
+
+/* TECHNOLOGY */
+Framework: Next.js 16 (App Router, Turbopack)
+Language: TypeScript, React 19
+Styling: Tailwind CSS 4
+Animation: Framer Motion
+Icons: Lucide React
+Fonts: Inter, JetBrains Mono (Google Fonts)
+Hosting: Render
+Backend: Node.js, Express
+AI: OpenAI GPT
+CI/CD: GitHub Actions
+Version Control: GitHub
+
+/* STANDARDS */
+HTML: HTML5
+CSS: CSS3, CSS Custom Properties
+Accessibility: WCAG 2.2 AA
+SEO: Schema.org JSON-LD, Open Graph, Twitter Cards
+Performance: Core Web Vitals optimized
+PWA: Web App Manifest, Service Worker ready
+Security: CSP, HSTS, X-Content-Type-Options, X-Frame-Options

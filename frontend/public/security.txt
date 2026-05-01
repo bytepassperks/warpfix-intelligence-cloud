@@ -1,0 +1,6 @@
+Contact: mailto:security@warpfix.org
+Preferred-Languages: en
+Canonical: https://warpfix.org/.well-known/security.txt
+Encryption: https://warpfix.org/pgp-key.txt
+Policy: https://warpfix.org/security-policy
+Hiring: https://warpfix.org/careers

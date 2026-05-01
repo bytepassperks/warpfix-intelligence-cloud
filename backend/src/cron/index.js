@@ -2,6 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }
 const { query } = require('../models/database');
 const { logger } = require('../utils/logger');
 const { scanDependencies } = require('../engines/dependencyRadar');
+const { aggregateMonthlyStats } = require('../agents/intelligenceGrowth');
 
 async function monthlyUsageReset() {
   logger.info('Running monthly usage reset');
@@ -64,10 +65,14 @@ async function run() {
     case 'telemetry':
       await telemetryAggregation();
       break;
+    case 'genome-stats':
+      await aggregateMonthlyStats();
+      break;
     case 'all':
     default:
       await telemetryAggregation();
       await dependencyRadarRefresh();
+      await aggregateMonthlyStats();
       break;
   }
   process.exit(0);
