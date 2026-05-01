@@ -22,7 +22,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
       callbackURL: `${process.env.API_BASE_URL || 'http://localhost:4000'}/auth/github/callback`,
-      scope: ['user:email', 'repo'],
+      scope: ['repo'],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {

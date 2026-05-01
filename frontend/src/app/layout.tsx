@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
+
+const GA_MEASUREMENT_ID = "G-J132WQ1Y5B";
 
 const BASE_URL = "https://warpfix.org";
 
@@ -143,6 +146,9 @@ export const metadata: Metadata = {
     images: [`${BASE_URL}/og-image.png`],
     creator: "@warpfix",
     site: "@warpfix",
+  },
+  verification: {
+    google: "bbiRm-H4LfyxskhuAc5IyTJbtLgIw2JH8Hk2bjvtkSI",
   },
   category: "Developer Tools",
   classification: "Software",
@@ -533,6 +539,19 @@ export default function RootLayout({
     >
       <head>
         <JsonLd />
+        {/* Google Analytics */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
         {/* Resource hints — preconnect, dns-prefetch, preload */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -541,6 +560,8 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://api.warpfix.org" />
         <link rel="preconnect" href="https://api.warpfix.org" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://github.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
         {/* Favicons — complete set */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icons/icon-32.png" sizes="32x32" type="image/png" />

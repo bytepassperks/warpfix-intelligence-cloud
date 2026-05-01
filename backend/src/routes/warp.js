@@ -28,14 +28,6 @@ router.post('/command', async (req, res) => {
     return res.status(401).json({ error: 'Invalid API key' });
   }
 
-  // Usage limit check
-  if (user.plan === 'free' && user.repairs_used_this_month >= 3) {
-    return res.status(429).json({
-      error: 'Monthly repair limit reached (3/3)',
-      upgrade_url: `${process.env.APP_BASE_URL}/pricing`,
-    });
-  }
-
   logger.info('Warp command received', { command, user: user.username });
 
   const validCommands = ['fix-ci', 'fix-tests', 'fix-deps', 'fix-runtime', 'repair-last', 'predict-failure'];
@@ -44,6 +36,14 @@ router.post('/command', async (req, res) => {
     return res.status(400).json({
       error: `Unknown command: ${command}`,
       valid_commands: validCommands,
+    });
+  }
+
+  const readOnlyCommands = ['repair-last', 'predict-failure'];
+  if (!readOnlyCommands.includes(command) && user.plan === 'free' && user.repairs_used_this_month >= 3) {
+    return res.status(429).json({
+      error: 'Monthly repair limit reached (3/3)',
+      upgrade_url: `${process.env.APP_BASE_URL}/pricing`,
     });
   }
     const jobData = {
