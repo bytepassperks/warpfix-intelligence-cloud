@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Search, Bell, HelpCircle, User, ChevronDown, Settings, CreditCard, LogOut, X, ExternalLink } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUser } from "@/lib/user-context";
+import { API_URL, formatRelativeTime } from "@/lib/utils";
 
 const SEARCH_ITEMS = [
   { label: "Dashboard", href: "/dashboard", category: "Pages" },
@@ -18,29 +21,52 @@ const SEARCH_ITEMS = [
   { label: "Billing", href: "/dashboard/billing", category: "Pages" },
 ];
 
-const NOTIFICATIONS = [
-  { id: 1, title: "CI repair completed", desc: "PR #42 — fixed test timeout in auth module", time: "2 min ago", unread: true },
-  { id: 2, title: "New review posted", desc: "PR #41 — 3 issues found in api/users.ts", time: "15 min ago", unread: true },
-  { id: 3, title: "Fingerprint match", desc: "Reused fix from PR #38 for similar error", time: "1 hour ago", unread: false },
-  { id: 4, title: "Security scan complete", desc: "No vulnerabilities detected in latest scan", time: "3 hours ago", unread: false },
-];
+interface Notification {
+  id: string;
+  title: string;
+  desc: string;
+  time: string;
+  unread: boolean;
+  pr_url?: string | null;
+}
 
 export function TopNav() {
   const router = useRouter();
+  const { user } = useUser();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifLoaded, setNotifLoaded] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = NOTIFICATIONS.filter((n) => n.unread).length;
+  const unreadCount = notifications.filter((n) => n.unread).length;
 
   const filteredItems = searchQuery.trim()
     ? SEARCH_ITEMS.filter((item) =>
         item.label.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : SEARCH_ITEMS;
+
+  // Fetch real notifications from API
+  useEffect(() => {
+    fetch(`${API_URL}/api/notifications`, { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Not authenticated");
+        return res.json();
+      })
+      .then((data) => {
+        const mapped = (data.notifications || []).map((n: { id: string; title: string; desc: string; time: string; unread: boolean; pr_url?: string | null }) => ({
+          ...n,
+          time: formatRelativeTime(n.time),
+        }));
+        setNotifications(mapped);
+      })
+      .catch(() => setNotifications([]))
+      .finally(() => setNotifLoaded(true));
+  }, []);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -63,6 +89,11 @@ export function TopNav() {
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [searchOpen]);
+
+  const displayName = user?.username || "User";
+  const displayEmail = user?.email || "";
+  const displayPlan = (user?.plan || "free").charAt(0).toUpperCase() + (user?.plan || "free").slice(1) + " Plan";
+  const avatarUrl = user?.avatar_url;
 
   return (
     <header className="h-14 border-b border-[var(--border-default)] bg-white flex items-center px-4 gap-3 shrink-0 z-40">
@@ -123,30 +154,50 @@ export function TopNav() {
                 )}
               </div>
               <div className="max-h-72 overflow-y-auto">
-                {NOTIFICATIONS.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className={`px-4 py-3 border-b border-[var(--border-default)] last:border-0 hover:bg-[var(--bg-secondary)] cursor-pointer transition-colors ${
-                      notif.unread ? "bg-[var(--brand-muted)]/30" : ""
-                    }`}
-                    onClick={() => setNotifOpen(false)}
-                  >
-                    <div className="flex items-start gap-2">
-                      {notif.unread && <span className="w-1.5 h-1.5 bg-[var(--brand)] rounded-full mt-1.5 shrink-0" />}
-                      <div className={notif.unread ? "" : "ml-3.5"}>
-                        <div className="text-[13px] font-medium">{notif.title}</div>
-                        <div className="text-[12px] text-[var(--text-secondary)] mt-0.5">{notif.desc}</div>
-                        <div className="text-[11px] text-[var(--text-tertiary)] mt-1">{notif.time}</div>
-                      </div>
+                {!notifLoaded ? (
+                  <div className="p-4 text-xs text-[var(--text-tertiary)] text-center">Loading...</div>
+                ) : notifications.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <Bell className="w-8 h-8 text-[var(--text-tertiary)] mx-auto mb-2 opacity-40" />
+                    <div className="text-[13px] text-[var(--text-tertiary)]">No notifications yet</div>
+                    <div className="text-[11px] text-[var(--text-tertiary)] mt-0.5">
+                      Activity will appear here when repairs run.
                     </div>
                   </div>
-                ))}
+                ) : (
+                  notifications.map((notif) => (
+                    <div
+                      key={notif.id}
+                      className={`px-4 py-3 border-b border-[var(--border-default)] last:border-0 hover:bg-[var(--bg-secondary)] cursor-pointer transition-colors ${
+                        notif.unread ? "bg-[var(--brand-muted)]/30" : ""
+                      }`}
+                      onClick={() => {
+                        if (notif.pr_url) window.open(notif.pr_url, "_blank");
+                        setNotifOpen(false);
+                      }}
+                    >
+                      <div className="flex items-start gap-2">
+                        {notif.unread && <span className="w-1.5 h-1.5 bg-[var(--brand)] rounded-full mt-1.5 shrink-0" />}
+                        <div className={notif.unread ? "" : "ml-3.5"}>
+                          <div className="text-[13px] font-medium">{notif.title}</div>
+                          <div className="text-[12px] text-[var(--text-secondary)] mt-0.5">{notif.desc}</div>
+                          <div className="text-[11px] text-[var(--text-tertiary)] mt-1">{notif.time}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
-              <div className="px-4 py-2.5 border-t border-[var(--border-default)] text-center">
-                <button className="text-[12px] text-[var(--brand)] font-medium hover:underline">
-                  Mark all as read
-                </button>
-              </div>
+              {notifications.length > 0 && (
+                <div className="px-4 py-2.5 border-t border-[var(--border-default)] text-center">
+                  <button
+                    className="text-[12px] text-[var(--brand)] font-medium hover:underline"
+                    onClick={() => setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })))}
+                  >
+                    Mark all as read
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -158,9 +209,19 @@ export function TopNav() {
           onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }}
           className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
         >
-          <div className="w-7 h-7 rounded-full bg-[var(--brand-muted)] flex items-center justify-center">
-            <User className="w-3.5 h-3.5 text-[var(--brand)]" />
-          </div>
+          {avatarUrl ? (
+            <Image
+              src={avatarUrl}
+              alt={displayName}
+              width={28}
+              height={28}
+              className="rounded-full"
+            />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-[var(--brand-muted)] flex items-center justify-center">
+              <User className="w-3.5 h-3.5 text-[var(--brand)]" />
+            </div>
+          )}
           <ChevronDown className={`w-3 h-3 text-[var(--text-tertiary)] transition-transform ${profileOpen ? "rotate-180" : ""}`} />
         </button>
 
@@ -175,10 +236,27 @@ export function TopNav() {
             >
               {/* User info */}
               <div className="px-4 py-3 border-b border-[var(--border-default)]">
-                <div className="text-[13px] font-semibold text-[var(--text-primary)]">Harry Roger</div>
-                <div className="text-[12px] text-[var(--text-secondary)]">harryroger798@gmail.com</div>
-                <div className="mt-1.5 inline-flex items-center px-1.5 py-0.5 bg-[var(--brand-muted)] text-[var(--brand)] text-[10px] font-semibold rounded uppercase">
-                  Free Plan
+                <div className="flex items-center gap-2.5 mb-2">
+                  {avatarUrl ? (
+                    <Image
+                      src={avatarUrl}
+                      alt={displayName}
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-[var(--brand-muted)] flex items-center justify-center">
+                      <User className="w-4 h-4 text-[var(--brand)]" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{displayName}</div>
+                    <div className="text-[11px] text-[var(--text-secondary)] truncate">{displayEmail}</div>
+                  </div>
+                </div>
+                <div className="inline-flex items-center px-1.5 py-0.5 bg-[var(--brand-muted)] text-[var(--brand)] text-[10px] font-semibold rounded uppercase">
+                  {displayPlan}
                 </div>
               </div>
               {/* Menu items */}
@@ -211,7 +289,11 @@ export function TopNav() {
               </div>
               <div className="border-t border-[var(--border-default)] py-1">
                 <button
-                  onClick={() => { setProfileOpen(false); router.push("/"); }}
+                  onClick={() => {
+                    setProfileOpen(false);
+                    fetch(`${API_URL}/auth/logout`, { method: "POST", credentials: "include" })
+                      .finally(() => router.push("/"));
+                  }}
                   className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-red-600 hover:bg-red-50 transition-colors w-full text-left"
                 >
                   <LogOut className="w-3.5 h-3.5" />

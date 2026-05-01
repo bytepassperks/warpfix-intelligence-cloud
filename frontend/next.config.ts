@@ -37,7 +37,7 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: https: blob:",
+      "img-src 'self' data: https: blob: https://avatars.githubusercontent.com",
       "connect-src 'self' https://api.warpfix.org https://fonts.googleapis.com https://fonts.gstatic.com",
       "frame-ancestors 'self'",
       "base-uri 'self'",
@@ -63,6 +63,12 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: "inline",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+      },
+    ],
   },
   experimental: {
     optimizeCss: true,
