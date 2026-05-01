@@ -309,11 +309,13 @@ async function processChatJob(job) {
       context: { owner, repo, prNumber: issue_number },
     });
 
-    // Post response as comment
-    await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
-      owner, repo, issue_number,
-      body: response,
-    });
+    // Post response as comment (only if we got a valid response)
+    if (response) {
+      await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
+        owner, repo, issue_number,
+        body: response,
+      });
+    }
 
     const duration = Date.now() - startTime;
     logger.info('Chat response posted', { issue: issue_number, duration });

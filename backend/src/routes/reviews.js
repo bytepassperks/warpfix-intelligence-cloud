@@ -28,7 +28,7 @@ router.get('/public-stats', async (req, res) => {
     const [totalResult, recentResult, issuesResult] = await Promise.all([
       query(`SELECT COUNT(*) as total FROM reviews`),
       query(
-        `SELECT r.*, repo.full_name as repo_name 
+        `SELECT r.id, r.pr_number, r.pr_title, r.created_at, repo.full_name as repo_name 
          FROM reviews r
          LEFT JOIN repositories repo ON repo.id = r.repository_id
          ORDER BY r.created_at DESC LIMIT 20`
@@ -54,7 +54,7 @@ router.get('/public-stats', async (req, res) => {
 });
 
 // Get review detail
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, async (req, res) => {
   try {
     const result = await query(
       `SELECT r.*, repo.full_name as repo_name 

@@ -10,7 +10,7 @@ router.get('/github/callback', (req, res, next) => {
     if (err) {
       logger.error('OAuth callback error', { error: err.message, stack: err.stack });
       return res.redirect(
-        `${process.env.APP_BASE_URL || 'http://localhost:3000'}/auth-error?error=${encodeURIComponent(err.message)}`
+        `${process.env.APP_BASE_URL || 'http://localhost:3000'}/auth-error?error=oauth_error`
       );
     }
     if (!user) {
@@ -23,7 +23,7 @@ router.get('/github/callback', (req, res, next) => {
       if (loginErr) {
         logger.error('Session login error', { error: loginErr.message, stack: loginErr.stack });
         return res.redirect(
-          `${process.env.APP_BASE_URL || 'http://localhost:3000'}/auth-error?error=${encodeURIComponent(loginErr.message)}`
+          `${process.env.APP_BASE_URL || 'http://localhost:3000'}/auth-error?error=session_error`
         );
       }
       logger.info('OAuth login successful', { userId: user.id, username: user.username });

@@ -33,7 +33,18 @@ app.use('/webhooks/github', express.raw({ type: 'application/json' }));
 // Global middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.APP_BASE_URL || 'http://localhost:3000',
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      process.env.APP_BASE_URL || 'http://localhost:3000',
+      'https://warpfix.org',
+      'https://www.warpfix.org',
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
   credentials: true,
 }));
 app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
@@ -49,6 +60,7 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? '.warpfix.org' : undefined,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   },
 }));

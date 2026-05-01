@@ -155,7 +155,7 @@ router.get('/telemetry', requireAuth, async (req, res) => {
     const result = await query(
       `SELECT metric_type, metric_value, recorded_at
        FROM telemetry_metrics
-       WHERE user_id = $1 OR user_id IS NULL
+       WHERE user_id = $1
        ORDER BY recorded_at DESC LIMIT 100`,
       [req.user.id]
     );

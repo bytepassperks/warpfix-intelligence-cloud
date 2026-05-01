@@ -3,7 +3,11 @@ const bcrypt = require('bcryptjs');
 const { query } = require('../models/database');
 const { logger } = require('../utils/logger');
 
-const JWT_SECRET = process.env.ADMIN_JWT_SECRET || 'warpfix-admin-secret-key-change-in-prod';
+const JWT_SECRET = process.env.ADMIN_JWT_SECRET;
+if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('ADMIN_JWT_SECRET must be set in production');
+}
+const ADMIN_SECRET = JWT_SECRET || 'warpfix-admin-dev-only-secret';
 const JWT_EXPIRY = '24h';
 
 async function hashPassword(password) {
@@ -17,7 +21,7 @@ async function verifyPassword(password, hash) {
 function generateToken(admin) {
   return jwt.sign(
     { id: admin.id, email: admin.email, role: admin.role },
-    JWT_SECRET,
+    ADMIN_SECRET,
     { expiresIn: JWT_EXPIRY }
   );
 }
@@ -30,7 +34,7 @@ function requireAdmin(req, res, next) {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, ADMIN_SECRET);
     if (decoded.role !== 'super_admin' && decoded.role !== 'admin') {
       return res.status(403).json({ error: 'Insufficient admin privileges' });
     }
@@ -49,4 +53,4 @@ function requireSuperAdmin(req, res, next) {
   next();
 }
 
-module.exports = { hashPassword, verifyPassword, generateToken, requireAdmin, requireSuperAdmin, JWT_SECRET };
+module.exports = { hashPassword, verifyPassword, generateToken, requireAdmin, requireSuperAdmin, JWT_SECRET: ADMIN_SECRET };

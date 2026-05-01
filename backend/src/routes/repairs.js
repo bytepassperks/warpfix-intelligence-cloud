@@ -36,7 +36,12 @@ router.get('/:id', requireAuth, async (req, res) => {
        LEFT JOIN failures f ON f.id = r.failure_id
        LEFT JOIN repositories repo ON repo.id = r.repository_id
        LEFT JOIN fingerprints fp ON fp.id = r.fingerprint_id
-       WHERE r.id = $1 AND r.user_id = $2`,
+       WHERE r.id = $1 AND (r.user_id = $2 OR r.repository_id IN (
+            SELECT rp.id FROM repositories rp
+            JOIN installations i ON i.installation_id::text = rp.installation_id
+            JOIN users u ON u.username = i.account_login
+            WHERE u.id = $2
+          ))`,
       [req.params.id, req.user.id]
     );
     if (!result.rows[0]) {

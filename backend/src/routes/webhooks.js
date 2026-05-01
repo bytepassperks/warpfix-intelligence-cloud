@@ -24,7 +24,9 @@ function verifyGitHubSignature(req, res, next) {
     .update(Buffer.isBuffer(req.body) ? req.body : body)
     .digest('hex');
 
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+  const sigBuf = Buffer.from(signature);
+  const expBuf = Buffer.from(expected);
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
     return res.status(401).json({ error: 'Invalid signature' });
   }
 

@@ -4,7 +4,7 @@ const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 
 // 1. Quality Metrics
-router.get('/quality', async (req, res) => {
+router.get('/quality', requireAuth, async (req, res) => {
   try {
     const [reviewStats, severityBreakdown, topIssues] = await Promise.all([
       query(`
@@ -42,7 +42,7 @@ router.get('/quality', async (req, res) => {
 });
 
 // 2. Time Saved
-router.get('/time-saved', async (req, res) => {
+router.get('/time-saved', requireAuth, async (req, res) => {
   try {
     const [reviewTimeSaved, repairTimeSaved, monthlyTrend] = await Promise.all([
       query(`
@@ -86,7 +86,7 @@ router.get('/time-saved', async (req, res) => {
 });
 
 // 3. Knowledge & Learnings
-router.get('/knowledge', async (req, res) => {
+router.get('/knowledge', requireAuth, async (req, res) => {
   try {
     const [learningStats, recentLearnings, fingerprintStats] = await Promise.all([
       query(`
@@ -120,7 +120,7 @@ router.get('/knowledge', async (req, res) => {
 });
 
 // 4. Trends
-router.get('/trends', async (req, res) => {
+router.get('/trends', requireAuth, async (req, res) => {
   try {
     const [repairTrend, reviewTrend, confidenceTrend, typeTrend] = await Promise.all([
       query(`
@@ -159,7 +159,7 @@ router.get('/trends', async (req, res) => {
 });
 
 // 5. Security
-router.get('/security', async (req, res) => {
+router.get('/security', requireAuth, async (req, res) => {
   try {
     const [vulnStats, recentVulns] = await Promise.all([
       query(`
@@ -188,7 +188,7 @@ router.get('/security', async (req, res) => {
 });
 
 // 6. Tech Debt
-router.get('/tech-debt', async (req, res) => {
+router.get('/tech-debt', requireAuth, async (req, res) => {
   try {
     const result = await query(`
       SELECT metric_value
@@ -212,7 +212,7 @@ router.get('/tech-debt', async (req, res) => {
 });
 
 // 7. Repositories
-router.get('/repositories', async (req, res) => {
+router.get('/repositories', requireAuth, async (req, res) => {
   try {
     const result = await query(`
       SELECT 
@@ -235,7 +235,7 @@ router.get('/repositories', async (req, res) => {
 });
 
 // 8. Contributors
-router.get('/contributors', async (req, res) => {
+router.get('/contributors', requireAuth, async (req, res) => {
   try {
     const result = await query(`
       SELECT 
@@ -256,7 +256,7 @@ router.get('/contributors', async (req, res) => {
 });
 
 // 9. Predictions
-router.get('/predictions', async (req, res) => {
+router.get('/predictions', requireAuth, async (req, res) => {
   try {
     const result = await query(`
       SELECT metric_value
@@ -282,7 +282,7 @@ router.get('/predictions', async (req, res) => {
 });
 
 // 10. Release Notes
-router.get('/releases', async (req, res) => {
+router.get('/releases', requireAuth, async (req, res) => {
   try {
     const result = await query(`
       SELECT metric_value

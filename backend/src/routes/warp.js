@@ -7,6 +7,7 @@ const router = express.Router();
 
 // Warp CLI commands hit this endpoint
 router.post('/command', async (req, res) => {
+  try {
   const {
     command,
     api_key,
@@ -42,8 +43,6 @@ router.post('/command', async (req, res) => {
       valid_commands: validCommands,
     });
   }
-
-  try {
     const jobData = {
       type: command,
       user_id: user.id,

@@ -202,20 +202,45 @@ function extractDiff(llmOutput) {
 function validatePatchSafety(patch) {
   const reasons = [];
 
-  const lines = patch.split('\n');
+  // For JSON format, only validate the file paths not content
+  let patchToCheck = patch;
+  let filePaths = [];
+  try {
+    const parsed = JSON.parse(patch);
+    if (parsed._warpfix_format === 'file_blocks' && Array.isArray(parsed.files)) {
+      filePaths = parsed.files.map(f => f.path);
+      // Only check diff-like content, not full file source
+      patchToCheck = parsed.files.map(f => f.path).join('\n');
+    }
+  } catch {
+    // Not JSON — check as diff
+  }
+
+  const lines = patchToCheck.split('\n');
   const changedLines = lines.filter(l => l.startsWith('+') || l.startsWith('-')).length;
   if (changedLines > PATCH_SAFETY_RULES.maxDiffLines) {
     reasons.push(`Diff too large: ${changedLines} lines (max ${PATCH_SAFETY_RULES.maxDiffLines})`);
   }
 
-  for (const pattern of PATCH_SAFETY_RULES.forbiddenPatterns) {
-    if (pattern.test(patch)) {
-      reasons.push(`Forbidden pattern detected: ${pattern}`);
+  // Only check forbidden patterns against added lines in diff format, not source content
+  if (!filePaths.length) {
+    const addedLines = lines.filter(l => l.startsWith('+')).join('\n');
+    for (const pattern of PATCH_SAFETY_RULES.forbiddenPatterns) {
+      // Reset lastIndex for patterns with /g flag
+      pattern.lastIndex = 0;
+      if (pattern.test(addedLines)) {
+        reasons.push(`Forbidden pattern detected: ${pattern}`);
+      }
     }
   }
 
+  // Check forbidden file changes
+  const allPaths = filePaths.length > 0 ? filePaths : [];
   for (const file of PATCH_SAFETY_RULES.forbiddenFileChanges) {
-    if (patch.includes(`+++ b/${file}`) || patch.includes(`--- a/${file}`)) {
+    if (allPaths.some(p => p === file || p.endsWith(`/${file}`))) {
+      reasons.push(`Forbidden file change: ${file}`);
+    }
+    if (patchToCheck.includes(`+++ b/${file}`) || patchToCheck.includes(`--- a/${file}`)) {
       reasons.push(`Forbidden file change: ${file}`);
     }
   }

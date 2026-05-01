@@ -96,7 +96,9 @@ router.get('/stats', requireAdmin, async (req, res) => {
 
 // GET /admin/users
 router.get('/users', requireAdmin, async (req, res) => {
-  const { page = 1, limit = 50, search, plan, sort = 'created_at', order = 'desc' } = req.query;
+  const { search, plan, sort = 'created_at', order = 'desc' } = req.query;
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 200);
+  const page = Math.max(parseInt(req.query.page) || 1, 1);
   const offset = (page - 1) * limit;
 
   try {

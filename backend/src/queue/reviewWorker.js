@@ -198,10 +198,11 @@ async function processReviewJob(job) {
       repoId = insertRepo.rows[0]?.id;
     }
 
-    await query(
+    const reviewResult = await query(
       `INSERT INTO reviews (repository_id, user_id, pr_number, pr_url, pr_title, review_data,
         inline_comments_count, summary, risk_level, review_effort_level, duration_ms)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       RETURNING id`,
       [repoId, user_id, pull_request.number, pull_request.html_url, pull_request.title,
        JSON.stringify({
          ...review,
@@ -223,14 +224,17 @@ async function processReviewJob(job) {
        postedComments.length, review.summary,
        review.risk_analysis?.level, review.review_effort?.level, duration]
     );
+    const reviewId = reviewResult.rows[0]?.id;
 
     // Store inline comments
-    for (const c of postedComments) {
-      await query(
-        `INSERT INTO review_comments (review_id, file_path, line_number, severity, category, comment, suggestion, verified)
-         VALUES (currval('reviews_id_seq'), $1, $2, $3, $4, $5, $6, $7)`,
-        [c.file, c.line, c.severity, c.category, c.comment, c.suggestion, c.verified || false]
-      ).catch(() => {}); // Non-critical
+    if (reviewId) {
+      for (const c of postedComments) {
+        await query(
+          `INSERT INTO review_comments (review_id, file_path, line_number, severity, category, comment, suggestion, verified)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [reviewId, c.file, c.line, c.severity, c.category, c.comment, c.suggestion, c.verified || false]
+        ).catch(() => {}); // Non-critical
+      }
     }
 
     await recordTelemetry(user_id, repoId, 'review_completed', {

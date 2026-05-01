@@ -94,8 +94,12 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Store learning from PR feedback (called by webhook)
+// Store learning from PR feedback (internal only — requires internal API key)
 router.post('/from-feedback', async (req, res) => {
+  const internalKey = req.headers['x-warpfix-internal-key'];
+  if (!internalKey || internalKey !== process.env.INTERNAL_API_KEY) {
+    return res.status(401).json({ error: 'Internal access required' });
+  }
   try {
     const { repository_id, user_id, comment_body, pr_number, file_path } = req.body;
 

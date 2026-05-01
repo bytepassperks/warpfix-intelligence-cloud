@@ -199,21 +199,37 @@ function parsePatchFiles(patch) {
     // Not JSON, try legacy diff format
   }
 
-  // Legacy diff parser - extracts file paths and new content from unified diff
+  // Legacy diff parser - extracts file paths and hunks from unified diff
+  // NOTE: This returns diff hunks, not full file content.
+  // The caller must fetch the existing file and apply the diff.
   const files = [];
   const sections = patch.split(/^diff --git/m).filter(Boolean);
 
   for (const section of sections) {
     const pathMatch = section.match(/\+\+\+ b\/(.+)/);
     if (pathMatch) {
-      const addedLines = section.split('\n')
-        .filter(l => l.startsWith('+') && !l.startsWith('+++'))
-        .map(l => l.substring(1));
+      const lines = section.split('\n');
+      const resultLines = [];
+      let inHunk = false;
+      for (const line of lines) {
+        if (line.startsWith('@@')) {
+          inHunk = true;
+          continue;
+        }
+        if (!inHunk) continue;
+        if (line.startsWith('-')) continue; // removed line
+        if (line.startsWith('+')) {
+          resultLines.push(line.substring(1)); // added line
+        } else {
+          resultLines.push(line.startsWith(' ') ? line.substring(1) : line); // context line
+        }
+      }
 
-      if (addedLines.length > 0) {
+      if (resultLines.length > 0) {
         files.push({
           path: pathMatch[1],
-          content: addedLines.join('\n'),
+          content: resultLines.join('\n'),
+          _is_diff: true,
         });
       }
     }
