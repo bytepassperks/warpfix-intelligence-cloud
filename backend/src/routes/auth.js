@@ -3,7 +3,7 @@ const passport = require('passport');
 const { logger } = require('../utils/logger');
 const router = express.Router();
 
-router.get('/github', passport.authenticate('github', { scope: ['user:email', 'repo'] }));
+router.get('/github', passport.authenticate('github', { scope: ['repo'] }));
 
 router.get('/github/callback', (req, res, next) => {
   passport.authenticate('github', (err, user, info) => {
