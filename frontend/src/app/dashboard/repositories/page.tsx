@@ -72,7 +72,7 @@ export default function RepositoriesPage() {
           description="Install the WarpFix GitHub App on a repository to start monitoring CI failures and auto-repairing them."
           action={{
             label: "Install GitHub App",
-            href: "https://github.com/apps/warpfix-intelligence-cloud/installations/new",
+            href: "https://github.com/apps/warpfix/installations/new",
           }}
         />
       ) : (

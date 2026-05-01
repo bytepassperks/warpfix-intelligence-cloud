@@ -10,7 +10,7 @@ const STEPS = [
     title: "Connect GitHub",
     description: "Install the WarpFix GitHub App to let us access your repositories and CI workflows.",
     cta: "Install GitHub App",
-    href: "https://github.com/apps/warpfix-intelligence-cloud/installations/new",
+    href: "https://github.com/apps/warpfix/installations/new",
   },
   {
     icon: FolderGit2,
