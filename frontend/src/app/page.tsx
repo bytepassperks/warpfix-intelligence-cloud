@@ -912,7 +912,12 @@ engines: 12`}
                   {authUser && authUser.plan?.toLowerCase() === plan.name.toLowerCase()
                     ? "Active"
                     : authUser
-                      ? plan.name === "Free" ? "Downgrade" : "Upgrade"
+                      ? (() => {
+                          const TIER_ORDER: Record<string, number> = { free: 0, pro: 1, team: 2 };
+                          const currentTier = TIER_ORDER[authUser.plan?.toLowerCase() || "free"] ?? 0;
+                          const planTier = TIER_ORDER[plan.name.toLowerCase()] ?? 0;
+                          return planTier < currentTier ? "Downgrade" : "Upgrade";
+                        })()
                       : plan.cta}
                 </Link>
                 <ul className="mt-6 space-y-2.5">
