@@ -4,9 +4,10 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const passport = require('passport');
 const { logger } = require('./utils/logger');
-const { initDatabase } = require('./models/database');
+const { initDatabase, getPool } = require('./models/database');
 
 const authRoutes = require('./routes/auth');
 const webhookRoutes = require('./routes/webhooks');
@@ -51,8 +52,13 @@ app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) }
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session
+// Session with PostgreSQL store for persistence across restarts
 app.use(session({
+  store: new pgSession({
+    pool: getPool(),
+    tableName: 'user_sessions',
+    createTableIfMissing: true,
+  }),
   secret: process.env.SESSION_SECRET || 'warpfix-dev-secret',
   resave: false,
   saveUninitialized: false,

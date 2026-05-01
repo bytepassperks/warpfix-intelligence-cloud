@@ -310,4 +310,8 @@ async function runMigrations() {
   }
 }
 
-module.exports = { pool, query, initDatabase };
+function getPool() {
+  return pool;
+}
+
+module.exports = { pool, query, initDatabase, getPool };
