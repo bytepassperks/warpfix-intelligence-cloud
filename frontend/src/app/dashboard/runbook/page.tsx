@@ -234,7 +234,7 @@ playbooks:
           <span className="text-[14px] font-semibold text-[var(--text-primary)]">WarpFix Doctor</span>
         </div>
         <p className="text-[12px] text-[var(--text-tertiary)] mb-3">
-          A terminal agent that queries logs, PRs, and failures, then suggests commands or patches. Works inside Warp terminal.
+          A terminal agent that queries logs, PRs, and failures, then suggests commands or patches. Install with npm i -g warpfix.
         </p>
         <div className="bg-[#1e1e2e] rounded-lg p-4 font-mono text-[12px]">
           <div className="text-green-400">$ warpfix doctor</div>

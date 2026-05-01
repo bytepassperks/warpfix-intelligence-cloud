@@ -40,6 +40,28 @@ router.get('/me', (req, res) => {
   res.json({ user: safeUser });
 });
 
+router.post('/cli-key', (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  const crypto = require('crypto');
+  const { query } = require('../models/database');
+  const key = `wf_${crypto.randomBytes(24).toString('hex')}`;
+  query('UPDATE users SET cli_api_key = $1 WHERE id = $2', [key, req.user.id])
+    .then(() => res.json({ cli_api_key: key }))
+    .catch(() => res.status(500).json({ error: 'Failed to generate key' }));
+});
+
+router.get('/cli-key', (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  const { query } = require('../models/database');
+  query('SELECT cli_api_key FROM users WHERE id = $1', [req.user.id])
+    .then(r => res.json({ cli_api_key: r.rows[0]?.cli_api_key || null }))
+    .catch(() => res.status(500).json({ error: 'Failed to fetch key' }));
+});
+
 router.post('/logout', (req, res) => {
   req.logout((err) => {
     if (err) return res.status(500).json({ error: 'Logout failed' });

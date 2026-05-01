@@ -1,0 +1,19 @@
+{
+  "name": "warpfix",
+  "version": "1.0.0",
+  "description": "WarpFix CLI — AI-powered CI repair from your terminal",
+  "bin": {
+    "warpfix": "./bin/warpfix.js"
+  },
+  "keywords": ["ci", "repair", "automation", "github-actions", "testing", "devops"],
+  "author": "WarpFix <hello@warpfix.org>",
+  "license": "MIT",
+  "homepage": "https://warpfix.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bytepassperks/warpfix-intelligence-cloud"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

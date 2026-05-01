@@ -295,10 +295,10 @@ function JsonLd() {
       },
       {
         "@type": "Question",
-        name: "Can I use WarpFix without Warp terminal?",
+        name: "How do I use the WarpFix CLI?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes. The web dashboard and GitHub App work independently. Terminal commands are optional — you can use WarpFix entirely through the web interface.",
+          text: "Install with npx warpfix or npm i -g warpfix. Run warpfix login to authenticate, then use commands like warpfix doctor, warpfix fix-ci, and warpfix fix-tests from any terminal.",
         },
       },
       {

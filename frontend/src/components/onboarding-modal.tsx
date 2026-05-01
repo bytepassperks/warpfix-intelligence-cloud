@@ -21,8 +21,8 @@ const STEPS = [
   },
   {
     icon: Terminal,
-    title: "Run /fix-ci",
-    description: "In your Warp terminal, type /fix-ci to trigger your first repair. Or wait for CI to fail naturally.",
+    title: "Run warpfix fix-ci",
+    description: "In your terminal, run warpfix fix-ci to trigger your first repair. Or wait for CI to fail naturally.",
     cta: "View Commands",
     href: "#",
   },

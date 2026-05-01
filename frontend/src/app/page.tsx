@@ -258,7 +258,7 @@ const FAQS = [
   { q: "What if a patch has low confidence?", a: "Patches below 40 are flagged for review and not opened as PRs. Scores between 40-70 get a 'review suggested' label." },
   { q: "What's free vs paid?", a: "Free: unlimited CI analytics, insights dashboards, flaky test detection, autopsy reports, simulation mode, static tool fixes, 3 repair PRs/month. Pro: unlimited repairs, deep PR review, security analysis, predictive CI, quality gates." },
   { q: "Can I bring my own API key?", a: "Yes. Plug in your own OpenAI, Anthropic, or Google API key for heavy features like multi-file refactors and run-until-green loops. WarpFix orchestrates; you control the LLM bill." },
-  { q: "Can I use WarpFix without Warp terminal?", a: "Yes. The web dashboard and GitHub App work independently. You can also use the WarpFix CLI locally for dry-run patches and the `warpfix doctor` command." },
+  { q: "How do I use the WarpFix CLI?", a: "Install with npx warpfix or npm i -g warpfix. Run warpfix login to authenticate, then use warpfix doctor, warpfix fix-ci, warpfix fix-tests from any terminal." },
 ];
 
 const COMPARISON = [

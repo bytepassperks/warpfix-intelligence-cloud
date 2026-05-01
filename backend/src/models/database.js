@@ -349,6 +349,7 @@ async function runMigrations() {
       DO $$ BEGIN
         ALTER TABLE repositories ADD COLUMN IF NOT EXISTS installation_id VARCHAR(255);
         ALTER TABLE repositories ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS cli_api_key VARCHAR(255);
       EXCEPTION WHEN OTHERS THEN NULL;
       END $$;
     `);

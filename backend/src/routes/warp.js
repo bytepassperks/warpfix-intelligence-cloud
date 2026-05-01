@@ -18,8 +18,11 @@ router.post('/command', async (req, res) => {
     return res.status(401).json({ error: 'API key required. Run /warpfix-login first.' });
   }
 
-  // Look up user by API key (stored as access_token for simplicity)
-  const userResult = await query('SELECT * FROM users WHERE access_token = $1', [api_key]);
+  // Look up user by CLI API key first, then fall back to access_token
+  let userResult = await query('SELECT * FROM users WHERE cli_api_key = $1', [api_key]);
+  if (!userResult.rows[0]) {
+    userResult = await query('SELECT * FROM users WHERE access_token = $1', [api_key]);
+  }
   const user = userResult.rows[0];
   if (!user) {
     return res.status(401).json({ error: 'Invalid API key' });

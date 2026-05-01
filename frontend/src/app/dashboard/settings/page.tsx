@@ -1,14 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Settings, Copy, Check } from "lucide-react";
+import { Settings, Copy, Check, Terminal, RefreshCw } from "lucide-react";
+
+const API = process.env.NEXT_PUBLIC_API_URL || "https://api.warpfix.org";
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState("assertive");
   const [autoReview, setAutoReview] = useState(true);
   const [autoRepair, setAutoRepair] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [cliKey, setCliKey] = useState<string | null>(null);
+  const [cliKeyLoading, setCliKeyLoading] = useState(false);
+  const [cliKeyCopied, setCliKeyCopied] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API}/auth/cli-key`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setCliKey(d.cli_api_key || null))
+      .catch(() => {});
+  }, []);
+
+  const generateCliKey = async () => {
+    setCliKeyLoading(true);
+    try {
+      const r = await fetch(`${API}/auth/cli-key`, { method: "POST", credentials: "include" });
+      const d = await r.json();
+      if (d.cli_api_key) setCliKey(d.cli_api_key);
+    } catch {}
+    setCliKeyLoading(false);
+  };
+
+  const copyCliKey = () => {
+    if (cliKey) {
+      navigator.clipboard.writeText(cliKey);
+      setCliKeyCopied(true);
+      setTimeout(() => setCliKeyCopied(false), 2000);
+    }
+  };
 
   const yamlExample = `# .warpfix.yaml
 review:
@@ -126,6 +156,47 @@ chat:
             ))}
           </div>
         </div>
+      </div>
+
+      {/* CLI API Key */}
+      <div className="bg-white rounded-lg border border-[var(--border-default)] p-6 mb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <Terminal className="w-4 h-4 text-indigo-600" />
+          <h3 className="font-semibold text-[15px]">CLI API Key</h3>
+        </div>
+        <p className="text-[12px] text-[var(--text-secondary)] mb-4">
+          Use this key to authenticate the WarpFix CLI. Install with <code className="bg-[var(--bg-secondary)] px-1 py-0.5 rounded text-[11px]">npm i -g warpfix</code> then run <code className="bg-[var(--bg-secondary)] px-1 py-0.5 rounded text-[11px]">warpfix login &lt;key&gt;</code>
+        </p>
+        {cliKey ? (
+          <div className="flex items-center gap-2">
+            <code className="flex-1 bg-[var(--bg-secondary)] px-3 py-2 rounded-lg text-[13px] font-mono truncate">
+              {cliKey}
+            </code>
+            <button
+              onClick={copyCliKey}
+              className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium rounded-lg border border-[var(--border-default)] hover:bg-[var(--bg-secondary)] transition-colors"
+            >
+              {cliKeyCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+              {cliKeyCopied ? "Copied" : "Copy"}
+            </button>
+            <button
+              onClick={generateCliKey}
+              disabled={cliKeyLoading}
+              className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium rounded-lg border border-[var(--border-default)] hover:bg-[var(--bg-secondary)] transition-colors"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${cliKeyLoading ? "animate-spin" : ""}`} />
+              Regenerate
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={generateCliKey}
+            disabled={cliKeyLoading}
+            className="px-4 py-2 bg-[var(--brand)] text-white text-[13px] font-medium rounded-lg hover:opacity-90 transition-opacity"
+          >
+            {cliKeyLoading ? "Generating..." : "Generate API Key"}
+          </button>
+        )}
       </div>
 
       {/* YAML Config */}
