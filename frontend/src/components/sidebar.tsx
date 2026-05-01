@@ -26,6 +26,9 @@ import {
   GitPullRequest,
   Dna,
   Network,
+  Bug,
+  ShieldAlert,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +57,10 @@ const NAV_SECTIONS = [
       { href: "/dashboard/insights", label: "Insights", icon: Fingerprint },
       { href: "/dashboard/flaky-tests", label: "Flaky Tests", icon: FlaskConical },
       { href: "/dashboard/autopsy", label: "Autopsy Reports", icon: FileSearch },
+      { href: "/dashboard/predictive-failures", label: "Predictive CI", icon: ShieldAlert },
+      { href: "/dashboard/tech-debt", label: "Tech Debt", icon: Bug },
+      { href: "/dashboard/test-coverage", label: "Test Coverage", icon: FlaskConical },
+      { href: "/dashboard/org-stability", label: "Org Stability", icon: Activity },
     ],
   },
   {

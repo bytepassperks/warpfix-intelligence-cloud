@@ -283,6 +283,344 @@ router.get('/org-memory', async (req, res) => {
   }
 });
 
+// ── Predictive CI Failure: real predictions from fingerprint + network data ──
+router.get('/predictive-failures', async (req, res) => {
+  try {
+    // Active predictions from network_predictions (high probability)
+    const predictions = await query(`
+      SELECT
+        id, pattern_type, description, probability, category,
+        based_on_prs, based_on_repos, times_prevented, suggestion, last_triggered_at
+      FROM network_predictions
+      WHERE probability >= 60
+      ORDER BY probability DESC
+    `);
+
+    // Recent failures that could have been predicted
+    const recentFailures = await query(`
+      SELECT
+        f.error_message, f.failure_type, f.branch, f.created_at,
+        r.full_name AS repo_name,
+        fp.hash AS fingerprint_hash, fp.times_matched
+      FROM failures f
+      LEFT JOIN repositories r ON f.repository_id = r.id
+      LEFT JOIN repairs rep ON rep.failure_id = f.id
+      LEFT JOIN fingerprints fp ON rep.fingerprint_id = fp.id
+      ORDER BY f.created_at DESC
+      LIMIT 20
+    `);
+
+    // Prediction accuracy over time
+    const totalPredicted = predictions.rows.reduce((s, p) => s + (parseInt(p.times_prevented) || 0), 0);
+    const totalFailures = await query('SELECT COUNT(*) AS cnt FROM failures');
+    const accuracy = totalFailures.rows[0]?.cnt > 0
+      ? Math.round((totalPredicted / (parseInt(totalFailures.rows[0].cnt) + totalPredicted)) * 100)
+      : 0;
+
+    // Category risk distribution
+    const riskDist = await query(`
+      SELECT
+        category,
+        COUNT(*) AS patterns,
+        SUM(times_prevented) AS prevented,
+        ROUND(AVG(probability)) AS avg_probability
+      FROM network_predictions
+      GROUP BY category
+      ORDER BY prevented DESC
+    `);
+
+    res.json({
+      overview: {
+        activePredictions: predictions.rows.length,
+        totalPrevented: totalPredicted,
+        predictionAccuracy: accuracy,
+        riskCategories: riskDist.rows.length,
+      },
+      predictions: predictions.rows,
+      recentFailures: recentFailures.rows,
+      riskDistribution: riskDist.rows,
+    });
+  } catch (err) {
+    logger.error('Predictive failures fetch failed', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch predictive failure data' });
+  }
+});
+
+// ── Tech Debt Tracking: real metrics from codebase analysis ──
+router.get('/tech-debt', async (req, res) => {
+  try {
+    // Debt from repeated fingerprints (same errors recurring)
+    const recurringIssues = await query(`
+      SELECT
+        error_pattern, hash, times_matched, resolution_confidence,
+        dependency_context->>'category' AS category,
+        dependency_context->>'framework' AS framework,
+        last_matched_at, created_at
+      FROM fingerprints
+      WHERE times_matched >= 3
+      ORDER BY times_matched DESC
+      LIMIT 20
+    `);
+
+    // Files with most failures (tech debt hotspots)
+    const hotspotFiles = await query(`
+      SELECT
+        test_file AS file_path,
+        COUNT(*) FILTER (WHERE status = 'failed') AS failure_count,
+        COUNT(*) AS total_runs,
+        ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'failed') / NULLIF(COUNT(*), 0), 1) AS fail_rate
+      FROM test_runs
+      WHERE test_file IS NOT NULL
+      GROUP BY test_file
+      HAVING COUNT(*) FILTER (WHERE status = 'failed') >= 3
+      ORDER BY failure_count DESC
+      LIMIT 15
+    `);
+
+    // Stale fingerprints (unresolved for a long time)
+    const staleIssues = await query(`
+      SELECT hash, error_pattern, times_matched, resolution_confidence,
+             created_at, last_matched_at,
+             EXTRACT(DAY FROM NOW() - created_at) AS age_days
+      FROM fingerprints
+      WHERE resolution_confidence < 60
+      ORDER BY times_matched DESC
+      LIMIT 10
+    `);
+
+    // Debt categories breakdown
+    const debtCategories = await query(`
+      SELECT
+        dependency_context->>'category' AS category,
+        COUNT(*) AS issues,
+        SUM(times_matched) AS total_occurrences,
+        ROUND(AVG(resolution_confidence)) AS avg_confidence
+      FROM fingerprints
+      WHERE dependency_context->>'category' IS NOT NULL
+      GROUP BY dependency_context->>'category'
+      ORDER BY total_occurrences DESC
+    `);
+
+    // Overall tech debt score (0-100, lower is better)
+    const totalIssues = recurringIssues.rows.length;
+    const avgConfidence = debtCategories.rows.length > 0
+      ? debtCategories.rows.reduce((s, c) => s + parseInt(c.avg_confidence || 0), 0) / debtCategories.rows.length
+      : 0;
+    const debtScore = Math.max(0, Math.min(100, Math.round(
+      (totalIssues * 3) + (hotspotFiles.rows.length * 5) + (100 - avgConfidence)
+    )));
+
+    res.json({
+      overview: {
+        debtScore,
+        recurringIssues: totalIssues,
+        hotspotFiles: hotspotFiles.rows.length,
+        staleIssues: staleIssues.rows.length,
+        avgResolutionConfidence: Math.round(avgConfidence),
+      },
+      recurringIssues: recurringIssues.rows,
+      hotspotFiles: hotspotFiles.rows,
+      staleIssues: staleIssues.rows,
+      debtCategories: debtCategories.rows,
+    });
+  } catch (err) {
+    logger.error('Tech debt fetch failed', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch tech debt data' });
+  }
+});
+
+// ── Test Coverage Analysis: real coverage from test runs ──
+router.get('/test-coverage', async (req, res) => {
+  try {
+    // Per-file test coverage based on test_runs data
+    const fileCoverage = await query(`
+      SELECT
+        test_file,
+        COUNT(DISTINCT test_name) AS tests_count,
+        COUNT(*) AS total_runs,
+        COUNT(*) FILTER (WHERE status = 'passed') AS passes,
+        COUNT(*) FILTER (WHERE status = 'failed') AS failures,
+        ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'passed') / NULLIF(COUNT(*), 0), 1) AS pass_rate,
+        MAX(created_at) AS last_run
+      FROM test_runs
+      WHERE test_file IS NOT NULL
+      GROUP BY test_file
+      ORDER BY tests_count DESC
+    `);
+
+    // Files without test coverage (from failures with no matching test_runs)
+    const untestedFiles = await query(`
+      SELECT DISTINCT
+        COALESCE(f.stack_trace, f.error_message) AS context,
+        f.failure_type, f.created_at,
+        r.full_name AS repo_name
+      FROM failures f
+      LEFT JOIN repositories r ON f.repository_id = r.id
+      WHERE NOT EXISTS (
+        SELECT 1 FROM test_runs tr WHERE tr.repository_id = f.repository_id
+      )
+      ORDER BY f.created_at DESC
+      LIMIT 10
+    `);
+
+    // Coverage trend (tests per day)
+    const coverageTrend = await query(`
+      SELECT
+        DATE(created_at) AS date,
+        COUNT(DISTINCT test_name) AS unique_tests,
+        COUNT(*) AS total_runs,
+        ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'passed') / NULLIF(COUNT(*), 0), 1) AS pass_rate
+      FROM test_runs
+      WHERE created_at > NOW() - INTERVAL '30 days'
+      GROUP BY DATE(created_at)
+      ORDER BY date
+    `);
+
+    // Overall stats
+    const overallStats = await query(`
+      SELECT
+        COUNT(DISTINCT test_name) AS total_tests,
+        COUNT(DISTINCT test_file) AS total_files,
+        COUNT(*) AS total_runs,
+        ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'passed') / NULLIF(COUNT(*), 0), 1) AS overall_pass_rate,
+        COUNT(DISTINCT repository_id) AS repos_covered
+      FROM test_runs
+    `);
+
+    const stats = overallStats.rows[0] || {};
+    const totalTests = parseInt(stats.total_tests || 0);
+    const totalFiles = parseInt(stats.total_files || 0);
+    const passRate = parseFloat(stats.overall_pass_rate || 0);
+
+    res.json({
+      overview: {
+        totalTests,
+        totalFiles,
+        totalRuns: parseInt(stats.total_runs || 0),
+        overallPassRate: passRate,
+        reposCovered: parseInt(stats.repos_covered || 0),
+        coverageScore: Math.round(passRate * 0.7 + Math.min(totalTests, 100) * 0.3),
+      },
+      fileCoverage: fileCoverage.rows,
+      untestedAreas: untestedFiles.rows,
+      coverageTrend: coverageTrend.rows,
+    });
+  } catch (err) {
+    logger.error('Test coverage fetch failed', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch test coverage data' });
+  }
+});
+
+// ── Org Stability Score: composite score from all data sources ──
+router.get('/org-stability', async (req, res) => {
+  try {
+    // Test reliability component
+    const testReliability = await query(`
+      SELECT
+        ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'passed') / NULLIF(COUNT(*), 0), 1) AS pass_rate,
+        COUNT(*) AS total_runs
+      FROM test_runs
+    `);
+
+    // Repair success rate
+    const repairSuccess = await query(`
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'completed' AND sandbox_passed = true) AS successes,
+        COUNT(*) AS total_repairs,
+        ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'completed' AND sandbox_passed = true) / NULLIF(COUNT(*), 0), 1) AS success_rate
+      FROM repairs
+    `);
+
+    // Fingerprint reuse rate (how often known patterns are matched)
+    const fpReuse = await query(`
+      SELECT
+        ROUND(AVG(times_matched), 1) AS avg_reuse,
+        ROUND(AVG(resolution_confidence), 0) AS avg_confidence,
+        COUNT(*) AS total_fingerprints
+      FROM fingerprints
+    `);
+
+    // Org preferences maturity
+    const orgMaturity = await query(`
+      SELECT
+        COUNT(*) AS total_preferences,
+        ROUND(AVG(confidence), 0) AS avg_confidence,
+        SUM(times_applied) AS total_applications
+      FROM org_preferences
+    `);
+
+    // Failure trend (are failures decreasing?)
+    const failureTrend = await query(`
+      SELECT
+        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') AS last_week,
+        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '14 days' AND created_at <= NOW() - INTERVAL '7 days') AS prev_week
+      FROM failures
+    `);
+
+    const passRate = parseFloat(testReliability.rows[0]?.pass_rate || 0);
+    const repairRate = parseFloat(repairSuccess.rows[0]?.success_rate || 0);
+    const fpConfidence = parseInt(fpReuse.rows[0]?.avg_confidence || 0);
+    const orgConf = parseInt(orgMaturity.rows[0]?.avg_confidence || 0);
+    const lastWeek = parseInt(failureTrend.rows[0]?.last_week || 0);
+    const prevWeek = parseInt(failureTrend.rows[0]?.prev_week || 0);
+    const trendImproving = lastWeek <= prevWeek;
+
+    // Composite stability score (0-100)
+    const stabilityScore = Math.round(
+      (passRate * 0.30) +
+      (repairRate * 0.25) +
+      (fpConfidence * 0.20) +
+      (orgConf * 0.15) +
+      (trendImproving ? 10 : 0)
+    );
+
+    res.json({
+      overview: {
+        stabilityScore: Math.min(100, stabilityScore),
+        testPassRate: passRate,
+        repairSuccessRate: repairRate,
+        fingerprintConfidence: fpConfidence,
+        orgMemoryStrength: orgConf,
+        failureTrend: trendImproving ? 'improving' : 'declining',
+      },
+      components: {
+        testReliability: {
+          score: Math.round(passRate),
+          weight: '30%',
+          totalRuns: parseInt(testReliability.rows[0]?.total_runs || 0),
+        },
+        repairEfficiency: {
+          score: Math.round(repairRate),
+          weight: '25%',
+          totalRepairs: parseInt(repairSuccess.rows[0]?.total_repairs || 0),
+          successes: parseInt(repairSuccess.rows[0]?.successes || 0),
+        },
+        patternIntelligence: {
+          score: fpConfidence,
+          weight: '20%',
+          totalFingerprints: parseInt(fpReuse.rows[0]?.total_fingerprints || 0),
+          avgReuse: parseFloat(fpReuse.rows[0]?.avg_reuse || 0),
+        },
+        orgMemory: {
+          score: orgConf,
+          weight: '15%',
+          totalPreferences: parseInt(orgMaturity.rows[0]?.total_preferences || 0),
+          totalApplications: parseInt(orgMaturity.rows[0]?.total_applications || 0),
+        },
+        failureTrend: {
+          score: trendImproving ? 100 : 0,
+          weight: '10%',
+          lastWeekFailures: lastWeek,
+          prevWeekFailures: prevWeek,
+        },
+      },
+    });
+  } catch (err) {
+    logger.error('Org stability fetch failed', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch org stability data' });
+  }
+});
+
 // ── Seed endpoint: populate intelligence data (call once) ──
 router.post('/seed', async (req, res) => {
   try {

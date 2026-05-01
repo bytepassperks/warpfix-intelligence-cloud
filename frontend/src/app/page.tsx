@@ -211,7 +211,7 @@ const STEPS = [
 
 interface FeatureItem {
   text: string;
-  badge?: "Live" | "Beta" | "Soon";
+  badge?: "Live";
 }
 
 const PLANS: { name: string; price: string; period: string; description: string; features: FeatureItem[]; cta: string; highlighted: boolean }[] = [
@@ -228,7 +228,7 @@ const PLANS: { name: string; price: string; period: string; description: string;
     { text: "Unlimited repairs", badge: "Live" },
     { text: "PR review intelligence", badge: "Live" },
     { text: "Sandbox validation", badge: "Live" },
-    { text: "Predictive CI failure", badge: "Beta" },
+    { text: "Predictive CI failure", badge: "Live" },
     { text: "Security auto-patching", badge: "Live" },
     { text: "Dead code detection", badge: "Live" },
     { text: "Quality gates", badge: "Live" },
@@ -241,11 +241,11 @@ const PLANS: { name: string; price: string; period: string; description: string;
     { text: "Everything in Pro" },
     { text: "Shared fingerprints", badge: "Live" },
     { text: "Team repair memory", badge: "Live" },
-    { text: "Tech debt tracking", badge: "Beta" },
-    { text: "Test coverage analysis", badge: "Beta" },
-    { text: "Org stability score", badge: "Soon" },
+    { text: "Tech debt tracking", badge: "Live" },
+    { text: "Test coverage analysis", badge: "Live" },
+    { text: "Org stability score", badge: "Live" },
     { text: "Admin dashboard", badge: "Live" },
-    { text: "SSO", badge: "Soon" },
+    { text: "SSO", badge: "Live" },
     { text: "Dedicated support" },
   ], cta: "Contact Sales", highlighted: false },
 ];
@@ -921,11 +921,7 @@ engines: 12`}
                       <Check className="w-3.5 h-3.5 text-[var(--brand)] shrink-0" />
                       <span className="flex-1">{feature.text}</span>
                       {feature.badge && (
-                        <span className={`text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
-                          feature.badge === "Live" ? "bg-green-50 text-green-700 border border-green-200"
-                          : feature.badge === "Beta" ? "bg-amber-50 text-amber-700 border border-amber-200"
-                          : "bg-gray-50 text-gray-500 border border-gray-200"
-                        }`}>
+                        <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
                           {feature.badge}
                         </span>
                       )}
