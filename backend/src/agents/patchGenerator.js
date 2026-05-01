@@ -202,15 +202,15 @@ function extractDiff(llmOutput) {
 function validatePatchSafety(patch) {
   const reasons = [];
 
-  // For JSON format, only validate the file paths not content
+  // For JSON format, extract content for safety checks
   let patchToCheck = patch;
   let filePaths = [];
   try {
     const parsed = JSON.parse(patch);
     if (parsed._warpfix_format === 'file_blocks' && Array.isArray(parsed.files)) {
       filePaths = parsed.files.map(f => f.path);
-      // Only check diff-like content, not full file source
-      patchToCheck = parsed.files.map(f => f.path).join('\n');
+      // Check file content for forbidden patterns too, not just paths
+      patchToCheck = parsed.files.map(f => `${f.path}\n${f.content || ''}`).join('\n');
     }
   } catch {
     // Not JSON — check as diff
@@ -218,19 +218,18 @@ function validatePatchSafety(patch) {
 
   const lines = patchToCheck.split('\n');
   const changedLines = lines.filter(l => l.startsWith('+') || l.startsWith('-')).length;
-  if (changedLines > PATCH_SAFETY_RULES.maxDiffLines) {
+  if (!filePaths.length && changedLines > PATCH_SAFETY_RULES.maxDiffLines) {
     reasons.push(`Diff too large: ${changedLines} lines (max ${PATCH_SAFETY_RULES.maxDiffLines})`);
   }
 
-  // Only check forbidden patterns against added lines in diff format, not source content
-  if (!filePaths.length) {
-    const addedLines = lines.filter(l => l.startsWith('+')).join('\n');
-    for (const pattern of PATCH_SAFETY_RULES.forbiddenPatterns) {
-      // Reset lastIndex for patterns with /g flag
-      pattern.lastIndex = 0;
-      if (pattern.test(addedLines)) {
-        reasons.push(`Forbidden pattern detected: ${pattern}`);
-      }
+  // Check forbidden patterns against all content (both diff and file_blocks format)
+  const contentToCheck = filePaths.length
+    ? patchToCheck
+    : lines.filter(l => l.startsWith('+')).join('\n');
+  for (const pattern of PATCH_SAFETY_RULES.forbiddenPatterns) {
+    pattern.lastIndex = 0;
+    if (pattern.test(contentToCheck)) {
+      reasons.push(`Forbidden pattern detected: ${pattern}`);
     }
   }
 

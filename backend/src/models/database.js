@@ -354,17 +354,20 @@ async function runMigrations() {
       END $$;
     `);
 
-    // Seed default super admin if not exists
-    const bcrypt = require('bcryptjs');
-    const adminEmail = 'harryroger798@gmail.com';
-    const existing = await pool.query('SELECT id FROM admins WHERE email = $1', [adminEmail]);
-    if (existing.rows.length === 0) {
-      const hash = await bcrypt.hash('007JamesBond@@', 12);
-      await pool.query(
-        "INSERT INTO admins (email, password_hash, name, role) VALUES ($1, $2, $3, $4)",
-        [adminEmail, hash, 'Super Admin', 'super_admin']
-      );
-      logger.info('Default super admin seeded');
+    // Seed default super admin if not exists (uses env vars for credentials)
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (adminEmail && adminPassword) {
+      const bcrypt = require('bcryptjs');
+      const existing = await pool.query('SELECT id FROM admins WHERE email = $1', [adminEmail]);
+      if (existing.rows.length === 0) {
+        const hash = await bcrypt.hash(adminPassword, 12);
+        await pool.query(
+          "INSERT INTO admins (email, password_hash, name, role) VALUES ($1, $2, $3, $4)",
+          [adminEmail, hash, 'Super Admin', 'super_admin']
+        );
+        logger.info('Default super admin seeded');
+      }
     }
 
     logger.info('Database migrations completed successfully');

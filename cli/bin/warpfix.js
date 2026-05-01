@@ -53,9 +53,12 @@ function getGitContext() {
     catch { return null; }
   };
 
+  const rawUrl = run('git remote get-url origin') || '';
+  const safeUrl = rawUrl.replace(/\/\/[^@]+@/, '//');
+
   return {
     git_branch: run('git branch --show-current'),
-    repo_url: run('git remote get-url origin'),
+    repo_url: safeUrl,
     language: fs.existsSync('package.json') ? 'node'
       : fs.existsSync('requirements.txt') ? 'python'
       : fs.existsSync('go.mod') ? 'go'

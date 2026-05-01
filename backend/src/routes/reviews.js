@@ -60,8 +60,8 @@ router.get('/:id', requireAuth, async (req, res) => {
       `SELECT r.*, repo.full_name as repo_name 
        FROM reviews r
        LEFT JOIN repositories repo ON repo.id = r.repository_id
-       WHERE r.id = $1`,
-      [req.params.id]
+       WHERE r.id = $1 AND r.user_id = $2`,
+      [req.params.id, req.user.id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Review not found' });

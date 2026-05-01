@@ -27,7 +27,8 @@ router.get('/public-stats', async (req, res) => {
          FROM repairs`
       ),
       query(
-        `SELECT r.*, repo.full_name as repo_name
+        `SELECT r.id, r.status, r.confidence_score, r.sandbox_passed, r.pr_url, r.pr_number,
+                r.engine_used, r.patch_summary, r.created_at, repo.full_name as repo_name
          FROM repairs r
          LEFT JOIN repositories repo ON repo.id = r.repository_id
          ORDER BY r.created_at DESC LIMIT 20`

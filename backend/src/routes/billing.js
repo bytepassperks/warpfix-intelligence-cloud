@@ -96,8 +96,12 @@ router.post('/webhook/dodo', express.raw({ type: 'application/json' }), async (r
       if (!signature) {
         return res.status(401).json({ error: 'Missing webhook signature' });
       }
-      const bodyStr = Buffer.isBuffer(req.body) ? req.body.toString() : req.body;
+      const bodyStr = Buffer.isBuffer(req.body) ? req.body.toString() : JSON.stringify(req.body);
       const expected = crypto.createHmac('sha256', secret).update(bodyStr).digest('hex');
+      // Validate signature is valid hex before comparing
+      if (!/^[0-9a-f]+$/i.test(signature) || signature.length !== expected.length) {
+        return res.status(401).json({ error: 'Invalid webhook signature format' });
+      }
       const sigBuf = Buffer.from(signature, 'hex');
       const expBuf = Buffer.from(expected, 'hex');
       if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {

@@ -50,7 +50,13 @@ app.use(cors({
   credentials: true,
 }));
 app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
-app.use(express.json());
+app.use((req, res, next) => {
+  // Skip JSON parsing for webhook routes that need raw body for signature verification
+  if (req.path === '/api/billing/webhook/dodo' || req.path === '/webhooks/github') {
+    return next();
+  }
+  express.json()(req, res, next);
+});
 app.use(express.urlencoded({ extended: true }));
 
 // Session with PostgreSQL store for persistence across restarts

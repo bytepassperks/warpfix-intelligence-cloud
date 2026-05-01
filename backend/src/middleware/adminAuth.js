@@ -53,4 +53,4 @@ function requireSuperAdmin(req, res, next) {
   next();
 }
 
-module.exports = { hashPassword, verifyPassword, generateToken, requireAdmin, requireSuperAdmin, JWT_SECRET: ADMIN_SECRET };
+module.exports = { hashPassword, verifyPassword, generateToken, requireAdmin, requireSuperAdmin };

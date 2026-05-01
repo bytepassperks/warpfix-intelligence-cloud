@@ -46,6 +46,14 @@ async function createPullRequest({ patch, repository, installation_id, classific
       logger.warn('No committable source files in patch (only test/workflow files)', {
         allFiles: files.map(f => f.path),
       });
+      // Clean up orphaned branch
+      try {
+        await octokit.request('DELETE /repos/{owner}/{repo}/git/refs/{ref}', {
+          owner, repo, ref: `heads/${fixBranch}`,
+        });
+      } catch (branchErr) {
+        logger.warn('Failed to delete orphaned branch', { branch: fixBranch, error: branchErr.message });
+      }
       return { url: null, number: null };
     }
 
