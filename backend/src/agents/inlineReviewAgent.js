@@ -93,28 +93,69 @@ function formatInlineComment(comment) {
   return body;
 }
 
-async function postInlineComments(octokit, owner, repo, prNumber, commitSha, comments) {
-  const posted = [];
+async function postInlineComments(octokit, owner, repo, prNumber, commitSha, comments, { summaryBody = null, event = 'COMMENT' } = {}) {
+  const reviewComments = [];
   for (const comment of comments.slice(0, 20)) {
     try {
       const body = formatInlineComment(comment);
-      await octokit.request('POST /repos/{owner}/{repo}/pulls/{pull_number}/comments', {
-        owner, repo,
-        pull_number: prNumber,
-        body,
-        commit_id: commitSha,
+      reviewComments.push({
         path: comment.file,
         line: comment.line,
         side: 'RIGHT',
+        body,
       });
-      posted.push(comment);
     } catch (err) {
-      logger.warn('Failed to post inline comment', {
+      logger.warn('Failed to format inline comment', {
         file: comment.file, line: comment.line, error: err.message,
       });
     }
   }
-  return posted;
+
+  if (reviewComments.length === 0 && !summaryBody) return [];
+
+  try {
+    await octokit.request('POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews', {
+      owner, repo,
+      pull_number: prNumber,
+      commit_id: commitSha,
+      body: summaryBody || '',
+      event,
+      comments: reviewComments,
+    });
+    logger.info('Posted batched review', {
+      repo: `${owner}/${repo}`, pr: prNumber,
+      inlineCount: reviewComments.length, hasSummary: !!summaryBody,
+    });
+    return comments.slice(0, 20);
+  } catch (err) {
+    logger.error('Failed to post batched review, falling back to individual comments', {
+      error: err.message, commentCount: reviewComments.length,
+    });
+    // Fallback: post summary as issue comment, then inline one by one
+    const posted = [];
+    if (summaryBody) {
+      try {
+        await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
+          owner, repo, issue_number: prNumber, body: summaryBody,
+        });
+      } catch (e) {
+        logger.error('Failed to post summary comment fallback', { error: e.message });
+      }
+    }
+    for (const rc of reviewComments) {
+      try {
+        await octokit.request('POST /repos/{owner}/{repo}/pulls/{pull_number}/comments', {
+          owner, repo, pull_number: prNumber,
+          body: rc.body, commit_id: commitSha,
+          path: rc.path, line: rc.line, side: rc.side,
+        });
+        posted.push(rc);
+      } catch (e) {
+        logger.warn('Fallback inline comment failed', { path: rc.path, line: rc.line, error: e.message });
+      }
+    }
+    return posted;
+  }
 }
 
 module.exports = { generateInlineComments, formatInlineComment, postInlineComments, SEVERITY_LABELS };

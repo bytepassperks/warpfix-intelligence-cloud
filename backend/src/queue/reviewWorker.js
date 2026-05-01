@@ -158,22 +158,16 @@ async function processReviewJob(job) {
     const gateReport = formatQualityGateReport(qualityGates);
     if (gateReport) summaryComment += '\n\n' + gateReport;
 
-    // Post the summary comment
-    await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
-      owner, repo, issue_number: pull_request.number, body: summaryComment,
-    });
-
-    // Post onboarding guide if applicable
+    // Append onboarding guide to summary if applicable
     if (onboardingGuide) {
-      await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
-        owner, repo, issue_number: pull_request.number, body: onboardingGuide,
-      });
+      summaryComment += '\n\n' + onboardingGuide;
     }
 
-    // Step 11: Post inline comments
+    // Step 11: Post summary + inline comments as a single batched review
     job.updateProgress(90);
     const postedComments = await postInlineComments(
-      octokit, owner, repo, pull_request.number, pull_request.head_sha, verifiedComments
+      octokit, owner, repo, pull_request.number, pull_request.head_sha, verifiedComments,
+      { summaryBody: summaryComment, event: 'COMMENT' }
     );
 
     // Step 12: Store review record

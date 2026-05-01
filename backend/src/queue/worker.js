@@ -245,24 +245,19 @@ async function processReviewJob(job) {
     job.updateProgress(40);
     const review = await generatePRReview({ prData, files, repoConfig: null, reviewProfile: 'assertive' });
 
-    // Post review summary as PR comment
+    // Post review summary + inline comments as a single batched review
     job.updateProgress(60);
     const reviewComment = formatReviewComment(review, prData);
-    await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
-      owner, repo, issue_number: prNumber,
-      body: reviewComment,
-    });
 
-    // Generate and post inline comments
     job.updateProgress(75);
     const inlineComments = await generateInlineComments({
       files, prData, repoConfig: null, reviewProfile: 'assertive', learnings: [],
     });
 
-    if (inlineComments.length > 0) {
-      job.updateProgress(85);
-      await postInlineComments(octokit, owner, repo, prNumber, prData.head.sha, inlineComments);
-    }
+    job.updateProgress(85);
+    await postInlineComments(octokit, owner, repo, prNumber, prData.head.sha, inlineComments, {
+      summaryBody: reviewComment, event: 'COMMENT',
+    });
 
     // Store review in database
     const duration = Date.now() - startTime;
