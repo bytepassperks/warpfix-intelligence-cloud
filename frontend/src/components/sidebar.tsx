@@ -29,8 +29,11 @@ import {
   Bug,
   ShieldAlert,
   Activity,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 const NAV_SECTIONS = [
   {
@@ -92,11 +95,10 @@ const NAV_SECTIONS = [
   },
 ];
 
-export function Sidebar() {
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
-    <aside className="border-r border-[var(--border-default)] bg-white flex-col h-screen sticky top-0 overflow-hidden z-30 hidden md:flex w-[256px]">
-      {/* Logo */}
+    <>
       <div className="h-14 flex items-center px-3 border-b border-[var(--border-default)] shrink-0">
         <Link href="/" className="flex items-center gap-2.5 min-w-0">
           <Image src="/logo-warpfix.png" alt="WarpFix" width={40} height={40} className="shrink-0" />
@@ -105,8 +107,6 @@ export function Sidebar() {
           </span>
         </Link>
       </div>
-
-      {/* Navigation */}
       <nav aria-label="Main navigation" className="flex-1 overflow-y-auto py-3 px-2">
         {NAV_SECTIONS.map((section) => (
           <div key={section.title} className="mb-4">
@@ -122,6 +122,7 @@ export function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={onNavigate}
                     className={cn(
                       "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all duration-150",
                       isActive
@@ -138,6 +139,58 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  return (
+    <>
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="fixed top-3.5 left-3 z-50 md:hidden p-1.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
+        aria-label="Open menu"
+      >
+        <Menu className="w-5 h-5 text-[var(--text-secondary)]" />
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-40 md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile sidebar */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 w-[280px] bg-white border-r border-[var(--border-default)] flex flex-col z-50 md:hidden transition-transform duration-200",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="absolute top-3.5 right-3 p-1.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
+          aria-label="Close menu"
+        >
+          <X className="w-5 h-5 text-[var(--text-secondary)]" />
+        </button>
+        <SidebarContent onNavigate={() => setMobileOpen(false)} />
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside className="border-r border-[var(--border-default)] bg-white flex-col h-screen sticky top-0 overflow-hidden z-30 hidden md:flex w-[256px]">
+        <SidebarContent />
+      </aside>
+    </>
   );
 }
