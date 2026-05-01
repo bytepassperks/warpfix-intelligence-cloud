@@ -61,8 +61,8 @@ WarpFix monitors your GitHub Actions workflows. When a CI pipeline fails, WarpFi
 
 ## Links
 
-- Website: https://warpfix-frontend.onrender.com
-- API: https://warpfix-api.onrender.com
+- Website: https://warpfix.org
+- API: https://api.warpfix.org
 - GitHub: https://github.com/bytepassperks/warpfix-intelligence-cloud
 
 ## FAQ

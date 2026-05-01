@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = "https://warpfix-frontend.onrender.com";
+const BASE_URL = "https://warpfix.org";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

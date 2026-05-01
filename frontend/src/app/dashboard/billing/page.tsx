@@ -128,7 +128,7 @@ export default function BillingPage() {
             </div>
             <p className="text-[13px] text-[var(--text-secondary)] mb-5">{plan.description}</p>
             <Link
-              href="https://warpfix-api.onrender.com/auth/github"
+              href="https://api.warpfix.org/auth/github"
               className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-[13px] font-medium transition-colors ${
                 plan.highlighted
                   ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]"

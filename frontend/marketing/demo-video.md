@@ -60,5 +60,5 @@
 ## Production Notes
 - Screenshots captured via `scripts/capture-screenshots.js`
 - Terminal recordings via Warp's built-in recording
-- Dashboard footage from live production at warpfix-frontend.onrender.com
+- Dashboard footage from live production at warpfix.org
 - All animations use Framer Motion (already in codebase)

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAdmin } from "../layout";
 import { Clock } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "https://warpfix-api.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://api.warpfix.org";
 
 interface Activity {
   id: string;

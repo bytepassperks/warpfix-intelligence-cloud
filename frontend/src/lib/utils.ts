@@ -26,4 +26,4 @@ export function formatConfidence(score: number): { label: string; color: string 
   return { label: "Low", color: "text-red-600 bg-red-50" };
 }
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://warpfix-api.onrender.com";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.warpfix.org";

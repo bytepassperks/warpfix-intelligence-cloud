@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAdmin } from "../layout";
 import { Search, Plus, ChevronDown, RotateCcw, Trash2, Edit2, X } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "https://warpfix-api.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://api.warpfix.org";
 
 interface User {
   id: string;

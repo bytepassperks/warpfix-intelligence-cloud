@@ -249,13 +249,13 @@ A: Yes. The free plan includes 3 repairs per month, 1 repository, error classifi
 
 ## Links
 
-- Website: https://warpfix-frontend.onrender.com
-- API: https://warpfix-api.onrender.com
+- Website: https://warpfix.org
+- API: https://api.warpfix.org
 - GitHub: https://github.com/bytepassperks/warpfix-intelligence-cloud
-- Documentation: https://warpfix-frontend.onrender.com/#features
-- Pricing: https://warpfix-frontend.onrender.com/#pricing
-- FAQ: https://warpfix-frontend.onrender.com/#faq
-- Status: https://warpfix-api.onrender.com/health
+- Documentation: https://warpfix.org/#features
+- Pricing: https://warpfix.org/#pricing
+- FAQ: https://warpfix.org/#faq
+- Status: https://api.warpfix.org/health
 
 ## Contact
 

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const BASE_URL = "https://warpfix-frontend.onrender.com";
+const BASE_URL = "https://warpfix.org";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -515,8 +515,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-        <link rel="dns-prefetch" href="https://warpfix-api.onrender.com" />
-        <link rel="preconnect" href="https://warpfix-api.onrender.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://api.warpfix.org" />
+        <link rel="preconnect" href="https://api.warpfix.org" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://github.com" />
         {/* Favicons — complete set */}
         <link rel="icon" href="/favicon.ico" sizes="any" />

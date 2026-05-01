@@ -9,7 +9,7 @@ import {
   LogOut, ChevronDown, Settings,
 } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "https://warpfix-api.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://api.warpfix.org";
 
 interface Admin {
   id: string;

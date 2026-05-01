@@ -259,11 +259,11 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="flex items-center gap-3">
-            <Link href="https://warpfix-api.onrender.com/auth/github" className="text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+            <Link href="https://api.warpfix.org/auth/github" className="text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
               Sign in
             </Link>
             <Link
-              href="https://warpfix-api.onrender.com/auth/github"
+              href="https://api.warpfix.org/auth/github"
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--brand)] text-white rounded-lg text-[13px] font-medium hover:bg-[var(--brand-hover)] transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
             >
               <GitHubIcon className="w-3.5 h-3.5" />
@@ -355,7 +355,7 @@ engines: 12`}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8"
           >
             <Link
-              href="https://warpfix-api.onrender.com/auth/github"
+              href="https://api.warpfix.org/auth/github"
               className="group flex items-center gap-2 px-6 py-2.5 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand-hover)] transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
             >
               Start fixing for free
@@ -649,7 +649,7 @@ engines: 12`}
                 </div>
                 <p className="text-[13px] text-[var(--text-secondary)] mb-5">{plan.description}</p>
                 <Link
-                  href="https://warpfix-api.onrender.com/auth/github"
+                  href="https://api.warpfix.org/auth/github"
                   className={`block text-center py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 active:scale-[0.98] ${
                     plan.highlighted
                       ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] shadow-sm hover:shadow-md"
@@ -755,7 +755,7 @@ engines: 12`}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <Link
-              href="https://warpfix-api.onrender.com/auth/github"
+              href="https://api.warpfix.org/auth/github"
               className="group inline-flex items-center gap-2 px-6 py-3 bg-white text-[var(--bg-inverse)] rounded-lg font-medium hover:bg-neutral-100 transition-all duration-200 active:scale-[0.98]"
             >
               <GitHubIcon className="w-4 h-4" />

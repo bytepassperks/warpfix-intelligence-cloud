@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAdmin } from "../layout";
 import { Plus, Shield, Trash2, X, Key } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "https://warpfix-api.onrender.com";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://api.warpfix.org";
 
 interface AdminUser {
   id: string;
