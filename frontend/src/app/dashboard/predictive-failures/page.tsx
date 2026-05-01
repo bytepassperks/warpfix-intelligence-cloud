@@ -109,12 +109,12 @@ export default function PredictiveFailuresPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 p-1 bg-[var(--bg-tertiary)] rounded-lg w-fit mb-6">
+      <div className="flex items-center gap-1 p-1 bg-[var(--bg-tertiary)] rounded-lg w-fit max-w-full overflow-x-auto mb-6">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all whitespace-nowrap ${
               activeTab === tab
                 ? "bg-white shadow-sm text-[var(--text-primary)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

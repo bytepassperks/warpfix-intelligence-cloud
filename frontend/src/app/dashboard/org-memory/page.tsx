@@ -114,9 +114,9 @@ export default function OrgMemoryPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
       <motion.div initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.06 } } }}>
-        <motion.div variants={fadeUp} custom={0} className="flex items-center justify-between">
+        <motion.div variants={fadeUp} custom={0} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
               <Brain className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
@@ -126,12 +126,12 @@ export default function OrgMemoryPage() {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-[var(--border-default)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors">
+          <div className="flex gap-2 shrink-0">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-[var(--border-default)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors whitespace-nowrap">
               <Download className="w-3.5 h-3.5" />
-              Export .warpfix-memory.yaml
+              Export
             </button>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-[var(--border-default)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-[var(--border-default)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors whitespace-nowrap">
               <Upload className="w-3.5 h-3.5" />
               Import
             </button>
@@ -171,14 +171,14 @@ export default function OrgMemoryPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--border-default)]">
+      <div className="flex gap-1 border-b border-[var(--border-default)] overflow-x-auto">
         {[
           { id: "preferences" as const, label: "Learned Preferences" },
           { id: "imports" as const, label: "Config Imports" },
           { id: "feedback" as const, label: "Feedback Log" },
         ].map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab.id
                 ? "border-indigo-600 text-indigo-600"
                 : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

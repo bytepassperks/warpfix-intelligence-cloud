@@ -113,12 +113,12 @@ export default function TestCoveragePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 p-1 bg-[var(--bg-tertiary)] rounded-lg w-fit mb-6">
+      <div className="flex items-center gap-1 p-1 bg-[var(--bg-tertiary)] rounded-lg w-fit max-w-full overflow-x-auto mb-6">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all whitespace-nowrap ${
               activeTab === tab
                 ? "bg-white shadow-sm text-[var(--text-primary)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -130,8 +130,8 @@ export default function TestCoveragePage() {
       </div>
 
       {activeTab === "File Coverage" && (
-        <div className="bg-white rounded-lg border border-[var(--border-default)] overflow-hidden">
-          <table className="w-full text-[13px]">
+        <div className="bg-white rounded-lg border border-[var(--border-default)] overflow-x-auto">
+          <table className="w-full text-[13px] min-w-[600px]">
             <thead className="bg-[var(--bg-secondary)]">
               <tr>
                 <th className="text-left p-3 font-medium">Test File</th>
