@@ -26,9 +26,14 @@ async function lookupFingerprint(hash) {
 
 async function storeFingerprint(fingerprint, resolutionPatch, confidence) {
   try {
+    const depCtx = JSON.stringify({
+      framework: fingerprint.classificationType || 'unknown',
+      category: fingerprint.classificationType || 'unknown',
+    });
+
     const result = await query(
-      `INSERT INTO fingerprints (hash, error_pattern, resolution_patch, resolution_confidence)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO fingerprints (hash, error_pattern, dependency_context, resolution_patch, resolution_confidence)
+       VALUES ($1, $2, $3::jsonb, $4, $5)
        ON CONFLICT (hash) DO UPDATE SET
          resolution_patch = CASE
            WHEN EXCLUDED.resolution_confidence > fingerprints.resolution_confidence
@@ -36,10 +41,11 @@ async function storeFingerprint(fingerprint, resolutionPatch, confidence) {
            ELSE fingerprints.resolution_patch
          END,
          resolution_confidence = GREATEST(fingerprints.resolution_confidence, EXCLUDED.resolution_confidence),
+         dependency_context = COALESCE(fingerprints.dependency_context, EXCLUDED.dependency_context),
          times_matched = fingerprints.times_matched + 1,
          last_matched_at = NOW()
        RETURNING id`,
-      [fingerprint.hash, fingerprint.errorPattern, resolutionPatch, confidence]
+      [fingerprint.hash, fingerprint.errorPattern, depCtx, resolutionPatch, confidence]
     );
     return result.rows[0]?.id;
   } catch (err) {

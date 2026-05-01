@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { logger } = require('../utils/logger');
 const { enqueueRepairJob, enqueueReviewJob, enqueueChatJob } = require('../queue/producer');
 const { query } = require('../models/database');
+const { captureOrgPreference, detectPreferenceFromPREdit } = require('../agents/intelligenceGrowth');
 const router = express.Router();
 
 function verifyGitHubSignature(req, res, next) {
@@ -125,6 +126,45 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
         const pr = payload.pull_request;
         const repo = payload.repository;
         const installId = payload.installation?.id;
+
+        // Capture org preferences when a WarpFix PR is closed/merged with edits
+        if (payload.action === 'closed' && pr.merged && pr.head?.ref?.startsWith('warpfix/')) {
+          logger.info('WarpFix PR merged — checking for org preference signals', {
+            repo: repo.full_name, pr: pr.number,
+          });
+
+          let userId = null;
+          if (installId) {
+            const instResult = await query(
+              `SELECT u.id FROM installations i JOIN users u ON u.username = i.account_login WHERE i.installation_id = $1`,
+              [installId]
+            );
+            userId = instResult.rows[0]?.id || null;
+          }
+
+          if (userId) {
+            const repair = await query(
+              'SELECT patch_diff, engine_used FROM repairs WHERE pr_number = $1 ORDER BY created_at DESC LIMIT 1',
+              [pr.number]
+            );
+            if (repair.rows[0]) {
+              await detectPreferenceFromPREdit({
+                userId,
+                originalPatch: repair.rows[0].patch_diff,
+                mergedPatch: pr.body || '',
+                classification: { type: repair.rows[0].engine_used },
+              });
+            }
+
+            await captureOrgPreference({
+              userId,
+              category: 'Workflow',
+              rule: `Team merged WarpFix PR #${pr.number} — auto-repair accepted for ${repo.name}`,
+              source: 'pr_merge',
+              confidence: 60,
+            });
+          }
+        }
 
         if (payload.action === 'opened' || payload.action === 'synchronize') {
           // Skip warpfix's own PRs

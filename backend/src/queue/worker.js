@@ -18,6 +18,7 @@ const { getInstallationOctokit } = require('../services/github');
 const { generatePRReview, formatReviewComment } = require('../agents/reviewAgent');
 const { generateInlineComments, postInlineComments } = require('../agents/inlineReviewAgent');
 const { processMention } = require('../agents/chatAgent');
+const { recordTestResults, checkCrossRepoPattern, aggregateMonthlyStats } = require('../agents/intelligenceGrowth');
 
 async function processRepairJob(job) {
   const { jobId, type, repository, workflow_run, installation_id, user_id, context } = job.data;
@@ -132,12 +133,43 @@ async function processRepairJob(job) {
       prNumber = prResult.number;
     }
 
-    // Step 10: Store fingerprint only if PR was created successfully
+    // Step 10: Store fingerprint (always — grows the CI Failure Genome regardless of PR)
     let fingerprintId = null;
-    if (prUrl) {
+    try {
       fingerprintId = await storeFingerprint(fingerprint, patch, confidence.score);
-    } else {
-      logger.info('Skipping fingerprint storage (PR not created)');
+    } catch (fpErr) {
+      logger.debug('Fingerprint storage failed', { error: fpErr.message });
+    }
+
+    // Step 10b: Record test results from CI logs (auto-grows CI Brain data)
+    if (repoId && logData.rawLog) {
+      try {
+        await recordTestResults({
+          rawLog: logData.rawLog,
+          repoId,
+          branch: workflow_run?.head_branch,
+          commitSha: workflow_run?.head_sha,
+          workflowRunId: workflow_run?.id,
+        });
+      } catch (e) {
+        logger.debug('Test result recording failed', { error: e.message });
+      }
+    }
+
+    // Step 10c: Check cross-repo patterns (auto-grows Network Intelligence)
+    if (fingerprint?.hash) {
+      try {
+        await checkCrossRepoPattern(fingerprint.hash, classification);
+      } catch (e) {
+        logger.debug('Cross-repo pattern check failed', { error: e.message });
+      }
+    }
+
+    // Step 10d: Aggregate monthly genome stats
+    try {
+      await aggregateMonthlyStats();
+    } catch (e) {
+      logger.debug('Monthly stats aggregation failed', { error: e.message });
     }
 
     // Step 11: Store repair record
