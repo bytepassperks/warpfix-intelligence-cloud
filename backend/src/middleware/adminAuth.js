@@ -5,9 +5,9 @@ const { logger } = require('../utils/logger');
 
 const JWT_SECRET = process.env.ADMIN_JWT_SECRET;
 if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
-  throw new Error('ADMIN_JWT_SECRET must be set in production');
+  console.warn('WARNING: ADMIN_JWT_SECRET not set — generating ephemeral secret. Set ADMIN_JWT_SECRET for persistent admin sessions.');
 }
-const ADMIN_SECRET = JWT_SECRET || 'warpfix-admin-dev-only-secret';
+const ADMIN_SECRET = JWT_SECRET || require('crypto').randomBytes(32).toString('hex');
 const JWT_EXPIRY = '24h';
 
 async function hashPassword(password) {
