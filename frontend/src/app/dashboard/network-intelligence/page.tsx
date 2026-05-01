@@ -144,14 +144,14 @@ export default function NetworkIntelligencePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--border-default)]">
+      <div className="flex gap-1 border-b border-[var(--border-default)] overflow-x-auto">
         {[
           { id: "predictions" as const, label: "Pre-CI Predictions" },
           { id: "stack" as const, label: "Framework Breakdown" },
           { id: "alerts" as const, label: "Category Distribution" },
         ].map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab.id
                 ? "border-cyan-600 text-cyan-600"
                 : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

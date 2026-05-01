@@ -109,7 +109,7 @@ export default function CiBrainPage() {
       </div>
 
       {/* Total runs banner */}
-      <div className="mb-6 bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex items-center justify-between">
+      <div className="mb-6 bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
         <span className="text-[13px] text-indigo-700">
           <strong>{overview.totalTestRuns.toLocaleString()}</strong> total test runs analyzed &middot;{" "}
           <strong>{overview.totalPasses.toLocaleString()}</strong> passed &middot;{" "}
@@ -123,9 +123,9 @@ export default function CiBrainPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-[var(--bg-secondary)] rounded-lg mb-6 w-fit">
+      <div className="flex gap-1 p-1 bg-[var(--bg-secondary)] rounded-lg mb-6 w-fit max-w-full overflow-x-auto">
         {TABS.map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 rounded-md text-[13px] font-medium transition-colors ${
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 rounded-md text-[13px] font-medium transition-colors whitespace-nowrap ${
             activeTab === tab ? "bg-white text-[var(--text-primary)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
           }`}>
             {tab}

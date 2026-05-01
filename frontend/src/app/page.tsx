@@ -197,7 +197,7 @@ const FEATURES = [
   { icon: Code2, title: "Dead Code Detection", description: "Uses codegraph analysis to find unreachable and unused code across your codebase." },
   { icon: TestTube2, title: "Test Coverage Gaps", description: "Identifies untested code paths in PRs and suggests missing test cases automatically." },
   { icon: Dna, title: "CI Failure Genome", description: "Proprietary database of 12,000+ CI failure patterns. Proven fixes reused instantly. Grows smarter with every repo." },
-  { icon: Globe, title: "Org CI Memory", description: "WarpFix learns your team's fix preferences from PR feedback. 47+ org-specific rules accumulated over time." },
+  { icon: Globe, title: "Org CI Memory", description: "WarpFix learns your team's fix preferences from PR feedback. Org-specific rules accumulate automatically over time." },
   { icon: Network, title: "Network Intelligence", description: "Cross-repo predictions: spot failures before CI runs based on patterns from 2,800+ repos in the network." },
   { icon: Scale, title: "Technical Debt Tracker", description: "Scores and tracks tech debt over time with A-F grades, trends, and actionable cleanup plans." },
   { icon: SlidersHorizontal, title: "Quality Gates", description: "Custom pre-merge rules via .warpfix.yaml — block PRs that violate your team's quality standards." },
