@@ -81,13 +81,15 @@ Rules:
 
 function formatInlineComment(comment) {
   const sev = SEVERITY_LABELS[comment.severity] || SEVERITY_LABELS.warning;
-  let body = `${sev.emoji} **${sev.label}** [${comment.category || 'general'}]\n\n`;
+  const categoryBadge = comment.category ? ` \`${comment.category}\`` : '';
+  let body = `${sev.emoji} **${sev.label}**${categoryBadge}\n\n`;
   body += comment.comment + '\n';
 
   if (comment.suggestion) {
     body += `\n\`\`\`suggestion\n${comment.suggestion}\n\`\`\`\n`;
   }
 
+  body += `\n<sub>🤖 WarpFix</sub>`;
   return body;
 }
 

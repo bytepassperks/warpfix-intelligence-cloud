@@ -13,6 +13,17 @@ import {
   Radar,
   Settings,
   CreditCard,
+  Brain,
+  Eye,
+  FileSearch,
+  FlaskConical,
+  Fingerprint,
+  Package,
+  BookOpen,
+  Key,
+  Terminal,
+  FileCode,
+  GitPullRequest,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +40,24 @@ const NAV_SECTIONS = [
     items: [
       { href: "/dashboard/repairs", label: "Repairs", icon: Wrench },
       { href: "/dashboard/reviews", label: "Reviews", icon: MessageSquareText },
+      { href: "/dashboard/pr-reviewer", label: "PR Reviewer", icon: GitPullRequest },
+    ],
+  },
+  {
+    title: "CI Brain",
+    items: [
+      { href: "/dashboard/ci-brain", label: "CI Intelligence", icon: Brain },
+      { href: "/dashboard/insights", label: "Insights", icon: Fingerprint },
+      { href: "/dashboard/flaky-tests", label: "Flaky Tests", icon: FlaskConical },
+      { href: "/dashboard/autopsy", label: "Autopsy Reports", icon: FileSearch },
+    ],
+  },
+  {
+    title: "Automation",
+    items: [
+      { href: "/dashboard/simulation", label: "Simulation Mode", icon: Eye },
+      { href: "/dashboard/static-fixes", label: "Static Auto-Fixes", icon: FileCode },
+      { href: "/dashboard/runbook", label: "Runbook Agent", icon: BookOpen },
     ],
   },
   {
@@ -36,12 +65,15 @@ const NAV_SECTIONS = [
     items: [
       { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
       { href: "/dashboard/security", label: "Security", icon: Shield },
-      { href: "/dashboard/dependency-radar", label: "Dependency Radar", icon: Radar },
+      { href: "/dashboard/dependency-radar", label: "Dep. Radar", icon: Radar },
+      { href: "/dashboard/dependency-alerts", label: "Dep. Alerts", icon: Package },
     ],
   },
   {
     title: "Configure",
     items: [
+      { href: "/dashboard/byo-key", label: "BYO Key", icon: Key },
+      { href: "/dashboard/cookbook", label: "Cookbook", icon: Terminal },
       { href: "/dashboard/settings", label: "Settings", icon: Settings },
       { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
     ],

@@ -49,7 +49,7 @@ Provide a clear, concise explanation of the changes and their purpose.`;
     maxTokens: 2000,
   });
 
-  return `### Explanation\n\n${response}\n\n---\n*🤖 WarpFix Chat Agent*`;
+  return `### 📖 Explanation\n\n${response}\n\n---\n<sub>🤖 <a href="https://warpfix.org">WarpFix</a> Chat Agent · \`@warpfix help\` for all commands</sub>`;
 }
 
 async function handleFix({ userMessage, prData, files }) {
@@ -68,7 +68,7 @@ Generate the fix with clear explanation.`;
     maxTokens: 3000,
   });
 
-  return `### Suggested Fix\n\n${response}\n\n---\n*🤖 WarpFix Chat Agent*`;
+  return `### 🔧 Suggested Fix\n\n${response}\n\n> 💡 **Tip:** If this fix looks correct, you can apply individual suggestions with GitHub's "Apply suggestion" button.\n\n---\n<sub>🤖 <a href="https://warpfix.org">WarpFix</a> Chat Agent</sub>`;
 }
 
 async function handleTest({ userMessage, prData, files }) {
@@ -87,7 +87,7 @@ Output test code with explanations.`;
     maxTokens: 4000,
   });
 
-  return `### Suggested Tests\n\n${response}\n\n---\n*🤖 WarpFix Chat Agent*`;
+  return `### 🧪 Suggested Tests\n\n${response}\n\n---\n<sub>🤖 <a href="https://warpfix.org">WarpFix</a> Chat Agent</sub>`;
 }
 
 async function handleRefactor({ userMessage, prData, files }) {
@@ -104,7 +104,7 @@ Request: ${userMessage || 'Suggest improvements'}`;
     maxTokens: 3000,
   });
 
-  return `### Refactoring Suggestions\n\n${response}\n\n---\n*🤖 WarpFix Chat Agent*`;
+  return `### ♻️ Refactoring Suggestions\n\n${response}\n\n---\n<sub>🤖 <a href="https://warpfix.org">WarpFix</a> Chat Agent</sub>`;
 }
 
 async function handleSecurity({ userMessage, prData, files }) {
@@ -123,7 +123,7 @@ Check for: injection vulnerabilities, auth bypass, data exposure, SSRF, XSS, ins
     maxTokens: 3000,
   });
 
-  return `### Security Analysis\n\n${response}\n\n---\n*🤖 WarpFix Chat Agent*`;
+  return `### 🛡 Security Analysis\n\n${response}\n\n---\n<sub>🤖 <a href="https://warpfix.org">WarpFix</a> Chat Agent · <a href="https://warpfix.org/security">Security Policy</a></sub>`;
 }
 
 async function handlePerformance({ userMessage, prData, files }) {
@@ -142,18 +142,18 @@ Check for: O(n²) patterns, memory leaks, unnecessary re-renders, N+1 queries, l
     maxTokens: 3000,
   });
 
-  return `### Performance Analysis\n\n${response}\n\n---\n*🤖 WarpFix Chat Agent*`;
+  return `### ⚡ Performance Analysis\n\n${response}\n\n---\n<sub>🤖 <a href="https://warpfix.org">WarpFix</a> Chat Agent</sub>`;
 }
 
 async function handleHelp() {
-  let msg = `### WarpFix Chat Commands\n\n`;
+  let msg = `### 🤖 WarpFix Chat Commands\n\n`;
   msg += `Mention \`@warpfix\` followed by a command:\n\n`;
+  msg += `| Command | Description |\n|---------|-------------|\n`;
   for (const [cmd, info] of Object.entries(COMMANDS)) {
-    msg += `- \`@warpfix ${cmd}\` — ${info.description}\n`;
+    msg += `| \`@warpfix ${cmd}\` | ${info.description} |\n`;
   }
-  msg += `\nYou can also ask any question after the command, e.g.:\n`;
-  msg += `\`@warpfix explain why was the auth middleware changed?\`\n`;
-  msg += `\n---\n*🤖 WarpFix Chat Agent*`;
+  msg += `\n**Example:** \`@warpfix explain why was the auth middleware changed?\`\n`;
+  msg += `\n---\n<sub>🤖 <a href="https://warpfix.org">WarpFix</a> Chat Agent · <a href="https://warpfix.org/docs">Documentation</a></sub>`;
   return msg;
 }
 
@@ -173,7 +173,7 @@ Answer helpfully and concisely.`;
     maxTokens: 2000,
   });
 
-  return `${response}\n\n---\n*🤖 WarpFix Chat Agent*`;
+  return `${response}\n\n---\n<sub>🤖 <a href="https://warpfix.org">WarpFix</a> Chat Agent · \`@warpfix help\` for all commands</sub>`;
 }
 
 module.exports = { processMention, COMMANDS };

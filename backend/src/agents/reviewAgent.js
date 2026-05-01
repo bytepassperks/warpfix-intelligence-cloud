@@ -83,12 +83,14 @@ Generate a JSON response with this EXACT structure:
 }
 
 function formatReviewComment(review, prData) {
-  let comment = `## WarpFix PR Review\n\n`;
-  comment += `### Summary\n${review.summary}\n\n`;
-  comment += `### Walkthrough\n${review.walkthrough}\n\n`;
+  let comment = `## 🔍 WarpFix PR Review\n\n`;
+  comment += `> ${review.summary}\n\n`;
+
+  // Walkthrough
+  comment += `<details>\n<summary>📖 Walkthrough</summary>\n\n${review.walkthrough}\n\n</details>\n\n`;
 
   // File changes table
-  comment += `### File Changes\n`;
+  comment += `### 📁 File Changes\n\n`;
   comment += `| File | Change | Impact |\n|------|--------|--------|\n`;
   for (const fc of review.file_changes || []) {
     const icon = fc.impact === 'high' ? '🔴' : fc.impact === 'medium' ? '🟡' : '🟢';
@@ -98,35 +100,38 @@ function formatReviewComment(review, prData) {
 
   // Sequence diagram
   if (review.sequence_diagram) {
-    comment += `### Sequence Diagram\n\`\`\`mermaid\n${review.sequence_diagram}\n\`\`\`\n\n`;
+    comment += `<details>\n<summary>📊 Sequence Diagram</summary>\n\n\`\`\`mermaid\n${review.sequence_diagram}\n\`\`\`\n\n</details>\n\n`;
   }
 
-  // Review effort
+  // Review effort + Risk in a compact format
   const effort = review.review_effort || {};
-  comment += `### Review Effort\n`;
-  comment += `**${effort.level}/5** (${effort.label}) — ~${effort.estimated_minutes} minutes\n\n`;
-
-  // Risk analysis
   const risk = review.risk_analysis || {};
   const riskIcon = { low: '🟢', medium: '🟡', high: '🟠', critical: '🔴' }[risk.level] || '⚪';
-  comment += `### Risk Analysis\n${riskIcon} **${risk.level?.toUpperCase()}**\n`;
+  const effortBar = '█'.repeat(effort.level || 0) + '░'.repeat(5 - (effort.level || 0));
+
+  comment += `### ⏱ Review Effort & Risk\n\n`;
+  comment += `| Metric | Value |\n|--------|-------|\n`;
+  comment += `| **Effort** | ${effortBar} ${effort.level}/5 (${effort.label}) · ~${effort.estimated_minutes}min |\n`;
+  comment += `| **Risk** | ${riskIcon} ${(risk.level || 'unknown').toUpperCase()} |\n\n`;
+
   if (risk.factors?.length) {
-    comment += risk.factors.map(f => `- ${f}`).join('\n') + '\n';
+    comment += `<details>\n<summary>Risk Factors</summary>\n\n`;
+    comment += risk.factors.map(f => `- ${f}`).join('\n') + '\n\n';
+    comment += `</details>\n\n`;
   }
-  comment += '\n';
 
   // Suggested labels
   if (review.suggested_labels?.length) {
-    comment += `### Suggested Labels\n${review.suggested_labels.map(l => `\`${l}\``).join(', ')}\n\n`;
+    comment += `**Labels:** ${review.suggested_labels.map(l => `\`${l}\``).join(' ')}\n\n`;
   }
 
   // Key observations
   if (review.key_observations?.length) {
-    comment += `### Key Observations\n`;
-    comment += review.key_observations.map(o => `- ${o}`).join('\n') + '\n\n';
+    comment += `### 💡 Key Observations\n\n`;
+    comment += review.key_observations.map(o => `> ${o}`).join('\n>\n') + '\n\n';
   }
 
-  comment += `---\n*Reviewed by [WarpFix Intelligence Cloud](https://warpfix.dev) — AI-Powered Code Review + CI Repair*`;
+  comment += `---\n<sub>🤖 Reviewed by <a href="https://warpfix.org">WarpFix</a> — AI-Powered Code Review + CI Repair · <a href="https://warpfix.org/security">Security</a></sub>`;
 
   return comment;
 }

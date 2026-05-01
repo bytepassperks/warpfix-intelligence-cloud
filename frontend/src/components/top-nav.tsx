@@ -115,15 +115,13 @@ export function TopNav() {
       </button>
 
       {/* Docs link */}
-      <a
-        href="https://docs.warpfix.dev"
-        target="_blank"
-        rel="noopener"
+      <Link
+        href="/docs"
         className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
         title="Documentation"
       >
         <HelpCircle className="w-4 h-4" />
-      </a>
+      </Link>
 
       {/* Notifications */}
       <div ref={notifRef} className="relative">
@@ -277,15 +275,14 @@ export function TopNav() {
                   <CreditCard className="w-3.5 h-3.5" />
                   Billing & Plans
                 </Link>
-                <a
-                  href="https://docs.warpfix.dev"
-                  target="_blank"
-                  rel="noopener"
+                <Link
+                  href="/docs"
+                  onClick={() => setProfileOpen(false)}
                   className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   Documentation
-                </a>
+                </Link>
               </div>
               <div className="border-t border-[var(--border-default)] py-1">
                 <button

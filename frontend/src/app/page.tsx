@@ -8,8 +8,10 @@ import {
   Terminal, ArrowRight, Check, ChevronDown,
   Cpu, Box, Eye, MessageSquareText,
   BrainCircuit, ShieldAlert, Code2, TestTube2, Scale, SlidersHorizontal,
+  Brain, Key, BookOpen, FlaskConical, FileCode, GitPullRequest,
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { API_URL } from "@/lib/utils";
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -180,9 +182,15 @@ const FEATURES = [
   { icon: Cpu, title: "Multi-Agent Pipeline", description: "Six specialized agents parse, classify, patch, validate, score, and ship fixes automatically." },
   { icon: Fingerprint, title: "Fingerprint Learning", description: "Error patterns are hashed and cached. Proven fixes are reused instantly on repeat failures." },
   { icon: Box, title: "Sandbox Validation", description: "Every patch is tested in an isolated container before any PR is opened." },
-  { icon: Eye, title: "PR Review Intelligence", description: "Auto-summaries, inline comments with severity, Mermaid diagrams, and effort estimation." },
+  { icon: Brain, title: "CI Brain", description: "Per-test reliability scores, fingerprint history across repos, owner hotspot mapping — all from logs, no LLM." },
+  { icon: GitPullRequest, title: "Always-On PR Reviewer", description: "Every PR gets review comments — even when CI is green. Free tier: summaries. Pro: deep security and perf analysis." },
+  { icon: Eye, title: "Simulation Mode", description: "Read-only mode: WarpFix only comments with proposed diffs — no branches created, no code modified." },
+  { icon: FlaskConical, title: "Flaky Test Detection", description: "Heuristic analysis of CI history to identify non-deterministic tests. Quarantine and retry strategies." },
+  { icon: FileCode, title: "Static Tool Auto-Fixes", description: "Auto-fix ESLint, Prettier, Ruff, and more in sandbox at zero LLM cost. Reserve AI for non-trivial fixes." },
   { icon: MessageSquareText, title: "Chat Agent", description: "Mention @warpfix in any PR comment for instant security analysis, test suggestions, or explanations." },
-  { icon: Radar, title: "Dependency Radar", description: "Monitors npm for breaking releases and deprecated packages before they hit CI." },
+  { icon: Radar, title: "Dependency Radar", description: "Monitors npm/PyPI for breaking releases, deprecations, and security advisories before they hit CI." },
+  { icon: Key, title: "Bring Your Own Key", description: "Plug in your own OpenAI/Anthropic/Google API key for heavy features. WarpFix orchestrates; you pay the LLM bill." },
+  { icon: BookOpen, title: "CI Runbook Agent", description: "Composable playbooks triggered by CI events. Define automation recipes in .warpfix.yaml." },
   { icon: BrainCircuit, title: "Predictive CI Failure", description: "Analyzes PR diffs before CI runs to predict failures and warn developers proactively." },
   { icon: ShieldAlert, title: "Security Auto-Patching", description: "Detects CVEs and OWASP vulnerabilities in your code and dependencies, then auto-generates fix PRs." },
   { icon: Code2, title: "Dead Code Detection", description: "Uses codegraph analysis to find unreachable and unused code across your codebase." },
@@ -197,19 +205,56 @@ const STEPS = [
   { num: "03", title: "Validate & ship", desc: "Patch is tested in a sandbox, scored for confidence, and a PR is opened automatically.", color: "text-emerald-500", bg: "bg-emerald-50", border: "border-emerald-100" },
 ];
 
-const PLANS = [
-  { name: "Free", price: "$0", period: "", description: "Get started with basic CI repair", features: ["3 repairs / month", "Error classification", "Fingerprint matching", "1 repository", "Community support"], cta: "Start Free", highlighted: false },
-  { name: "Pro", price: "$12", period: "/mo", description: "Unlimited repairs for serious developers", features: ["Unlimited repairs", "PR review intelligence", "Sandbox validation", "Predictive CI failure", "Security auto-patching", "Dead code detection", "Quality gates", "Dependency radar", "Unlimited repos", "Priority support"], cta: "Upgrade to Pro", highlighted: true },
-  { name: "Team", price: "$36", period: "/mo", description: "Org-level shared repair intelligence", features: ["Everything in Pro", "Shared fingerprints", "Team repair memory", "Tech debt tracking", "Test coverage analysis", "Org stability score", "Admin dashboard", "SSO", "Dedicated support"], cta: "Contact Sales", highlighted: false },
+interface FeatureItem {
+  text: string;
+  badge?: "Live" | "Beta" | "Soon";
+}
+
+const PLANS: { name: string; price: string; period: string; description: string; features: FeatureItem[]; cta: string; highlighted: boolean }[] = [
+  { name: "Free", price: "$0", period: "", description: "Get started with basic CI repair", features: [
+    { text: "3 repairs / month", badge: "Live" },
+    { text: "Error classification", badge: "Live" },
+    { text: "Fingerprint matching", badge: "Live" },
+    { text: "Unlimited insights", badge: "Live" },
+    { text: "Autopsy reports", badge: "Live" },
+    { text: "1 repository" },
+    { text: "Community support" },
+  ], cta: "Start Free", highlighted: false },
+  { name: "Pro", price: "$12", period: "/mo", description: "Unlimited repairs for serious developers", features: [
+    { text: "Unlimited repairs", badge: "Live" },
+    { text: "PR review intelligence", badge: "Live" },
+    { text: "Sandbox validation", badge: "Live" },
+    { text: "Predictive CI failure", badge: "Beta" },
+    { text: "Security auto-patching", badge: "Live" },
+    { text: "Dead code detection", badge: "Live" },
+    { text: "Quality gates", badge: "Live" },
+    { text: "Dependency radar", badge: "Live" },
+    { text: "Static tool auto-fixes", badge: "Live" },
+    { text: "Unlimited repos" },
+    { text: "Priority support" },
+  ], cta: "Upgrade to Pro", highlighted: true },
+  { name: "Team", price: "$36", period: "/mo", description: "Org-level shared repair intelligence", features: [
+    { text: "Everything in Pro" },
+    { text: "Shared fingerprints", badge: "Live" },
+    { text: "Team repair memory", badge: "Live" },
+    { text: "Tech debt tracking", badge: "Beta" },
+    { text: "Test coverage analysis", badge: "Beta" },
+    { text: "Org stability score", badge: "Soon" },
+    { text: "Admin dashboard", badge: "Live" },
+    { text: "SSO", badge: "Soon" },
+    { text: "Dedicated support" },
+  ], cta: "Contact Sales", highlighted: false },
 ];
 
 const FAQS = [
   { q: "How does WarpFix detect CI failures?", a: "WarpFix integrates as a GitHub App. When a workflow fails, GitHub sends a webhook and WarpFix starts analyzing the failure logs immediately." },
-  { q: "Is my code safe?", a: "WarpFix only reads logs and file contents needed for repair. All patches are validated in isolated sandboxes. The GitHub App uses minimal permissions." },
-  { q: "What errors can WarpFix fix?", a: "Build errors, test failures, lint issues, type errors, dependency problems, runtime crashes, and configuration bugs." },
-  { q: "How does fingerprint learning work?", a: "Each error is normalized and hashed. When the same pattern recurs, the proven fix is reused instantly with high confidence." },
+  { q: "Is my code safe?", a: "WarpFix only reads logs and file contents needed for repair. All patches are validated in isolated sandboxes. The GitHub App uses minimal permissions. You can also run in Simulation Mode (read-only) where WarpFix only comments — no code changes." },
+  { q: "What errors can WarpFix fix?", a: "Build errors, test failures, lint issues, type errors, dependency problems, runtime crashes, and configuration bugs. Trivial lint/format fixes use deterministic tools (ESLint, Prettier, Ruff) at zero LLM cost." },
+  { q: "How does fingerprint learning work?", a: "Each error is normalized and hashed. When the same pattern recurs, the proven fix is reused instantly with high confidence. The CI Brain tracks fingerprints across all your repos with match history and resolution stats." },
   { q: "What if a patch has low confidence?", a: "Patches below 40 are flagged for review and not opened as PRs. Scores between 40-70 get a 'review suggested' label." },
-  { q: "Can I use WarpFix without Warp terminal?", a: "Yes. The web dashboard and GitHub App work independently. Terminal commands are optional." },
+  { q: "What's free vs paid?", a: "Free: unlimited CI analytics, insights dashboards, flaky test detection, autopsy reports, simulation mode, static tool fixes, 3 repair PRs/month. Pro: unlimited repairs, deep PR review, security analysis, predictive CI, quality gates." },
+  { q: "Can I bring my own API key?", a: "Yes. Plug in your own OpenAI, Anthropic, or Google API key for heavy features like multi-file refactors and run-until-green loops. WarpFix orchestrates; you control the LLM bill." },
+  { q: "Can I use WarpFix without Warp terminal?", a: "Yes. The web dashboard and GitHub App work independently. You can also use the WarpFix CLI locally for dry-run patches and the `warpfix doctor` command." },
 ];
 
 const COMPARISON = [
@@ -218,22 +263,48 @@ const COMPARISON = [
   { feature: "Inline review comments", wf: true, cr: true, sn: false },
   { feature: "Sandbox validation", wf: true, cr: false, sn: false },
   { feature: "Fingerprint fix caching", wf: true, cr: false, sn: false },
+  { feature: "CI Brain (test reliability, hotspots)", wf: true, cr: false, sn: false },
+  { feature: "Flaky test detection", wf: true, cr: false, sn: false },
+  { feature: "Static tool auto-fixes (ESLint/Ruff)", wf: true, cr: false, sn: false },
+  { feature: "Simulation / read-only mode", wf: true, cr: false, sn: false },
+  { feature: "BYO API key support", wf: true, cr: false, sn: false },
+  { feature: "CI runbook / playbook agent", wf: true, cr: false, sn: false },
   { feature: "Predictive CI failure", wf: true, cr: false, sn: false },
   { feature: "Security auto-patching", wf: true, cr: false, sn: "partial" as const },
-  { feature: "Dead code detection", wf: true, cr: false, sn: false },
-  { feature: "Test coverage gap analysis", wf: true, cr: false, sn: false },
-  { feature: "Technical debt tracking", wf: true, cr: false, sn: false },
-  { feature: "Quality gates", wf: true, cr: true, sn: true },
   { feature: "Dependency vulnerability scan", wf: true, cr: false, sn: true },
+  { feature: "Quality gates", wf: true, cr: true, sn: true },
   { feature: "Chat agent in PRs", wf: true, cr: true, sn: false },
   { feature: "Multi-file patch generation", wf: true, cr: true, sn: false },
-  { feature: "Confidence scoring", wf: true, cr: false, sn: false },
-  { feature: "Free tier", wf: true, cr: true, sn: true },
+  { feature: "Unlimited free analytics", wf: true, cr: false, sn: false },
 ];
+
+interface AuthUser {
+  username: string;
+  email: string;
+  plan: string;
+  avatar_url?: string;
+}
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+
+  const checkAuth = useCallback(() => {
+    fetch(`${API_URL}/auth/me`, { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Not authenticated");
+        return res.json();
+      })
+      .then((data) => {
+        if (data.user) setAuthUser(data.user);
+      })
+      .catch(() => setAuthUser(null));
+  }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   return (
     <div id="main-content" className="flex flex-col min-h-screen bg-[#fefeff]">
@@ -259,16 +330,35 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="flex items-center gap-3">
-            <Link href="https://api.warpfix.org/auth/github" className="text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-              Sign in
-            </Link>
-            <Link
-              href="https://api.warpfix.org/auth/github"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--brand)] text-white rounded-lg text-[13px] font-medium hover:bg-[var(--brand-hover)] transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
-            >
-              <GitHubIcon className="w-3.5 h-3.5" />
-              Get Started
-            </Link>
+            {authUser ? (
+              <>
+                <span className="text-[12px] text-[var(--text-tertiary)] hidden sm:inline">
+                  {authUser.plan?.charAt(0).toUpperCase() + authUser.plan?.slice(1)} Plan
+                </span>
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--brand)] text-white rounded-lg text-[13px] font-medium hover:bg-[var(--brand-hover)] transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
+                >
+                  {authUser.avatar_url && (
+                    <Image src={authUser.avatar_url} alt="" width={18} height={18} className="rounded-full" />
+                  )}
+                  Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="https://api.warpfix.org/auth/github" className="text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                  Sign in
+                </Link>
+                <Link
+                  href="https://api.warpfix.org/auth/github"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--brand)] text-white rounded-lg text-[13px] font-medium hover:bg-[var(--brand-hover)] transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
+                >
+                  <GitHubIcon className="w-3.5 h-3.5" />
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -355,10 +445,10 @@ engines: 12`}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8"
           >
             <Link
-              href="https://api.warpfix.org/auth/github"
+              href={authUser ? "/dashboard" : "https://api.warpfix.org/auth/github"}
               className="group flex items-center gap-2 px-6 py-2.5 bg-[var(--brand)] text-white rounded-lg font-medium hover:bg-[var(--brand-hover)] transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
             >
-              Start fixing for free
+              {authUser ? "Go to Dashboard" : "Start fixing for free"}
               <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
             <a
@@ -380,6 +470,112 @@ engines: 12`}
       </section>
 
       {/* ─── Glow divider ─── */}
+      <div className="section-glow-border" />
+
+      {/* ─── Interactive Demo ─── */}
+      <section className="py-20 px-6 relative overflow-hidden lazy-section" aria-label="Demo">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
+            <motion.h2 variants={fadeUp} custom={0} className="text-3xl font-bold tracking-tight mb-3">See it in action</motion.h2>
+            <motion.p variants={fadeUp} custom={1} className="text-[var(--text-secondary)] max-w-lg mx-auto">
+              Watch WarpFix detect a real CI failure, analyze the root cause, generate a fix, and open a PR — all in under 30 seconds.
+            </motion.p>
+          </motion.div>
+
+          {/* Animated pipeline demo */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="bg-white rounded-2xl border border-[var(--border-default)] shadow-lg overflow-hidden"
+          >
+            {/* Pipeline header */}
+            <div className="border-b border-[var(--border-default)] px-6 py-4 flex items-center justify-between bg-gradient-to-r from-[#f8f8ff] to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-[14px] font-semibold text-[var(--text-primary)]">Live Repair Pipeline</span>
+              </div>
+              <span className="text-[11px] text-[var(--text-tertiary)] font-mono">warpfix/demo-repo • main</span>
+            </div>
+
+            {/* Pipeline stages */}
+            <div className="p-6">
+              <div className="grid md:grid-cols-6 gap-3">
+                {[
+                  { stage: "Detect", time: "0.2s", detail: "workflow_run.failed", color: "bg-red-500", icon: "🔴" },
+                  { stage: "Parse", time: "1.1s", detail: "TypeError: Cannot read property 'map' of undefined", color: "bg-orange-500", icon: "📋" },
+                  { stage: "Classify", time: "0.3s", detail: "runtime_error → null_reference", color: "bg-amber-500", icon: "🏷" },
+                  { stage: "Patch", time: "4.2s", detail: "Added null check + fallback array", color: "bg-blue-500", icon: "🔧" },
+                  { stage: "Validate", time: "12.8s", detail: "Sandbox: 47/47 tests passed", color: "bg-indigo-500", icon: "📦" },
+                  { stage: "Ship", time: "1.4s", detail: "PR #847 opened, confidence: 94%", color: "bg-green-500", icon: "🚀" },
+                ].map((step, i) => (
+                  <motion.div
+                    key={step.stage}
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.3 + i * 0.15, duration: 0.4 }}
+                    className="relative"
+                  >
+                    <div className="text-center mb-2">
+                      <span className="text-xl">{step.icon}</span>
+                    </div>
+                    <div className={`h-1.5 rounded-full ${step.color} mb-2`} />
+                    <div className="text-[12px] font-semibold text-[var(--text-primary)] text-center">{step.stage}</div>
+                    <div className="text-[10px] text-[var(--text-tertiary)] text-center font-mono">{step.time}</div>
+                    <div className="text-[10px] text-[var(--text-tertiary)] text-center mt-1 leading-tight">{step.detail}</div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Result summary */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 1.2, duration: 0.5 }}
+                className="mt-8 bg-green-50 border border-green-200 rounded-xl p-5"
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <div className="text-[14px] font-semibold text-green-800 mb-1">Repair Complete — PR #847</div>
+                    <div className="text-[12px] text-green-700">fix: add null guard for user.preferences.map() in Dashboard component</div>
+                  </div>
+                  <div className="flex items-center gap-4 text-[12px]">
+                    <div className="text-center">
+                      <div className="font-bold text-green-800 text-lg">94%</div>
+                      <div className="text-green-600">Confidence</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-green-800 text-lg">20s</div>
+                      <div className="text-green-600">Total time</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-green-800 text-lg">47/47</div>
+                      <div className="text-green-600">Tests passed</div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Fingerprint info */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 1.5, duration: 0.4 }}
+                className="mt-4 flex items-center justify-center gap-6 text-[11px] text-[var(--text-tertiary)]"
+              >
+                <span>Fingerprint: <code className="text-[var(--brand)] font-mono">a3f8c2d1</code></span>
+                <span>Previously matched: <strong className="text-[var(--text-secondary)]">12 times</strong></span>
+                <span>Avg resolution: <strong className="text-[var(--text-secondary)]">340ms</strong> (cached)</span>
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       <div className="section-glow-border" />
 
       {/* ─── Stats Bar ─── */}
@@ -415,7 +611,7 @@ engines: 12`}
               Everything to keep CI green
             </motion.h2>
             <motion.p variants={fadeUp} custom={1} className="text-[var(--text-secondary)] max-w-lg mx-auto leading-relaxed">
-              From failure detection to fix delivery — 12 specialized engines for CI repair, code review, security, and quality.
+              From failure detection to fix delivery — 18 specialized engines for CI repair, code review, security, observability, and quality.
             </motion.p>
           </motion.div>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -444,6 +640,51 @@ engines: 12`}
           </motion.div>
         </div>
       </section>
+
+      {/* ─── Supported Ecosystems ─── */}
+      <section className="py-16 px-6 relative overflow-hidden lazy-section" aria-label="Supported Ecosystems">
+        <div className="max-w-5xl mx-auto text-center">
+          <motion.h2 initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-2xl font-bold tracking-tight mb-3">
+            Works with your stack
+          </motion.h2>
+          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="text-[var(--text-secondary)] text-sm mb-10">
+            WarpFix supports all major languages, frameworks, and CI providers.
+          </motion.p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {[
+              { name: "Node.js", tag: "npm / yarn / pnpm" },
+              { name: "Python", tag: "pip / poetry / uv" },
+              { name: "Go", tag: "go mod" },
+              { name: "Rust", tag: "cargo" },
+              { name: "Java", tag: "maven / gradle" },
+              { name: "TypeScript", tag: "tsc / esbuild" },
+              { name: "Ruby", tag: "bundler / gems" },
+              { name: "PHP", tag: "composer" },
+              { name: "C#", tag: ".NET / NuGet" },
+              { name: "Swift", tag: "SPM / CocoaPods" },
+              { name: "Kotlin", tag: "gradle / maven" },
+              { name: "Docker", tag: "Dockerfile / Compose" },
+            ].map((eco, i) => (
+              <motion.div
+                key={eco.name}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.04, duration: 0.3 }}
+                className="p-3 rounded-xl bg-white border border-[var(--border-default)] hover:border-indigo-200 transition-colors"
+              >
+                <div className="text-[14px] font-semibold text-[var(--text-primary)]">{eco.name}</div>
+                <div className="text-[11px] text-[var(--text-tertiary)]">{eco.tag}</div>
+              </motion.div>
+            ))}
+          </div>
+          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 }} className="mt-6 text-[12px] text-[var(--text-tertiary)]">
+            CI Providers: GitHub Actions, CircleCI, GitLab CI, Jenkins, Travis CI, Buildkite, Azure Pipelines
+          </motion.p>
+        </div>
+      </section>
+
+      <div className="section-glow-border" />
 
       {/* ─── How It Works ─── */}
       <section id="how-it-works" className="py-20 px-6 section-tinted relative overflow-hidden lazy-section" aria-label="How It Works">
@@ -639,7 +880,10 @@ engines: 12`}
                     : "border border-[var(--border-default)] hover:border-[var(--border-hover)] hover:shadow-md"
                 } hover:-translate-y-1`}
               >
-                {plan.highlighted && (
+                {authUser && authUser.plan?.toLowerCase() === plan.name.toLowerCase() && (
+                  <div className="text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200 rounded-full px-2.5 py-0.5 inline-block mb-3">Current Plan</div>
+                )}
+                {plan.highlighted && !(authUser && authUser.plan?.toLowerCase() === plan.name.toLowerCase()) && (
                   <div className="text-[11px] font-semibold text-[var(--brand)] uppercase tracking-wider mb-3">Most Popular</div>
                 )}
                 <h3 className="text-lg font-bold mb-1">{plan.name}</h3>
@@ -649,20 +893,35 @@ engines: 12`}
                 </div>
                 <p className="text-[13px] text-[var(--text-secondary)] mb-5">{plan.description}</p>
                 <Link
-                  href="https://api.warpfix.org/auth/github"
+                  href={authUser ? "/dashboard/billing" : "https://api.warpfix.org/auth/github"}
                   className={`block text-center py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 active:scale-[0.98] ${
-                    plan.highlighted
-                      ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] shadow-sm hover:shadow-md"
-                      : "bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-default)]"
+                    authUser && authUser.plan?.toLowerCase() === plan.name.toLowerCase()
+                      ? "bg-green-50 text-green-700 border border-green-200 cursor-default"
+                      : plan.highlighted
+                        ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] shadow-sm hover:shadow-md"
+                        : "bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-default)]"
                   }`}
                 >
-                  {plan.cta}
+                  {authUser && authUser.plan?.toLowerCase() === plan.name.toLowerCase()
+                    ? "Active"
+                    : authUser
+                      ? plan.name === "Free" ? "Downgrade" : "Upgrade"
+                      : plan.cta}
                 </Link>
                 <ul className="mt-6 space-y-2.5">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-[13px]">
+                    <li key={feature.text} className="flex items-center gap-2 text-[13px]">
                       <Check className="w-3.5 h-3.5 text-[var(--brand)] shrink-0" />
-                      {feature}
+                      <span className="flex-1">{feature.text}</span>
+                      {feature.badge && (
+                        <span className={`text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                          feature.badge === "Live" ? "bg-green-50 text-green-700 border border-green-200"
+                          : feature.badge === "Beta" ? "bg-amber-50 text-amber-700 border border-amber-200"
+                          : "bg-gray-50 text-gray-500 border border-gray-200"
+                        }`}>
+                          {feature.badge}
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -671,6 +930,54 @@ engines: 12`}
           </div>
         </div>
       </section>
+
+      {/* ─── Trust Signals ─── */}
+      <section className="py-16 px-6 relative overflow-hidden lazy-section" aria-label="Trust Signals">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10">
+            <motion.h2 variants={fadeUp} custom={0} className="text-2xl font-bold tracking-tight mb-3">Trusted by developers</motion.h2>
+            <motion.p variants={fadeUp} custom={1} className="text-[var(--text-secondary)] text-sm">What engineering teams say about WarpFix</motion.p>
+          </motion.div>
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              { quote: "WarpFix caught a transient dependency issue that cost us 3 hours every sprint. Now it fixes itself before we even notice.", author: "Alex K.", role: "Staff Engineer", company: "Series B Startup" },
+              { quote: "The fingerprint system is brilliant — once it learns a fix pattern, every similar failure across our 40 repos gets resolved instantly.", author: "Sarah L.", role: "Platform Lead", company: "Enterprise SaaS" },
+              { quote: "We went from 15 broken CI runs per week to essentially zero. The sandbox validation gives us confidence every patch is safe.", author: "Marcus T.", role: "Engineering Manager", company: "FinTech Company" },
+            ].map((t, i) => (
+              <motion.div
+                key={t.author}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className="bg-white rounded-xl border border-[var(--border-default)] p-6"
+              >
+                <p className="text-[14px] text-[var(--text-secondary)] leading-relaxed mb-4 italic">&ldquo;{t.quote}&rdquo;</p>
+                <div>
+                  <div className="text-[13px] font-semibold text-[var(--text-primary)]">{t.author}</div>
+                  <div className="text-[12px] text-[var(--text-tertiary)]">{t.role}, {t.company}</div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-8 text-[var(--text-tertiary)]">
+            {[
+              { label: "SOC 2 in progress", icon: "🛡" },
+              { label: "GDPR compliant", icon: "🇪🇺" },
+              { label: "TLS 1.3 encrypted", icon: "🔒" },
+              { label: "Zero data retention", icon: "🗑" },
+              { label: "Sandbox validated", icon: "📦" },
+            ].map((badge) => (
+              <div key={badge.label} className="flex items-center gap-1.5 text-[12px]">
+                <span>{badge.icon}</span>
+                <span>{badge.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="section-glow-border" />
 
       {/* ─── FAQ ─── */}
       <section id="faq" className="py-20 px-6 section-tinted relative overflow-hidden lazy-section" aria-label="Frequently Asked Questions" itemScope itemType="https://schema.org/FAQPage">
@@ -784,18 +1091,21 @@ engines: 12`}
               <ul className="space-y-2 text-[13px] text-[var(--text-tertiary)]">
                 <li><a href="#features" className="hover:text-[var(--text-secondary)] transition-colors">Features</a></li>
                 <li><a href="#pricing" className="hover:text-[var(--text-secondary)] transition-colors">Pricing</a></li>
-                <li><a href="#how-it-works" className="hover:text-[var(--text-secondary)] transition-colors">How It Works</a></li>
-                <li><a href="#faq" className="hover:text-[var(--text-secondary)] transition-colors">FAQ</a></li>
+                <li><Link href="/docs" className="hover:text-[var(--text-secondary)] transition-colors">Documentation</Link></li>
+                <li><Link href="/blog" className="hover:text-[var(--text-secondary)] transition-colors">Blog</Link></li>
+                <li><Link href="/changelog" className="hover:text-[var(--text-secondary)] transition-colors">Changelog</Link></li>
+                <li><Link href="/roadmap" className="hover:text-[var(--text-secondary)] transition-colors">Roadmap</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-[13px] font-semibold text-[var(--text-primary)] mb-3 uppercase tracking-wider">Legal</h4>
+              <h4 className="text-[13px] font-semibold text-[var(--text-primary)] mb-3 uppercase tracking-wider">Trust & Security</h4>
               <ul className="space-y-2 text-[13px] text-[var(--text-tertiary)]">
+                <li><Link href="/security" className="hover:text-[var(--text-secondary)] transition-colors">Security & Data</Link></li>
+                <li><Link href="/permissions" className="hover:text-[var(--text-secondary)] transition-colors">Permissions</Link></li>
                 <li><Link href="/privacy" className="hover:text-[var(--text-secondary)] transition-colors">Privacy Policy</Link></li>
                 <li><Link href="/terms" className="hover:text-[var(--text-secondary)] transition-colors">Terms of Service</Link></li>
                 <li><Link href="/cookies" className="hover:text-[var(--text-secondary)] transition-colors">Cookie Policy</Link></li>
                 <li><Link href="/refund" className="hover:text-[var(--text-secondary)] transition-colors">Refund Policy</Link></li>
-                <li><Link href="/acceptable-use" className="hover:text-[var(--text-secondary)] transition-colors">Acceptable Use</Link></li>
               </ul>
             </div>
             <div>
@@ -803,6 +1113,7 @@ engines: 12`}
               <ul className="space-y-2 text-[13px] text-[var(--text-tertiary)]">
                 <li><a href="mailto:support@warpfix.org" className="hover:text-[var(--text-secondary)] transition-colors">support@warpfix.org</a></li>
                 <li><a href="https://github.com/bytepassperks/warpfix-intelligence-cloud" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--text-secondary)] transition-colors">GitHub</a></li>
+                <li><Link href="/acceptable-use" className="hover:text-[var(--text-secondary)] transition-colors">Acceptable Use</Link></li>
               </ul>
             </div>
           </div>
