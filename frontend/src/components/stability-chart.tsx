@@ -9,17 +9,17 @@ interface StabilityData {
   open_dependency_alerts: number;
 }
 
-const DEMO_DATA: StabilityData = {
-  stability_score: 76,
+const EMPTY_DATA: StabilityData = {
+  stability_score: 0,
   ci_failure_trend: Array.from({ length: 14 }, (_, i) => ({
     day: new Date(Date.now() - (13 - i) * 86400000).toISOString().split("T")[0],
-    failures: Math.floor(Math.random() * 5),
+    failures: 0,
   })),
   repair_frequency: Array.from({ length: 14 }, (_, i) => ({
     day: new Date(Date.now() - (13 - i) * 86400000).toISOString().split("T")[0],
-    repairs: Math.floor(Math.random() * 4),
+    repairs: 0,
   })),
-  open_dependency_alerts: 3,
+  open_dependency_alerts: 0,
 };
 
 export function StabilityChart() {
@@ -34,7 +34,7 @@ export function StabilityChart() {
         return res.json();
       })
       .then(setData)
-      .catch(() => setData(DEMO_DATA));
+      .catch(() => setData(EMPTY_DATA));
   }, []);
 
   if (!data) {
