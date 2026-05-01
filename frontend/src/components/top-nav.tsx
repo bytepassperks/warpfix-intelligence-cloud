@@ -96,7 +96,7 @@ export function TopNav() {
   const avatarUrl = user?.avatar_url;
 
   return (
-    <header className="h-14 border-b border-[var(--border-default)] bg-white flex items-center px-4 gap-3 shrink-0 z-40">
+    <header className="h-14 border-b border-[var(--border-default)] bg-white flex items-center px-4 pl-12 md:pl-4 gap-3 shrink-0 z-40">
       {/* Breadcrumb area */}
       <div className="flex-1 flex items-center gap-2 min-w-0">
         <span className="text-sm text-[var(--text-secondary)]">Dashboard</span>

@@ -348,6 +348,65 @@ router.delete('/promos/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// POST /admin/promos/bulk  — bulk generate promo codes
+router.post('/promos/bulk', requireAdmin, async (req, res) => {
+  const { count, prefix, description, discount_type, discount_value, plan_override, max_redemptions, expires_at } = req.body;
+  const numCodes = Math.min(Math.max(parseInt(count) || 1, 1), 500);
+
+  if (!prefix) return res.status(400).json({ error: 'Prefix is required for bulk generation' });
+
+  try {
+    const codes = [];
+    for (let i = 0; i < numCodes; i++) {
+      const suffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const code = `${prefix.toUpperCase()}-${suffix}`;
+      codes.push(code);
+    }
+
+    const inserted = [];
+    const failed = [];
+    for (const code of codes) {
+      try {
+        const result = await query(
+          `INSERT INTO promo_codes (code, description, discount_type, discount_value, plan_override, max_redemptions, expires_at, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+          [code, description || `Bulk generated: ${prefix}`, discount_type || 'percentage', discount_value || 0, plan_override || null, max_redemptions ? parseInt(max_redemptions) : null, expires_at || null, req.admin.id]
+        );
+        inserted.push(result.rows[0]);
+      } catch (err) {
+        failed.push({ code, error: err.code === '23505' ? 'Duplicate code' : err.message });
+      }
+    }
+
+    logger.info('Admin bulk created promos', { admin: req.admin.email, count: inserted.length, prefix });
+    res.status(201).json({ promos: inserted, created: inserted.length, failed: failed.length, failures: failed });
+  } catch (err) {
+    logger.error('Admin bulk promo error', { error: err.message });
+    res.status(500).json({ error: 'Failed to bulk generate promos' });
+  }
+});
+
+// GET /admin/promos/:id/redemptions  — get users who redeemed a promo
+router.get('/promos/:id/redemptions', requireAdmin, async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT pr.id, pr.created_at as redeemed_at, 
+        u.id as user_id, u.username, u.email, u.avatar_url, u.plan,
+        a.email as applied_by_admin
+       FROM promo_redemptions pr
+       LEFT JOIN users u ON pr.user_id = u.id
+       LEFT JOIN admins a ON pr.applied_by = a.id
+       WHERE pr.promo_id = $1
+       ORDER BY pr.created_at DESC`,
+      [req.params.id]
+    );
+    res.json({ redemptions: result.rows });
+  } catch (err) {
+    logger.error('Admin promo redemptions error', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch redemptions' });
+  }
+});
+
 // POST /admin/promos/:id/apply  — apply promo to a user
 router.post('/promos/:id/apply', requireAdmin, async (req, res) => {
   const { user_id } = req.body;

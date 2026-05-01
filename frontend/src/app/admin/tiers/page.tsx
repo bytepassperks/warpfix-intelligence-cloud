@@ -104,8 +104,8 @@ export default function TiersPage() {
         <div className="grid grid-cols-3 gap-4">
           {[
             { plan: "free", price: "Free", desc: "For individual developers" },
-            { plan: "pro", price: "₹999/mo", desc: "For professional developers" },
-            { plan: "team", price: "₹2,999/mo", desc: "For teams and organizations" },
+            { plan: "pro", price: "$12/mo", desc: "For professional developers" },
+            { plan: "team", price: "$36/mo", desc: "For teams and organizations" },
           ].map((p) => (
             <div key={p.plan} className={`p-4 rounded-lg border ${p.plan === "pro" ? "border-[var(--brand)] bg-[var(--brand)]/5" : "border-[var(--border-default)]"}`}>
               <h4 className="font-semibold capitalize text-[14px]">{p.plan}</h4>

@@ -5,9 +5,9 @@ const { logger } = require('../utils/logger');
 const router = express.Router();
 
 const PLANS = {
-  free: { name: 'Free', repairs_per_month: 3, price_inr: 0 },
-  pro: { name: 'Pro', repairs_per_month: 999999, price_inr: 999 },
-  team: { name: 'Team', repairs_per_month: 999999, price_inr: 2999 },
+  free: { name: 'Free', repairs_per_month: 3, price_usd: 0 },
+  pro: { name: 'Pro', repairs_per_month: 999999, price_usd: 12 },
+  team: { name: 'Team', repairs_per_month: 999999, price_usd: 36 },
 };
 
 router.get('/plans', (req, res) => {
@@ -56,7 +56,7 @@ router.post('/checkout', requireAuth, async (req, res) => {
       body: JSON.stringify({
         billing: {
           city: '',
-          country: 'IN',
+          country: 'US',
           state: '',
           street: '',
           zipcode: '',
@@ -83,6 +83,80 @@ router.post('/checkout', requireAuth, async (req, res) => {
   } catch (err) {
     logger.error('Checkout error', { error: err.message });
     res.status(500).json({ error: 'Billing service error' });
+  }
+});
+
+// User-facing promo code application
+router.post('/promo/apply', requireAuth, async (req, res) => {
+  const { code } = req.body;
+  if (!code || typeof code !== 'string') {
+    return res.status(400).json({ error: 'Promo code is required' });
+  }
+
+  try {
+    // Look up the promo code
+    const promoResult = await query(
+      'SELECT * FROM promo_codes WHERE UPPER(code) = UPPER($1) AND active = true',
+      [code.trim()]
+    );
+    const promo = promoResult.rows[0];
+    if (!promo) {
+      return res.status(404).json({ error: 'Invalid or expired promo code' });
+    }
+
+    // Check expiry
+    if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+      return res.status(400).json({ error: 'This promo code has expired' });
+    }
+
+    // Check max redemptions
+    if (promo.max_redemptions) {
+      const countResult = await query(
+        'SELECT COUNT(*) FROM promo_redemptions WHERE promo_id = $1',
+        [promo.id]
+      );
+      if (parseInt(countResult.rows[0].count) >= promo.max_redemptions) {
+        return res.status(400).json({ error: 'This promo code has reached its redemption limit' });
+      }
+    }
+
+    // Check if user already redeemed this promo
+    const alreadyRedeemed = await query(
+      'SELECT id FROM promo_redemptions WHERE promo_id = $1 AND user_id = $2',
+      [promo.id, req.user.id]
+    );
+    if (alreadyRedeemed.rows.length > 0) {
+      return res.status(400).json({ error: 'You have already used this promo code' });
+    }
+
+    // Apply promo: if plan_override, upgrade the user's plan
+    if (promo.plan_override && PLANS[promo.plan_override]) {
+      await query('UPDATE users SET plan = $1 WHERE id = $2', [promo.plan_override, req.user.id]);
+    }
+
+    // Record the redemption
+    await query(
+      'INSERT INTO promo_redemptions (promo_id, user_id) VALUES ($1, $2)',
+      [promo.id, req.user.id]
+    );
+
+    logger.info('User applied promo', { userId: req.user.id, code: promo.code, plan_override: promo.plan_override });
+
+    const message = promo.plan_override
+      ? `Promo applied! You've been upgraded to the ${PLANS[promo.plan_override].name} plan.`
+      : promo.discount_type === 'percentage'
+        ? `Promo applied! ${promo.discount_value}% discount activated.`
+        : `Promo applied! $${promo.discount_value} discount activated.`;
+
+    res.json({
+      message,
+      plan_override: promo.plan_override || null,
+      discount_type: promo.discount_type,
+      discount_value: promo.discount_value,
+    });
+  } catch (err) {
+    logger.error('Promo apply error', { error: err.message, userId: req.user.id });
+    res.status(500).json({ error: 'Failed to apply promo code. Please try again.' });
   }
 });
 

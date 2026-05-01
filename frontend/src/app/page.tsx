@@ -336,7 +336,7 @@ export default function LandingPage() {
               </a>
             ))}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {authUser ? (
               <>
                 <span className="text-[12px] text-[var(--text-tertiary)] hidden sm:inline">
@@ -344,7 +344,7 @@ export default function LandingPage() {
                 </span>
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--brand)] text-white rounded-lg text-[13px] font-medium hover:bg-[var(--brand-hover)] transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
+                  className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 bg-[var(--brand)] text-white rounded-lg text-[12px] sm:text-[13px] font-medium hover:bg-[var(--brand-hover)] transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98] whitespace-nowrap"
                 >
                   {authUser.avatar_url && (
                     <Image src={authUser.avatar_url} alt="" width={18} height={18} className="rounded-full" />
@@ -354,12 +354,12 @@ export default function LandingPage() {
               </>
             ) : (
               <>
-                <Link href="https://api.warpfix.org/auth/github" className="text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                <Link href="https://api.warpfix.org/auth/github" className="text-[12px] sm:text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors whitespace-nowrap leading-none py-1.5">
                   Sign in
                 </Link>
                 <Link
                   href="https://api.warpfix.org/auth/github"
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--brand)] text-white rounded-lg text-[13px] font-medium hover:bg-[var(--brand-hover)] transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
+                  className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 bg-[var(--brand)] text-white rounded-lg text-[12px] sm:text-[13px] font-medium hover:bg-[var(--brand-hover)] transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98] whitespace-nowrap"
                 >
                   <GitHubIcon className="w-3.5 h-3.5" />
                   Get Started
@@ -508,7 +508,7 @@ engines: 12`}
 
             {/* Pipeline stages */}
             <div className="p-6">
-              <div className="grid md:grid-cols-6 gap-3">
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                 {[
                   { stage: "Detect", time: "0.2s", detail: "workflow_run.failed", color: "bg-red-500", icon: "🔴" },
                   { stage: "Parse", time: "1.1s", detail: "TypeError: Cannot read property 'map' of undefined", color: "bg-orange-500", icon: "📋" },

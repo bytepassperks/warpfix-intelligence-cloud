@@ -148,7 +148,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <AuthContext.Provider value={{ admin, token, logout }}>
       <div className="flex min-h-screen bg-[#f8f9fb]">
         {/* Sidebar */}
-        <aside className="w-[240px] bg-white border-r border-[var(--border-default)] flex flex-col h-screen sticky top-0">
+        <aside className="hidden md:flex w-[240px] bg-white border-r border-[var(--border-default)] flex-col h-screen sticky top-0">
           <div className="h-14 flex items-center px-4 border-b border-[var(--border-default)]">
             <Link href="/admin" className="flex items-center gap-2.5">
               <Image src="/logo-warpfix.png" alt="WarpFix" width={32} height={32} />
@@ -192,7 +192,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Main content */}
         <main className="flex-1 min-w-0">
-          <header className="h-14 border-b border-[var(--border-default)] bg-white px-6 flex items-center justify-between sticky top-0 z-10">
+          <header className="h-14 border-b border-[var(--border-default)] bg-white px-4 md:px-6 flex items-center justify-between sticky top-0 z-10">
             <h1 className="text-[15px] font-medium text-[var(--text-primary)]">
               {NAV.find((n) => n.href === pathname)?.label || "Admin Panel"}
             </h1>
