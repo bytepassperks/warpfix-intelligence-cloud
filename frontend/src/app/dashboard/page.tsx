@@ -5,7 +5,8 @@ import { RecentRepairs } from "@/components/recent-repairs";
 import { motion } from "framer-motion";
 import { Zap, ArrowRight, Terminal, MessageSquare, Copy, Check } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { API_URL } from "@/lib/utils";
 
 const CLI_COMMANDS = [
   { cmd: "fix-ci", desc: "Auto-repair a failing CI workflow" },
@@ -28,6 +29,16 @@ const PR_COMMANDS = [
 
 export default function DashboardPage() {
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
+  const [plan, setPlan] = useState<string>("free");
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/dashboard/stats`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.stats?.plan) setPlan(data.stats.plan.toLowerCase());
+      })
+      .catch(() => {});
+  }, []);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -50,34 +61,38 @@ export default function DashboardPage() {
 
       <StatsCards />
 
-      {/* Upgrade Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="mt-6 bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl border border-indigo-100 p-5 flex items-center justify-between"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[var(--brand-muted)] flex items-center justify-center">
-            <Zap className="w-5 h-5 text-[var(--brand)]" />
-          </div>
-          <div>
-            <div className="text-[14px] font-semibold text-[var(--text-primary)]">
-              Unlock unlimited repairs
-            </div>
-            <div className="text-[12px] text-[var(--text-secondary)]">
-              Upgrade to Pro for unlimited repairs, sandbox validation, and priority support.
-            </div>
-          </div>
-        </div>
-        <Link
-          href="/dashboard/billing"
-          className="flex items-center gap-1.5 px-4 py-2 bg-[var(--brand)] text-white text-[13px] font-medium rounded-lg hover:bg-[var(--brand-hover)] transition-colors shrink-0"
+      {/* Upgrade Banner — only show if not on highest plan */}
+      {plan !== "team" && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mt-6 bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl border border-indigo-100 p-5 flex items-center justify-between"
         >
-          Upgrade
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
-      </motion.div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[var(--brand-muted)] flex items-center justify-center">
+              <Zap className="w-5 h-5 text-[var(--brand)]" />
+            </div>
+            <div>
+              <div className="text-[14px] font-semibold text-[var(--text-primary)]">
+                {plan === "pro" ? "Unlock team features" : "Unlock unlimited repairs"}
+              </div>
+              <div className="text-[12px] text-[var(--text-secondary)]">
+                {plan === "pro"
+                  ? "Upgrade to Team for org-wide analytics, team management, and priority support."
+                  : "Upgrade to Pro for unlimited repairs, sandbox validation, and priority support."}
+              </div>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/billing"
+            className="flex items-center gap-1.5 px-4 py-2 bg-[var(--brand)] text-white text-[13px] font-medium rounded-lg hover:bg-[var(--brand-hover)] transition-colors shrink-0"
+          >
+            {plan === "pro" ? "Upgrade to Team" : "Upgrade to Pro"}
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </motion.div>
+      )}
 
       {/* WarpFix Commands Guide */}
       <motion.div

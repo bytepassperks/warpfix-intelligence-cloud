@@ -18,7 +18,7 @@ export default function RepositoriesPage() {
   const [repos, setRepos] = useState<Repo[] | null>(null);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/dashboard/public-stats`)
+    fetch(`${API_URL}/api/dashboard/stats`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.recent_repairs?.length) {

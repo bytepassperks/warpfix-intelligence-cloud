@@ -6,6 +6,7 @@ const router = express.Router();
 // 1. Quality Metrics
 router.get('/quality', requireAuth, async (req, res) => {
   try {
+    const userId = req.user.id;
     const [reviewStats, severityBreakdown, topIssues] = await Promise.all([
       query(`
         SELECT 
@@ -13,22 +14,22 @@ router.get('/quality', requireAuth, async (req, res) => {
           AVG((review_data->>'review_effort_level')::int) as avg_effort,
           COUNT(CASE WHEN review_data->>'risk_level' = 'critical' THEN 1 END) as critical_count,
           COUNT(CASE WHEN review_data->>'risk_level' = 'high' THEN 1 END) as high_count
-        FROM reviews WHERE created_at > NOW() - INTERVAL '30 days'
-      `),
+        FROM reviews WHERE created_at > NOW() - INTERVAL '30 days' AND user_id = $1
+      `, [userId]),
       query(`
         SELECT 
           COALESCE(SUM((review_data->>'critical_count')::int), 0) as critical,
           COALESCE(SUM((review_data->>'warning_count')::int), 0) as warnings,
           COALESCE(SUM((review_data->>'nitpick_count')::int), 0) as nitpicks
-        FROM reviews WHERE created_at > NOW() - INTERVAL '30 days'
-      `),
+        FROM reviews WHERE created_at > NOW() - INTERVAL '30 days' AND user_id = $1
+      `, [userId]),
       query(`
         SELECT review_data->>'top_category' as category, COUNT(*) as count
         FROM reviews WHERE created_at > NOW() - INTERVAL '30 days'
-        AND review_data->>'top_category' IS NOT NULL
+        AND review_data->>'top_category' IS NOT NULL AND user_id = $1
         GROUP BY review_data->>'top_category'
         ORDER BY count DESC LIMIT 10
-      `),
+      `, [userId]),
     ]);
 
     res.json({
@@ -44,29 +45,30 @@ router.get('/quality', requireAuth, async (req, res) => {
 // 2. Time Saved
 router.get('/time-saved', requireAuth, async (req, res) => {
   try {
+    const userId = req.user.id;
     const [reviewTimeSaved, repairTimeSaved, monthlyTrend] = await Promise.all([
       query(`
         SELECT 
           COUNT(*) as reviews_automated,
           SUM(COALESCE((review_data->>'estimated_minutes')::int, 15)) as minutes_saved,
           ROUND(AVG(COALESCE((review_data->>'estimated_minutes')::int, 15)), 1) as avg_minutes_per_review
-        FROM reviews WHERE created_at > NOW() - INTERVAL '30 days'
-      `),
+        FROM reviews WHERE created_at > NOW() - INTERVAL '30 days' AND user_id = $1
+      `, [userId]),
       query(`
         SELECT 
           COUNT(*) as repairs_automated,
           SUM(CASE WHEN sandbox_passed THEN 1 ELSE 0 END) as successful_repairs,
           ROUND(AVG(duration_ms) / 1000, 1) as avg_repair_seconds
-        FROM repairs WHERE created_at > NOW() - INTERVAL '30 days'
-      `),
+        FROM repairs WHERE created_at > NOW() - INTERVAL '30 days' AND user_id = $1
+      `, [userId]),
       query(`
         SELECT 
           DATE_TRUNC('week', created_at) as week,
           COUNT(*) FILTER (WHERE status = 'completed') as repairs,
           0 as reviews
-        FROM repairs WHERE created_at > NOW() - INTERVAL '90 days'
+        FROM repairs WHERE created_at > NOW() - INTERVAL '90 days' AND user_id = $1
         GROUP BY week ORDER BY week
-      `),
+      `, [userId]),
     ]);
 
     const reviewMinutes = parseInt(reviewTimeSaved.rows[0]?.minutes_saved || 0);
@@ -122,29 +124,30 @@ router.get('/knowledge', requireAuth, async (req, res) => {
 // 4. Trends
 router.get('/trends', requireAuth, async (req, res) => {
   try {
+    const userId = req.user.id;
     const [repairTrend, reviewTrend, confidenceTrend, typeTrend] = await Promise.all([
       query(`
         SELECT DATE(created_at) as day, COUNT(*) as count,
                SUM(CASE WHEN sandbox_passed THEN 1 ELSE 0 END) as successful
-        FROM repairs WHERE created_at > NOW() - INTERVAL '30 days'
+        FROM repairs WHERE created_at > NOW() - INTERVAL '30 days' AND user_id = $1
         GROUP BY DATE(created_at) ORDER BY day
-      `),
+      `, [userId]),
       query(`
         SELECT DATE(created_at) as day, COUNT(*) as count
-        FROM reviews WHERE created_at > NOW() - INTERVAL '30 days'
+        FROM reviews WHERE created_at > NOW() - INTERVAL '30 days' AND user_id = $1
         GROUP BY DATE(created_at) ORDER BY day
-      `),
+      `, [userId]),
       query(`
         SELECT DATE(created_at) as day, 
                ROUND(AVG(confidence_score), 1) as avg_confidence
-        FROM repairs WHERE created_at > NOW() - INTERVAL '30 days'
+        FROM repairs WHERE created_at > NOW() - INTERVAL '30 days' AND user_id = $1
         GROUP BY DATE(created_at) ORDER BY day
-      `),
+      `, [userId]),
       query(`
         SELECT engine_used as type, COUNT(*) as count
-        FROM repairs WHERE created_at > NOW() - INTERVAL '30 days'
+        FROM repairs WHERE created_at > NOW() - INTERVAL '30 days' AND user_id = $1
         GROUP BY engine_used ORDER BY count DESC
-      `),
+      `, [userId]),
     ]);
 
     res.json({
@@ -161,14 +164,15 @@ router.get('/trends', requireAuth, async (req, res) => {
 // 5. Security
 router.get('/security', requireAuth, async (req, res) => {
   try {
+    const userId = req.user.id;
     const [vulnStats, recentVulns] = await Promise.all([
       query(`
         SELECT 
           COUNT(*) as total_scans,
           COALESCE(SUM((review_data->>'security_issues')::int), 0) as total_issues,
           COALESCE(SUM((review_data->>'security_critical')::int), 0) as critical_issues
-        FROM reviews WHERE created_at > NOW() - INTERVAL '30 days'
-      `),
+        FROM reviews WHERE created_at > NOW() - INTERVAL '30 days' AND user_id = $1
+      `, [userId]),
       query(`
         SELECT da.*, repo.full_name as repo_name
         FROM dependency_alerts da
@@ -214,6 +218,7 @@ router.get('/tech-debt', requireAuth, async (req, res) => {
 // 7. Repositories
 router.get('/repositories', requireAuth, async (req, res) => {
   try {
+    const userId = req.user.id;
     const result = await query(`
       SELECT 
         repo.id, repo.full_name, repo.language,
@@ -224,9 +229,10 @@ router.get('/repositories', requireAuth, async (req, res) => {
       FROM repositories repo
       LEFT JOIN repairs r ON r.repository_id = repo.id
       LEFT JOIN reviews rv ON rv.repository_id = repo.id
+      WHERE repo.user_id = $1
       GROUP BY repo.id, repo.full_name, repo.language
       ORDER BY repair_count DESC
-    `);
+    `, [userId]);
 
     res.json({ repositories: result.rows });
   } catch (err) {
@@ -237,6 +243,7 @@ router.get('/repositories', requireAuth, async (req, res) => {
 // 8. Contributors
 router.get('/contributors', requireAuth, async (req, res) => {
   try {
+    const userId = req.user.id;
     const result = await query(`
       SELECT 
         review_data->>'pr_author' as author,
@@ -244,10 +251,10 @@ router.get('/contributors', requireAuth, async (req, res) => {
         ROUND(AVG(COALESCE((review_data->>'estimated_minutes')::int, 15)), 1) as avg_review_time
       FROM reviews
       WHERE review_data->>'pr_author' IS NOT NULL
-      AND created_at > NOW() - INTERVAL '30 days'
+      AND created_at > NOW() - INTERVAL '30 days' AND user_id = $1
       GROUP BY review_data->>'pr_author'
       ORDER BY prs_reviewed DESC
-    `);
+    `, [userId]);
 
     res.json({ contributors: result.rows });
   } catch (err) {
