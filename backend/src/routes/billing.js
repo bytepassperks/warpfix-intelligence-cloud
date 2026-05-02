@@ -226,3 +226,4 @@ router.post('/webhook/dodo', express.raw({ type: 'application/json' }), async (r
 });
 
 module.exports = router;
+module.exports.PLANS = PLANS;

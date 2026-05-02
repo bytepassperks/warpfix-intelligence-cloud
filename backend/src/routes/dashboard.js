@@ -1,6 +1,7 @@
 const express = require('express');
 const { query } = require('../models/database');
 const { requireAuth } = require('../middleware/auth');
+const { PLANS } = require('./billing');
 const router = express.Router();
 
 // Helper: get all repo IDs the user has access to (via direct ownership or installation)
@@ -178,6 +179,25 @@ router.post('/repositories/sync', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const username = req.user.username;
+    const plan = req.user.plan || 'free';
+    const maxRepos = PLANS[plan]?.max_repos ?? 1;
+
+    // Check current repo count against plan limit
+    if (maxRepos !== -1) {
+      const countResult = await query(
+        'SELECT COUNT(*) AS cnt FROM repositories WHERE user_id = $1',
+        [userId]
+      );
+      const currentCount = parseInt(countResult.rows[0].cnt);
+      if (currentCount >= maxRepos) {
+        return res.status(403).json({
+          error: `Repository limit reached. Your ${PLANS[plan].name} plan allows ${maxRepos} repo(s). Upgrade to Pro for unlimited.`,
+          limit: maxRepos,
+          current: currentCount,
+          plan,
+        });
+      }
+    }
 
     // Find installations for this user
     const instResult = await query(
@@ -223,6 +243,16 @@ router.post('/repositories/sync', requireAuth, async (req, res) => {
         const data = await response.json();
 
         for (const repo of (data.repositories || [])) {
+          // Enforce max_repos limit during sync
+          if (maxRepos !== -1) {
+            const curCount = await query(
+              'SELECT COUNT(*) AS cnt FROM repositories WHERE user_id = $1',
+              [userId]
+            );
+            if (parseInt(curCount.rows[0].cnt) >= maxRepos) {
+              break; // Stop syncing, limit reached
+            }
+          }
           await query(
             `INSERT INTO repositories (github_id, full_name, owner, name, default_branch, language, installation_id, user_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
