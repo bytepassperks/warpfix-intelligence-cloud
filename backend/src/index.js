@@ -22,6 +22,7 @@ const analyticsRoutes = require('./routes/analytics');
 const adminRoutes = require('./routes/admin');
 const notificationRoutes = require('./routes/notifications');
 const intelligenceRoutes = require('./routes/intelligence');
+const marketplaceRoutes = require('./routes/marketplace');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -29,8 +30,9 @@ const PORT = process.env.PORT || 4000;
 // Trust proxy for Render
 app.set('trust proxy', 1);
 
-// Webhook route needs raw body for signature verification
+// Webhook routes need raw body for signature verification
 app.use('/webhooks/github', express.raw({ type: 'application/json' }));
+app.use('/webhooks/marketplace', express.raw({ type: 'application/json' }));
 
 // Global middleware
 app.use(helmet());
@@ -52,7 +54,7 @@ app.use(cors({
 app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
 app.use((req, res, next) => {
   // Skip JSON parsing for webhook routes that need raw body for signature verification
-  if (req.path === '/api/billing/webhook/dodo' || req.path === '/webhooks/github') {
+  if (req.path === '/api/billing/webhook/dodo' || req.path === '/webhooks/github' || req.path === '/webhooks/marketplace') {
     return next();
   }
   express.json()(req, res, next);
@@ -97,6 +99,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/intelligence', intelligenceRoutes);
+app.use('/webhooks/marketplace', marketplaceRoutes);
 
 // Error handler
 app.use((err, req, res, _next) => {
