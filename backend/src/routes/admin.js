@@ -215,16 +215,27 @@ router.patch('/users/:id', requireAdmin, async (req, res) => {
 });
 
 // PATCH /admin/users/:id/tier  — change user tier specifically
+// Accepts: { plan: "free"|"pro"|"team", expires_at?: ISO date string, duration_days?: number }
 router.patch('/users/:id/tier', requireAdmin, async (req, res) => {
-  const { plan } = req.body;
+  const { plan, expires_at, duration_days } = req.body;
   if (!plan || !TIER_LIMITS[plan]) {
     return res.status(400).json({ error: 'Invalid plan. Must be: free, pro, or team' });
   }
 
   try {
+    // Calculate plan_expires_at from either expires_at or duration_days
+    let planExpiresAt = null;
+    if (plan !== 'free') {
+      if (expires_at) {
+        planExpiresAt = new Date(expires_at);
+      } else if (duration_days && duration_days > 0) {
+        planExpiresAt = new Date(Date.now() + duration_days * 24 * 60 * 60 * 1000);
+      }
+    }
+
     const result = await query(
-      'UPDATE users SET plan = $1, updated_at = NOW() WHERE id = $2 RETURNING id, username, email, plan',
-      [plan, req.params.id]
+      'UPDATE users SET plan = $1, plan_expires_at = $3, updated_at = NOW() WHERE id = $2 RETURNING id, username, email, plan, plan_expires_at',
+      [plan, req.params.id, planExpiresAt]
     );
     if (!result.rows[0]) return res.status(404).json({ error: 'User not found' });
 
@@ -235,7 +246,7 @@ router.patch('/users/:id/tier', requireAdmin, async (req, res) => {
       [req.params.id, plan]
     ).catch(() => {});
 
-    logger.info('Admin changed user tier', { admin: req.admin.email, userId: req.params.id, plan });
+    logger.info('Admin changed user tier', { admin: req.admin.email, userId: req.params.id, plan, expires_at: planExpiresAt });
     res.json({ user: result.rows[0], tier_limits: TIER_LIMITS[plan] });
   } catch (err) {
     logger.error('Admin tier change error', { error: err.message });
@@ -292,14 +303,14 @@ router.get('/promos', requireAdmin, async (req, res) => {
 
 // POST /admin/promos  — create promo
 router.post('/promos', requireAdmin, async (req, res) => {
-  const { code, description, discount_type, discount_value, plan_override, max_redemptions, expires_at } = req.body;
+  const { code, description, discount_type, discount_value, plan_override, max_redemptions, expires_at, duration_days } = req.body;
   if (!code) return res.status(400).json({ error: 'Promo code required' });
 
   try {
     const result = await query(
-      `INSERT INTO promo_codes (code, description, discount_type, discount_value, plan_override, max_redemptions, expires_at, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [code.toUpperCase(), description || '', discount_type || 'percentage', discount_value || 0, plan_override || null, max_redemptions || null, expires_at || null, req.admin.id]
+      `INSERT INTO promo_codes (code, description, discount_type, discount_value, plan_override, max_redemptions, expires_at, duration_days, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [code.toUpperCase(), description || '', discount_type || 'percentage', discount_value || 0, plan_override || null, max_redemptions || null, expires_at || null, duration_days || null, req.admin.id]
     );
     logger.info('Admin created promo', { admin: req.admin.email, code });
     res.status(201).json({ promo: result.rows[0] });
@@ -407,6 +418,22 @@ router.get('/promos/:id/redemptions', requireAdmin, async (req, res) => {
   }
 });
 
+// DELETE /admin/promos/:id/redemptions/:redemptionId  — remove a redemption
+router.delete('/promos/:id/redemptions/:redemptionId', requireAdmin, async (req, res) => {
+  try {
+    const result = await query(
+      'DELETE FROM promo_redemptions WHERE id = $1 AND promo_id = $2 RETURNING id',
+      [req.params.redemptionId, req.params.id]
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: 'Redemption not found' });
+    logger.info('Admin deleted promo redemption', { admin: req.admin.email, redemptionId: req.params.redemptionId });
+    res.json({ message: 'Redemption deleted' });
+  } catch (err) {
+    logger.error('Admin delete redemption error', { error: err.message });
+    res.status(500).json({ error: 'Failed to delete redemption' });
+  }
+});
+
 // POST /admin/promos/:id/apply  — apply promo to a user
 router.post('/promos/:id/apply', requireAdmin, async (req, res) => {
   const { user_id } = req.body;
@@ -430,7 +457,14 @@ router.post('/promos/:id/apply', requireAdmin, async (req, res) => {
 
     // Apply plan override if set
     if (p.plan_override) {
-      await query('UPDATE users SET plan = $1, updated_at = NOW() WHERE id = $2', [p.plan_override, user_id]);
+      let planExpiresAt = null;
+      if (p.duration_days && p.duration_days > 0) {
+        planExpiresAt = new Date(Date.now() + p.duration_days * 24 * 60 * 60 * 1000);
+      }
+      await query(
+        'UPDATE users SET plan = $1, plan_expires_at = $3, updated_at = NOW() WHERE id = $2',
+        [p.plan_override, user_id, planExpiresAt]
+      );
     }
 
     await query(

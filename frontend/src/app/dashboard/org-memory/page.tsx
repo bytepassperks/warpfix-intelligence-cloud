@@ -3,10 +3,10 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import {
-import { UpgradeGate } from "@/components/ui/upgrade-gate";
   Brain, BookOpen, FileCode2, Download, Upload, Plus, Check,
   X, Pencil, GitBranch, Users, Settings, Lightbulb, Loader2,
 } from "lucide-react";
+import { UpgradeGate } from "@/components/ui/upgrade-gate";
 import { API_URL } from "@/lib/utils";
 
 const fadeUp = {

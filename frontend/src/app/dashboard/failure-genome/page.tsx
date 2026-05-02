@@ -3,10 +3,10 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import {
-import { UpgradeGate } from "@/components/ui/upgrade-gate";
   Dna, TrendingUp, Globe, Hash, Clock, BarChart3,
   ChevronDown, ChevronUp, ArrowUpRight, Shield, Layers, Loader2,
 } from "lucide-react";
+import { UpgradeGate } from "@/components/ui/upgrade-gate";
 import { API_URL } from "@/lib/utils";
 
 const fadeUp = {

@@ -3,10 +3,10 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import {
-import { UpgradeGate } from "@/components/ui/upgrade-gate";
   Network, Globe, TrendingUp, Shield, Zap, BarChart3,
   AlertTriangle, ArrowRight, Eye, Target, Activity, Loader2,
 } from "lucide-react";
+import { UpgradeGate } from "@/components/ui/upgrade-gate";
 import { API_URL } from "@/lib/utils";
 
 const fadeUp = {
