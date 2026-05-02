@@ -1,10 +1,11 @@
 const express = require('express');
 const { query } = require('../models/database');
 const { requireAuth } = require('../middleware/auth');
+const { requireFeature } = require('../middleware/tierGate');
 const router = express.Router();
 
 // 1. Quality Metrics
-router.get('/quality', requireAuth, async (req, res) => {
+router.get('/quality', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const userId = req.user.id;
     const [reviewStats, severityBreakdown, topIssues] = await Promise.all([
@@ -43,7 +44,7 @@ router.get('/quality', requireAuth, async (req, res) => {
 });
 
 // 2. Time Saved
-router.get('/time-saved', requireAuth, async (req, res) => {
+router.get('/time-saved', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const userId = req.user.id;
     const [reviewTimeSaved, repairTimeSaved, monthlyTrend] = await Promise.all([
@@ -88,7 +89,7 @@ router.get('/time-saved', requireAuth, async (req, res) => {
 });
 
 // 3. Knowledge & Learnings
-router.get('/knowledge', requireAuth, async (req, res) => {
+router.get('/knowledge', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const [learningStats, recentLearnings, fingerprintStats] = await Promise.all([
       query(`
@@ -122,7 +123,7 @@ router.get('/knowledge', requireAuth, async (req, res) => {
 });
 
 // 4. Trends
-router.get('/trends', requireAuth, async (req, res) => {
+router.get('/trends', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const userId = req.user.id;
     const [repairTrend, reviewTrend, confidenceTrend, typeTrend] = await Promise.all([
@@ -162,7 +163,7 @@ router.get('/trends', requireAuth, async (req, res) => {
 });
 
 // 5. Security
-router.get('/security', requireAuth, async (req, res) => {
+router.get('/security', requireAuth, requireFeature('security_scan'), async (req, res) => {
   try {
     const userId = req.user.id;
     const [vulnStats, recentVulns] = await Promise.all([
@@ -192,7 +193,7 @@ router.get('/security', requireAuth, async (req, res) => {
 });
 
 // 6. Tech Debt
-router.get('/tech-debt', requireAuth, async (req, res) => {
+router.get('/tech-debt', requireAuth, requireFeature('tech_debt_tracking'), async (req, res) => {
   try {
     const result = await query(`
       SELECT metric_value
@@ -216,7 +217,7 @@ router.get('/tech-debt', requireAuth, async (req, res) => {
 });
 
 // 7. Repositories
-router.get('/repositories', requireAuth, async (req, res) => {
+router.get('/repositories', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const userId = req.user.id;
     const result = await query(`
@@ -241,7 +242,7 @@ router.get('/repositories', requireAuth, async (req, res) => {
 });
 
 // 8. Contributors
-router.get('/contributors', requireAuth, async (req, res) => {
+router.get('/contributors', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const userId = req.user.id;
     const result = await query(`
@@ -263,7 +264,7 @@ router.get('/contributors', requireAuth, async (req, res) => {
 });
 
 // 9. Predictions
-router.get('/predictions', requireAuth, async (req, res) => {
+router.get('/predictions', requireAuth, requireFeature('predictive_ci'), async (req, res) => {
   try {
     const result = await query(`
       SELECT metric_value
@@ -289,7 +290,7 @@ router.get('/predictions', requireAuth, async (req, res) => {
 });
 
 // 10. Release Notes
-router.get('/releases', requireAuth, async (req, res) => {
+router.get('/releases', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const result = await query(`
       SELECT metric_value

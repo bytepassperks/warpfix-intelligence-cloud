@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Loader2, Shield, Activity, Fingerprint, Brain, TrendingUp, AlertTriangle } from "lucide-react";
 import { API_URL } from "@/lib/utils";
+import { UpgradeGate } from "@/components/ui/upgrade-gate";
 
 interface StabilityComponent {
   score: number;
@@ -41,10 +42,11 @@ export default function OrgStabilityPage() {
   const [data, setData] = useState<StabilityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [gated, setGated] = useState<{feature: string; currentPlan: string; requiredPlan: string} | null>(null);
 
   useEffect(() => {
     fetch(`${API_URL}/api/intelligence/org-stability`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : Promise.reject("API error")))
+      .then(async (r) => { if (r.status === 403) { const b = await r.json(); if (b.feature) { setGated({ feature: b.feature, currentPlan: b.current_plan || "free", requiredPlan: b.required_plan || "pro" }); return null; } } return r.ok ? r.json() : Promise.reject("API error"); })
       .then(setData)
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
@@ -54,6 +56,14 @@ export default function OrgStabilityPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-6 h-6 animate-spin text-[var(--brand-primary)]" />
+      </div>
+    );
+  }
+
+  if (gated) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <UpgradeGate feature={gated.feature} requiredPlan={gated.requiredPlan} currentPlan={gated.currentPlan} />
       </div>
     );
   }

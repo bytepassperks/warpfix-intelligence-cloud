@@ -3,6 +3,7 @@ const router = express.Router();
 const { query } = require('../models/database');
 const { logger } = require('../utils/logger');
 const { requireAuth } = require('../middleware/auth');
+const { requireFeature } = require('../middleware/tierGate');
 
 // Helper: get all repo IDs the user has access to
 async function getUserRepoIds(userId) {
@@ -17,7 +18,7 @@ async function getUserRepoIds(userId) {
 }
 
 // ── CI Brain: test reliability & fingerprint stats ──
-router.get('/ci-brain', requireAuth, async (req, res) => {
+router.get('/ci-brain', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     // Total test runs and unique tests
     const testStats = await query(`
@@ -105,7 +106,7 @@ router.get('/ci-brain', requireAuth, async (req, res) => {
 });
 
 // ── Failure Genome: fingerprint database + monthly index ──
-router.get('/failure-genome', requireAuth, async (req, res) => {
+router.get('/failure-genome', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     // All fingerprints with metadata
     const fingerprints = await query(`
@@ -165,7 +166,7 @@ router.get('/failure-genome', requireAuth, async (req, res) => {
 });
 
 // ── Network Intelligence: cross-repo predictions ──
-router.get('/network-intelligence', requireAuth, async (req, res) => {
+router.get('/network-intelligence', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     // All predictions
     const predictions = await query(`
@@ -229,7 +230,7 @@ router.get('/network-intelligence', requireAuth, async (req, res) => {
 });
 
 // ── Org Memory: learned preferences & feedback log ──
-router.get('/org-memory', requireAuth, async (req, res) => {
+router.get('/org-memory', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -289,7 +290,7 @@ router.get('/org-memory', requireAuth, async (req, res) => {
 });
 
 // ── Predictive CI Failure: real predictions from fingerprint + network data ──
-router.get('/predictive-failures', requireAuth, async (req, res) => {
+router.get('/predictive-failures', requireAuth, requireFeature('predictive_ci'), async (req, res) => {
   try {
     // Active predictions from network_predictions (high probability)
     const predictions = await query(`
@@ -352,7 +353,7 @@ router.get('/predictive-failures', requireAuth, async (req, res) => {
 });
 
 // ── Tech Debt Tracking: real metrics from codebase analysis ──
-router.get('/tech-debt', requireAuth, async (req, res) => {
+router.get('/tech-debt', requireAuth, requireFeature('tech_debt_tracking'), async (req, res) => {
   try {
     // Debt from repeated fingerprints (same errors recurring)
     const recurringIssues = await query(`
@@ -435,7 +436,7 @@ router.get('/tech-debt', requireAuth, async (req, res) => {
 });
 
 // ── Test Coverage Analysis: real coverage from test runs ──
-router.get('/test-coverage', requireAuth, async (req, res) => {
+router.get('/test-coverage', requireAuth, requireFeature('test_coverage'), async (req, res) => {
   try {
     // Per-file test coverage based on test_runs data
     const fileCoverage = await query(`
@@ -517,7 +518,7 @@ router.get('/test-coverage', requireAuth, async (req, res) => {
 });
 
 // ── Org Stability Score: composite score from all data sources ──
-router.get('/org-stability', requireAuth, async (req, res) => {
+router.get('/org-stability', requireAuth, requireFeature('quality_gates'), async (req, res) => {
   try {
     // Test reliability component
     const testReliability = await query(`
@@ -627,7 +628,7 @@ router.get('/org-stability', requireAuth, async (req, res) => {
 });
 
 // ── Autopsy Reports: failure analysis with root cause ──
-router.get('/autopsy', requireAuth, async (req, res) => {
+router.get('/autopsy', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const reports = await query(`
       SELECT f.id, f.error_message, f.failure_type, f.branch, f.stack_trace,
@@ -665,7 +666,7 @@ router.get('/autopsy', requireAuth, async (req, res) => {
 });
 
 // ── Flaky Tests: non-deterministic test detection ──
-router.get('/flaky-tests', requireAuth, async (req, res) => {
+router.get('/flaky-tests', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const flakyTests = await query(`
       SELECT
@@ -703,7 +704,7 @@ router.get('/flaky-tests', requireAuth, async (req, res) => {
 });
 
 // ── Runbook Agent: automation playbooks from org preferences ──
-router.get('/runbook', requireAuth, async (req, res) => {
+router.get('/runbook', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const userId = req.user.id;
     const playbooks = await query(
@@ -740,7 +741,7 @@ router.get('/runbook', requireAuth, async (req, res) => {
 });
 
 // ── PR Reviewer: code review stats ──
-router.get('/pr-reviewer', requireAuth, async (req, res) => {
+router.get('/pr-reviewer', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const userId = req.user.id;
     const reviews = await query(
@@ -783,7 +784,7 @@ router.get('/pr-reviewer', requireAuth, async (req, res) => {
 });
 
 // ── Simulation Mode: dry-run repairs ──
-router.get('/simulation', requireAuth, async (req, res) => {
+router.get('/simulation', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const userId = req.user.id;
     const repoIds = await getUserRepoIds(userId);
@@ -817,7 +818,7 @@ router.get('/simulation', requireAuth, async (req, res) => {
 });
 
 // ── Insights: combined analytics dashboard ──
-router.get('/insights', requireAuth, async (req, res) => {
+router.get('/insights', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const fingerprints = await query(`
       SELECT hash, error_pattern AS pattern, times_matched AS count,
@@ -861,7 +862,7 @@ router.get('/insights', requireAuth, async (req, res) => {
 });
 
 // ── Static Auto-Fixes: repair engine stats ──
-router.get('/static-fixes', requireAuth, async (req, res) => {
+router.get('/static-fixes', requireAuth, requireFeature('dead_code_detection'), async (req, res) => {
   try {
     const engineStats = await query(`
       SELECT engine_used AS name,
@@ -888,7 +889,7 @@ router.get('/static-fixes', requireAuth, async (req, res) => {
 });
 
 // ── Cookbook: repair patterns & recipes from fingerprints ──
-router.get('/cookbook', requireAuth, async (req, res) => {
+router.get('/cookbook', requireAuth, requireFeature('custom_rules'), async (req, res) => {
   try {
     const recipes = await query(`
       SELECT hash, error_pattern AS title,

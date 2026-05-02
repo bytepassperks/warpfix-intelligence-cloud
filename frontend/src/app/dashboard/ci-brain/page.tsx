@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Brain, Fingerprint, Users, FileWarning, BarChart3, TrendingUp, Clock, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { API_URL } from "@/lib/utils";
+import { UpgradeGate } from "@/components/ui/upgrade-gate";
 
 interface CiBrainData {
   overview: {
@@ -44,11 +45,13 @@ export default function CiBrainPage() {
   const [data, setData] = useState<CiBrainData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [gated, setGated] = useState<{feature: string; currentPlan: string; requiredPlan: string} | null>(null);
 
   useEffect(() => {
     async function fetchData() {
       try {
         const res = await fetch(`${API_URL}/api/intelligence/ci-brain`, { credentials: "include" });
+        if (res.status === 403) { const b = await res.json(); if (b.feature) { setGated({ feature: b.feature, currentPlan: b.current_plan || "free", requiredPlan: b.required_plan || "pro" }); setLoading(false); return; } }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         setData(json);
@@ -65,6 +68,14 @@ export default function CiBrainPage() {
     return (
       <div className="p-6 max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  if (gated) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <UpgradeGate feature={gated.feature} requiredPlan={gated.requiredPlan} currentPlan={gated.currentPlan} />
       </div>
     );
   }

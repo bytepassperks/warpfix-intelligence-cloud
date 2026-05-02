@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonCard, SkeletonTable } from "@/components/ui/skeleton";
 import { API_URL } from "@/lib/utils";
+import { UpgradeGate } from "@/components/ui/upgrade-gate";
 
 const OWASP_CHECKS = [
   "Broken Access Control", "Cryptographic Failures", "Injection",
@@ -16,16 +17,25 @@ const OWASP_CHECKS = [
 
 export default function SecurityPage() {
   const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [gated, setGated] = useState<{feature: string; currentPlan: string; requiredPlan: string} | null>(null);
 
   useEffect(() => {
     fetch(`${API_URL}/api/analytics/security`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => { if (r.status === 403) { const b = await r.json(); if (b.feature) { setGated({ feature: b.feature, currentPlan: b.current_plan || "free", requiredPlan: b.required_plan || "pro" }); return null; } } return r.ok ? r.json() : null; })
       .then(setData)
       .catch(() => setData({}));
   }, []);
 
   const vulnStats = (data?.vulnerability_stats || {}) as Record<string, number>;
   const alerts = (data?.unresolved_alerts || []) as Array<Record<string, unknown>>;
+
+  if (gated) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <UpgradeGate feature={gated.feature} requiredPlan={gated.requiredPlan} currentPlan={gated.currentPlan} />
+      </div>
+    );
+  }
 
   return (
     <div>
