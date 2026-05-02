@@ -25,7 +25,7 @@ export default function AnalyticsPage() {
       : activeTab === "trends" ? "trends"
       : "predictions";
 
-    fetch(`${API_URL}/api/analytics/${endpoint}`)
+    fetch(`${API_URL}/api/analytics/${endpoint}`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then(setData)
       .catch(() => setData({}));

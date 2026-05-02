@@ -56,7 +56,7 @@ export default function PredictiveFailuresPage() {
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>(TABS[0]);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/intelligence/predictive-failures`)
+    fetch(`${API_URL}/api/intelligence/predictive-failures`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : Promise.reject("API error")))
       .then(setData)
       .catch((e) => setError(String(e)))

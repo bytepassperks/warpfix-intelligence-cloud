@@ -201,6 +201,21 @@ router.post('/webhook/dodo', express.raw({ type: 'application/json' }), async (r
         "UPDATE users SET plan = $1 WHERE email = $2",
         [plan, sub.customer.email]
       );
+      logger.info('User upgraded via Dodo subscription', { email: sub.customer.email, plan });
+    }
+
+    if (event.type === 'subscription.cancelled' || event.type === 'subscription.expired') {
+      const sub = event.data;
+      await query(
+        `UPDATE subscriptions SET status = $1, updated_at = NOW()
+         WHERE dodo_subscription_id = $2`,
+        [event.type === 'subscription.cancelled' ? 'cancelled' : 'expired', sub.subscription_id]
+      );
+      await query(
+        "UPDATE users SET plan = 'free' WHERE email = $1",
+        [sub.customer.email]
+      );
+      logger.info('User downgraded to free via Dodo subscription event', { email: sub.customer.email, type: event.type });
     }
 
     res.json({ received: true });

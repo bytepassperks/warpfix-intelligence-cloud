@@ -43,7 +43,7 @@ export default function OrgStabilityPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/intelligence/org-stability`)
+    fetch(`${API_URL}/api/intelligence/org-stability`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : Promise.reject("API error")))
       .then(setData)
       .catch((e) => setError(String(e)))
