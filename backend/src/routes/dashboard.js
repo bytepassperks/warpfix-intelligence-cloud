@@ -151,6 +151,107 @@ router.get('/stability', requireAuth, async (req, res) => {
   }
 });
 
+// List connected repositories for the current user
+router.get('/repositories', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await query(`
+      SELECT repo.id, repo.full_name, repo.language, repo.created_at,
+             COUNT(DISTINCT r.id)  AS repair_count,
+             COUNT(DISTINCT rv.id) AS review_count,
+             MAX(r.created_at)     AS last_repair
+      FROM repositories repo
+      LEFT JOIN repairs r  ON r.repository_id  = repo.id
+      LEFT JOIN reviews rv ON rv.repository_id = repo.id
+      WHERE repo.user_id = $1
+      GROUP BY repo.id, repo.full_name, repo.language, repo.created_at
+      ORDER BY repo.created_at DESC
+    `, [userId]);
+    res.json({ repositories: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch repositories' });
+  }
+});
+
+// Sync repos from GitHub installations into the DB
+router.post('/repositories/sync', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const username = req.user.username;
+
+    // Find installations for this user
+    const instResult = await query(
+      `SELECT installation_id FROM installations WHERE account_login = $1`,
+      [username]
+    );
+    if (!instResult.rows.length) {
+      return res.json({ synced: 0, repositories: [] });
+    }
+
+    const { createAppAuth } = require('@octokit/auth-app');
+    const appId = process.env.GITHUB_APP_ID;
+    const privateKey = (process.env.GITHUB_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+
+    if (!appId || !privateKey) {
+      // Fallback: just return existing repos if we can't talk to GitHub
+      const existing = await query(
+        'SELECT id, full_name, language, created_at FROM repositories WHERE user_id = $1 ORDER BY created_at DESC',
+        [userId]
+      );
+      return res.json({ synced: 0, repositories: existing.rows });
+    }
+
+    let totalSynced = 0;
+    for (const inst of instResult.rows) {
+      try {
+        const auth = createAppAuth({ appId, privateKey });
+        const installationAuth = await auth({
+          type: 'installation',
+          installationId: Number(inst.installation_id),
+        });
+
+        const response = await fetch(
+          `https://api.github.com/installation/repositories?per_page=100`,
+          {
+            headers: {
+              Authorization: `token ${installationAuth.token}`,
+              Accept: 'application/vnd.github+json',
+            },
+          }
+        );
+        if (!response.ok) continue;
+        const data = await response.json();
+
+        for (const repo of (data.repositories || [])) {
+          await query(
+            `INSERT INTO repositories (github_id, full_name, owner, name, default_branch, language, installation_id, user_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             ON CONFLICT (github_id) DO UPDATE SET
+               full_name = EXCLUDED.full_name,
+               language = EXCLUDED.language,
+               user_id = COALESCE(repositories.user_id, EXCLUDED.user_id),
+               updated_at = NOW()`,
+            [repo.id, repo.full_name, repo.owner.login, repo.name,
+             repo.default_branch || 'main', repo.language,
+             String(inst.installation_id), userId]
+          );
+          totalSynced++;
+        }
+      } catch (innerErr) {
+        // Skip individual installation errors
+      }
+    }
+
+    const repos = await query(
+      'SELECT id, full_name, language, created_at FROM repositories WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId]
+    );
+    res.json({ synced: totalSynced, repositories: repos.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to sync repositories' });
+  }
+});
+
 router.get('/telemetry', requireAuth, async (req, res) => {
   try {
     const result = await query(

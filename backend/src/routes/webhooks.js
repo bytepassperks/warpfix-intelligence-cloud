@@ -118,6 +118,30 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
              JSON.stringify(inst.permissions), JSON.stringify(inst.events)]
           );
           logger.info('Installation created', { id: inst.id, account: inst.account.login });
+
+          // Auto-save repos from the installation payload
+          if (payload.repositories && payload.repositories.length > 0) {
+            const userResult = await query(
+              'SELECT id FROM users WHERE username = $1',
+              [inst.account.login]
+            );
+            const userId = userResult.rows[0]?.id || null;
+
+            for (const repo of payload.repositories) {
+              await query(
+                `INSERT INTO repositories (github_id, full_name, owner, name, default_branch, installation_id, user_id)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)
+                 ON CONFLICT (github_id) DO UPDATE SET
+                   full_name = EXCLUDED.full_name,
+                   user_id = COALESCE(repositories.user_id, EXCLUDED.user_id),
+                   installation_id = EXCLUDED.installation_id,
+                   updated_at = NOW()`,
+                [repo.id, repo.full_name, repo.full_name.split('/')[0], repo.name,
+                 'main', String(inst.id), userId]
+              );
+            }
+            logger.info('Saved repos from installation', { count: payload.repositories.length, account: inst.account.login });
+          }
         }
         break;
       }
