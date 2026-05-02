@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FolderGit2, GitBranch, Wrench, ExternalLink } from "lucide-react";
+import { FolderGit2, GitBranch, Wrench, ExternalLink, RefreshCw } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
@@ -12,51 +12,69 @@ interface Repo {
   total_repairs: number;
   success_rate: number;
   last_repair_at: string | null;
+  language?: string | null;
 }
 
 export default function RepositoriesPage() {
   const [repos, setRepos] = useState<Repo[] | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
-  useEffect(() => {
-    fetch(`${API_URL}/api/dashboard/stats`, { credentials: "include" })
+  const fetchRepos = () => {
+    fetch(`${API_URL}/api/dashboard/repositories`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data?.recent_repairs?.length) {
-          const repoMap = new Map<string, Repo>();
-          for (const r of data.recent_repairs) {
-            const name = (r.repo_name || r.repo_full_name || "unknown") as string;
-            const existing = repoMap.get(name);
-            if (existing) {
-              existing.total_repairs++;
-              if (r.sandbox_passed) existing.success_rate++;
-            } else {
-              repoMap.set(name, {
-                full_name: name,
-                total_repairs: 1,
-                success_rate: r.sandbox_passed ? 1 : 0,
-                last_repair_at: r.created_at as string,
-              });
-            }
-          }
-          const repos = Array.from(repoMap.values()).map((r) => ({
-            ...r,
-            success_rate: Math.round((r.success_rate / r.total_repairs) * 100),
-          }));
-          setRepos(repos);
+        if (data?.repositories?.length) {
+          setRepos(
+            data.repositories.map((r: Record<string, unknown>) => ({
+              full_name: r.full_name as string,
+              total_repairs: parseInt(String(r.repair_count || "0")),
+              success_rate: 0,
+              last_repair_at: (r.last_repair as string) || null,
+              language: r.language as string | null,
+            }))
+          );
         } else {
           setRepos([]);
         }
       })
       .catch(() => setRepos([]));
+  };
+
+  const syncRepos = () => {
+    setSyncing(true);
+    fetch(`${API_URL}/api/dashboard/repositories/sync`, {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(() => {
+        fetchRepos();
+        setSyncing(false);
+      })
+      .catch(() => setSyncing(false));
+  };
+
+  useEffect(() => {
+    fetchRepos();
   }, []);
 
   return (
     <div>
-      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <h1 className="text-xl font-semibold">Repositories</h1>
-        <p className="text-[13px] text-[var(--text-secondary)] mt-0.5">
-          Repos with WarpFix installed
-        </p>
+      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold">Repositories</h1>
+          <p className="text-[13px] text-[var(--text-secondary)] mt-0.5">
+            Repos with WarpFix installed
+          </p>
+        </div>
+        <button
+          onClick={syncRepos}
+          disabled={syncing}
+          className="flex items-center gap-2 px-3 py-1.5 text-[13px] font-medium rounded-md border border-[var(--border-default)] hover:bg-[var(--bg-secondary)] transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+          {syncing ? "Syncing…" : "Sync Repos"}
+        </button>
       </motion.div>
 
       {repos === null ? (
@@ -92,7 +110,7 @@ export default function RepositoriesPage() {
                   </div>
                   <div>
                     <div className="font-medium text-[14px]">{repo.full_name.split("/").pop()}</div>
-                    <div className="text-xs text-[var(--text-tertiary)]">{repo.full_name}</div>
+                    <div className="text-xs text-[var(--text-tertiary)]">{repo.full_name}{repo.language ? ` · ${repo.language}` : ""}</div>
                   </div>
                 </div>
                 <a
