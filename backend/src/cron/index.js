@@ -82,8 +82,24 @@ async function expiredSubscriptionDowngrade() {
 async function expiredPromoDowngrade() {
   logger.info('Running expired promo downgrade check');
   try {
-    const result = await query(
-      `UPDATE users SET plan = 'free', updated_at = NOW()
+    // Check per-user plan_expires_at (set by promo or admin tier change)
+    const userExpiry = await query(
+      `UPDATE users SET plan = 'free', plan_expires_at = NULL, updated_at = NOW()
+       WHERE plan_expires_at IS NOT NULL
+       AND plan_expires_at < NOW()
+       AND plan != 'free'
+       AND id NOT IN (
+         SELECT user_id FROM subscriptions WHERE status = 'active'
+       )
+       RETURNING id, username`
+    );
+    if (userExpiry.rows.length > 0) {
+      logger.info('Expired plan downgrades (per-user expiry)', { count: userExpiry.rows.length, users: userExpiry.rows.map(r => r.username) });
+    }
+
+    // Also check global promo expiry (legacy: promo_codes.expires_at)
+    const promoExpiry = await query(
+      `UPDATE users SET plan = 'free', plan_expires_at = NULL, updated_at = NOW()
        WHERE id IN (
          SELECT pr.user_id FROM promo_redemptions pr
          JOIN promo_codes pc ON pr.promo_id = pc.id
@@ -97,9 +113,11 @@ async function expiredPromoDowngrade() {
        )
        RETURNING id, username`
     );
-    if (result.rows.length > 0) {
-      logger.info('Expired promo downgrades', { count: result.rows.length, users: result.rows.map(r => r.username) });
-    } else {
+    if (promoExpiry.rows.length > 0) {
+      logger.info('Expired promo downgrades (global promo expiry)', { count: promoExpiry.rows.length, users: promoExpiry.rows.map(r => r.username) });
+    }
+
+    if (userExpiry.rows.length === 0 && promoExpiry.rows.length === 0) {
       logger.info('No expired promo downgrades needed');
     }
   } catch (err) {

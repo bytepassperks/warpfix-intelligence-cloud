@@ -23,6 +23,7 @@ router.get('/subscription', requireAuth, async (req, res) => {
     res.json({
       subscription: result.rows[0] || null,
       current_plan: req.user.plan,
+      plan_expires_at: req.user.plan_expires_at || null,
       usage: {
         repairs_used: req.user.repairs_used_this_month,
         repairs_limit: PLANS[req.user.plan]?.repairs_per_month || 3,
@@ -131,7 +132,11 @@ router.post('/promo/apply', requireAuth, async (req, res) => {
 
     // Apply promo: if plan_override, upgrade the user's plan
     if (promo.plan_override && PLANS[promo.plan_override]) {
-      await query('UPDATE users SET plan = $1 WHERE id = $2', [promo.plan_override, req.user.id]);
+      let planExpiresAt = null;
+      if (promo.duration_days && promo.duration_days > 0) {
+        planExpiresAt = new Date(Date.now() + promo.duration_days * 24 * 60 * 60 * 1000);
+      }
+      await query('UPDATE users SET plan = $1, plan_expires_at = $3 WHERE id = $2', [promo.plan_override, req.user.id, planExpiresAt]);
     }
 
     // Record the redemption
