@@ -1,10 +1,11 @@
 const express = require('express');
 const { query } = require('../models/database');
 const { requireAuth } = require('../middleware/auth');
+const { requireFeature } = require('../middleware/tierGate');
 const router = express.Router();
 
 // Get reviews for a repository
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, requireFeature('reviews_enabled'), async (req, res) => {
   try {
     const userId = req.user.id;
     const result = await query(

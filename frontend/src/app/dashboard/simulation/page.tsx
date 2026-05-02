@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { PlayCircle, CheckCircle2, XCircle, Cpu, ArrowRight, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { API_URL, formatRelativeTime } from "@/lib/utils";
+import { UpgradeGate } from "@/components/ui/upgrade-gate";
 
 interface SimRepair {
   id: string;
@@ -25,10 +26,11 @@ interface SimData {
 export default function SimulationPage() {
   const [data, setData] = useState<SimData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [gated, setGated] = useState<{feature: string; currentPlan: string; requiredPlan: string} | null>(null);
 
   useEffect(() => {
     fetch(`${API_URL}/api/intelligence/simulation`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => { if (r.status === 403) { const b = await r.json(); if (b.feature) { setGated({ feature: b.feature, currentPlan: b.current_plan || "free", requiredPlan: b.required_plan || "pro" }); return null; } } return r.ok ? r.json() : null; })
       .then((d) => { if (d) setData(d); })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -38,6 +40,14 @@ export default function SimulationPage() {
     return (
       <div className="p-6 max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  if (gated) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <UpgradeGate feature={gated.feature} requiredPlan={gated.requiredPlan} currentPlan={gated.currentPlan} />
       </div>
     );
   }
