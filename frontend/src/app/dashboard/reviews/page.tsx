@@ -30,13 +30,14 @@ export default function ReviewsPage() {
   });
 
   useEffect(() => {
-    fetch(`${API_URL}/api/reviews/public-stats`)
+    fetch(`${API_URL}/api/reviews`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (d) {
-          setReviews(d.recent_reviews || []);
+          const reviews = d.reviews || d.recent_reviews || [];
+          setReviews(reviews);
           setStats({
-            total_reviews: d.total_reviews || 0,
+            total_reviews: d.total_reviews || reviews.length,
             issue_breakdown: d.issue_breakdown || stats.issue_breakdown,
           });
         } else {

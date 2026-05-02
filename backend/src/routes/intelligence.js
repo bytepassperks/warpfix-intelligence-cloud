@@ -2,9 +2,22 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../models/database');
 const { logger } = require('../utils/logger');
+const { requireAuth } = require('../middleware/auth');
+
+// Helper: get all repo IDs the user has access to
+async function getUserRepoIds(userId) {
+  const result = await query(
+    `SELECT DISTINCT rp.id FROM repositories rp
+     LEFT JOIN installations i ON i.installation_id::text = rp.installation_id
+     LEFT JOIN users u ON u.username = i.account_login
+     WHERE rp.user_id = $1 OR u.id = $1`,
+    [userId]
+  );
+  return result.rows.map(r => r.id);
+}
 
 // ── CI Brain: test reliability & fingerprint stats ──
-router.get('/ci-brain', async (req, res) => {
+router.get('/ci-brain', requireAuth, async (req, res) => {
   try {
     // Total test runs and unique tests
     const testStats = await query(`
@@ -92,7 +105,7 @@ router.get('/ci-brain', async (req, res) => {
 });
 
 // ── Failure Genome: fingerprint database + monthly index ──
-router.get('/failure-genome', async (req, res) => {
+router.get('/failure-genome', requireAuth, async (req, res) => {
   try {
     // All fingerprints with metadata
     const fingerprints = await query(`
@@ -152,7 +165,7 @@ router.get('/failure-genome', async (req, res) => {
 });
 
 // ── Network Intelligence: cross-repo predictions ──
-router.get('/network-intelligence', async (req, res) => {
+router.get('/network-intelligence', requireAuth, async (req, res) => {
   try {
     // All predictions
     const predictions = await query(`
@@ -216,39 +229,31 @@ router.get('/network-intelligence', async (req, res) => {
 });
 
 // ── Org Memory: learned preferences & feedback log ──
-router.get('/org-memory', async (req, res) => {
+router.get('/org-memory', requireAuth, async (req, res) => {
   try {
-    const userId = req.query.user_id;
+    const userId = req.user.id;
 
-    // All org preferences (if user_id, filter; otherwise show all)
-    let prefsQuery = `
-      SELECT id, category, rule, confidence, source, times_applied, last_used_at, created_at
-      FROM org_preferences
-    `;
-    const params = [];
-    if (userId) {
-      prefsQuery += ' WHERE user_id = $1';
-      params.push(userId);
-    }
-    prefsQuery += ' ORDER BY confidence DESC, times_applied DESC';
-
-    const preferences = await query(prefsQuery, params);
+    // All org preferences filtered to authenticated user
+    const preferences = await query(
+      `SELECT id, category, rule, confidence, source, times_applied, last_used_at, created_at
+       FROM org_preferences
+       WHERE user_id = $1
+       ORDER BY confidence DESC, times_applied DESC`,
+      [userId]
+    );
 
     // Category breakdown
-    let catQuery = `
-      SELECT
+    const categories = await query(
+      `SELECT
         category,
         COUNT(*) AS rules_count,
         ROUND(AVG(confidence), 0) AS avg_confidence,
         SUM(times_applied) AS total_applications
-      FROM org_preferences
-    `;
-    if (userId) {
-      catQuery += ' WHERE user_id = $1';
-    }
-    catQuery += ' GROUP BY category ORDER BY rules_count DESC';
-
-    const categories = await query(catQuery, params);
+       FROM org_preferences
+       WHERE user_id = $1
+       GROUP BY category ORDER BY rules_count DESC`,
+      [userId]
+    );
 
     // PR feedback signals (from learnings table)
     const feedbackLog = await query(`
@@ -284,7 +289,7 @@ router.get('/org-memory', async (req, res) => {
 });
 
 // ── Predictive CI Failure: real predictions from fingerprint + network data ──
-router.get('/predictive-failures', async (req, res) => {
+router.get('/predictive-failures', requireAuth, async (req, res) => {
   try {
     // Active predictions from network_predictions (high probability)
     const predictions = await query(`
@@ -347,7 +352,7 @@ router.get('/predictive-failures', async (req, res) => {
 });
 
 // ── Tech Debt Tracking: real metrics from codebase analysis ──
-router.get('/tech-debt', async (req, res) => {
+router.get('/tech-debt', requireAuth, async (req, res) => {
   try {
     // Debt from repeated fingerprints (same errors recurring)
     const recurringIssues = await query(`
@@ -430,7 +435,7 @@ router.get('/tech-debt', async (req, res) => {
 });
 
 // ── Test Coverage Analysis: real coverage from test runs ──
-router.get('/test-coverage', async (req, res) => {
+router.get('/test-coverage', requireAuth, async (req, res) => {
   try {
     // Per-file test coverage based on test_runs data
     const fileCoverage = await query(`
@@ -512,7 +517,7 @@ router.get('/test-coverage', async (req, res) => {
 });
 
 // ── Org Stability Score: composite score from all data sources ──
-router.get('/org-stability', async (req, res) => {
+router.get('/org-stability', requireAuth, async (req, res) => {
   try {
     // Test reliability component
     const testReliability = await query(`
@@ -618,6 +623,306 @@ router.get('/org-stability', async (req, res) => {
   } catch (err) {
     logger.error('Org stability fetch failed', { error: err.message });
     res.status(500).json({ error: 'Failed to fetch org stability data' });
+  }
+});
+
+// ── Autopsy Reports: failure analysis with root cause ──
+router.get('/autopsy', requireAuth, async (req, res) => {
+  try {
+    const reports = await query(`
+      SELECT f.id, f.error_message, f.failure_type, f.branch, f.stack_trace,
+             f.workflow_name, f.created_at,
+             r.full_name AS repo_name,
+             fp.hash AS fingerprint_hash, fp.times_matched AS historical_matches,
+             fp.error_pattern, fp.resolution_confidence,
+             fp.dependency_context->>'category' AS category,
+             rep.patch_summary, rep.status AS repair_status
+      FROM failures f
+      LEFT JOIN repositories r ON f.repository_id = r.id
+      LEFT JOIN repairs rep ON rep.failure_id = f.id
+      LEFT JOIN fingerprints fp ON rep.fingerprint_id = fp.id
+      ORDER BY f.created_at DESC
+      LIMIT 50
+    `);
+
+    const autoResolved = reports.rows.filter(r => r.repair_status === 'completed').length;
+    const uniqueCauses = new Set(reports.rows.map(r => r.fingerprint_hash).filter(Boolean)).size;
+
+    res.json({
+      overview: {
+        totalReports: reports.rows.length,
+        uniqueRootCauses: uniqueCauses,
+        autoResolved: reports.rows.length > 0
+          ? Math.round((autoResolved / reports.rows.length) * 100)
+          : 0,
+      },
+      reports: reports.rows,
+    });
+  } catch (err) {
+    logger.error('Autopsy fetch failed', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch autopsy data' });
+  }
+});
+
+// ── Flaky Tests: non-deterministic test detection ──
+router.get('/flaky-tests', requireAuth, async (req, res) => {
+  try {
+    const flakyTests = await query(`
+      SELECT
+        test_name, test_file,
+        COUNT(*) AS total_runs,
+        COUNT(*) FILTER (WHERE status = 'passed') AS passes,
+        COUNT(*) FILTER (WHERE status = 'failed') AS failures,
+        ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'failed') / NULLIF(COUNT(*), 0), 1) AS flake_rate,
+        MAX(created_at) FILTER (WHERE status = 'failed') AS last_flake
+      FROM test_runs
+      GROUP BY test_name, test_file
+      HAVING COUNT(*) FILTER (WHERE status = 'passed') > 0
+        AND COUNT(*) FILTER (WHERE status = 'failed') > 0
+      ORDER BY flake_rate DESC
+      LIMIT 20
+    `);
+
+    const totalFlakeEvents = flakyTests.rows.reduce((s, t) => s + parseInt(t.failures || 0), 0);
+    const avgFlakeRate = flakyTests.rows.length > 0
+      ? (flakyTests.rows.reduce((s, t) => s + parseFloat(t.flake_rate || 0), 0) / flakyTests.rows.length).toFixed(1)
+      : 0;
+
+    res.json({
+      overview: {
+        flakyCount: flakyTests.rows.length,
+        totalFlakeEvents,
+        avgFlakeRate: parseFloat(avgFlakeRate),
+      },
+      tests: flakyTests.rows,
+    });
+  } catch (err) {
+    logger.error('Flaky tests fetch failed', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch flaky tests data' });
+  }
+});
+
+// ── Runbook Agent: automation playbooks from org preferences ──
+router.get('/runbook', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const playbooks = await query(
+      `SELECT id, category AS trigger, rule AS name, confidence,
+              times_applied AS runs, last_used_at AS last_run, source, created_at
+       FROM org_preferences
+       WHERE user_id = $1
+       ORDER BY times_applied DESC`,
+      [userId]
+    );
+
+    const totalRuns = playbooks.rows.reduce((s, p) => s + parseInt(p.runs || 0), 0);
+
+    const recentActivity = await query(
+      `SELECT id, rule, category, context, source, times_applied, created_at
+       FROM learnings
+       ORDER BY created_at DESC
+       LIMIT 20`
+    );
+
+    res.json({
+      overview: {
+        totalPlaybooks: playbooks.rows.length,
+        totalRuns,
+        eventsProcessed: recentActivity.rows.length,
+      },
+      playbooks: playbooks.rows,
+      recentActivity: recentActivity.rows,
+    });
+  } catch (err) {
+    logger.error('Runbook fetch failed', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch runbook data' });
+  }
+});
+
+// ── PR Reviewer: code review stats ──
+router.get('/pr-reviewer', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const reviews = await query(
+      `SELECT id, pr_number, pr_title, pr_url, summary, risk_level,
+              review_effort_level, inline_comments_count, review_data,
+              created_at, repo_name
+       FROM reviews
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [userId]
+    );
+
+    const totalReviews = reviews.rows.length;
+    const issueBreakdown = reviews.rows.reduce((acc, r) => {
+      const data = r.review_data || {};
+      acc.critical += parseInt(data.critical_count || 0);
+      acc.warnings += parseInt(data.warning_count || 0);
+      acc.nitpicks += parseInt(data.nitpick_count || 0);
+      return acc;
+    }, { critical: 0, warnings: 0, nitpicks: 0 });
+
+    const autoFixed = reviews.rows.filter(r =>
+      r.review_data && r.review_data.auto_fixed
+    ).length;
+
+    res.json({
+      overview: {
+        totalReviews,
+        totalIssues: issueBreakdown.critical + issueBreakdown.warnings + issueBreakdown.nitpicks,
+        autoFixed,
+        issueBreakdown,
+      },
+      reviews: reviews.rows,
+    });
+  } catch (err) {
+    logger.error('PR Reviewer fetch failed', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch PR reviewer data' });
+  }
+});
+
+// ── Simulation Mode: dry-run repairs ──
+router.get('/simulation', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const repoIds = await getUserRepoIds(userId);
+    const repoIdList = repoIds.length > 0 ? repoIds : ['00000000-0000-0000-0000-000000000000'];
+
+    const repairs = await query(
+      `SELECT r.id, r.error_message, r.patch_summary, r.confidence_score,
+              r.sandbox_passed, r.engine_used, r.status, r.created_at,
+              repo.full_name AS repo_name
+       FROM repairs r
+       LEFT JOIN repositories repo ON repo.id = r.repository_id
+       WHERE r.user_id = $1 OR r.repository_id = ANY($2::uuid[])
+       ORDER BY r.created_at DESC
+       LIMIT 20`,
+      [userId, repoIdList]
+    );
+
+    res.json({
+      overview: {
+        totalSimulations: repairs.rows.length,
+        passRate: repairs.rows.length > 0
+          ? Math.round((repairs.rows.filter(r => r.sandbox_passed).length / repairs.rows.length) * 100)
+          : 0,
+      },
+      repairs: repairs.rows,
+    });
+  } catch (err) {
+    logger.error('Simulation fetch failed', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch simulation data' });
+  }
+});
+
+// ── Insights: combined analytics dashboard ──
+router.get('/insights', requireAuth, async (req, res) => {
+  try {
+    const fingerprints = await query(`
+      SELECT hash, error_pattern AS pattern, times_matched AS count,
+             last_matched_at AS last_seen, resolution_confidence AS confidence
+      FROM fingerprints
+      ORDER BY times_matched DESC LIMIT 10
+    `);
+
+    const flakyTests = await query(`
+      SELECT test_name AS name, test_file AS file,
+             ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'failed') / NULLIF(COUNT(*), 0), 1) AS flake_rate,
+             COUNT(*) AS runs,
+             MAX(created_at) FILTER (WHERE status = 'failed') AS last_flake
+      FROM test_runs
+      GROUP BY test_name, test_file
+      HAVING COUNT(*) FILTER (WHERE status = 'failed') > 0
+      ORDER BY flake_rate DESC LIMIT 5
+    `);
+
+    const failureFiles = await query(`
+      SELECT test_file AS path,
+             COUNT(*) FILTER (WHERE status = 'failed') AS failures,
+             ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'failed') / NULLIF(COUNT(*), 0), 1) AS pct,
+             MAX(created_at) FILTER (WHERE status = 'failed') AS last_fail
+      FROM test_runs
+      WHERE test_file IS NOT NULL
+      GROUP BY test_file
+      HAVING COUNT(*) FILTER (WHERE status = 'failed') > 0
+      ORDER BY failures DESC LIMIT 5
+    `);
+
+    res.json({
+      fingerprints: fingerprints.rows,
+      flakyTests: flakyTests.rows,
+      failureFiles: failureFiles.rows,
+    });
+  } catch (err) {
+    logger.error('Insights fetch failed', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch insights data' });
+  }
+});
+
+// ── Static Auto-Fixes: repair engine stats ──
+router.get('/static-fixes', requireAuth, async (req, res) => {
+  try {
+    const engineStats = await query(`
+      SELECT engine_used AS name,
+             COUNT(*) AS fixes,
+             COUNT(*) FILTER (WHERE sandbox_passed = true) AS successes,
+             MAX(created_at) AS last_run
+      FROM repairs
+      WHERE engine_used IS NOT NULL
+      GROUP BY engine_used
+      ORDER BY fixes DESC
+    `);
+
+    res.json({
+      tools: engineStats.rows,
+      overview: {
+        totalTools: engineStats.rows.length,
+        totalFixes: engineStats.rows.reduce((s, t) => s + parseInt(t.fixes || 0), 0),
+      },
+    });
+  } catch (err) {
+    logger.error('Static fixes fetch failed', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch static fixes data' });
+  }
+});
+
+// ── Cookbook: repair patterns & recipes from fingerprints ──
+router.get('/cookbook', requireAuth, async (req, res) => {
+  try {
+    const recipes = await query(`
+      SELECT hash, error_pattern AS title,
+             dependency_context->>'framework' AS framework,
+             dependency_context->>'category' AS category,
+             resolution_confidence AS confidence,
+             times_matched AS uses,
+             last_matched_at AS last_used
+      FROM fingerprints
+      WHERE resolution_confidence >= 70
+      ORDER BY times_matched DESC
+      LIMIT 20
+    `);
+
+    const categories = await query(`
+      SELECT dependency_context->>'category' AS category,
+             COUNT(*) AS count
+      FROM fingerprints
+      WHERE dependency_context->>'category' IS NOT NULL
+      GROUP BY dependency_context->>'category'
+      ORDER BY count DESC
+    `);
+
+    res.json({
+      overview: {
+        totalRecipes: recipes.rows.length,
+        categories: categories.rows.length,
+      },
+      recipes: recipes.rows,
+      categories: categories.rows,
+    });
+  } catch (err) {
+    logger.error('Cookbook fetch failed', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch cookbook data' });
   }
 });
 
