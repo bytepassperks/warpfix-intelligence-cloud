@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FolderGit2, GitBranch, Wrench, ExternalLink, RefreshCw } from "lucide-react";
+import { FolderGit2, GitBranch, Wrench, ExternalLink, RefreshCw, AlertTriangle } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
@@ -18,6 +18,7 @@ interface Repo {
 export default function RepositoriesPage() {
   const [repos, setRepos] = useState<Repo[] | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [limitError, setLimitError] = useState<string | null>(null);
 
   const fetchRepos = () => {
     fetch(`${API_URL}/api/dashboard/repositories`, { credentials: "include" })
@@ -42,11 +43,19 @@ export default function RepositoriesPage() {
 
   const syncRepos = () => {
     setSyncing(true);
+    setLimitError(null);
     fetch(`${API_URL}/api/dashboard/repositories/sync`, {
       method: "POST",
       credentials: "include",
     })
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => {
+        if (r.status === 403) {
+          const err = await r.json();
+          setLimitError(err.error || "Repository limit reached. Upgrade your plan for more.");
+          return null;
+        }
+        return r.ok ? r.json() : null;
+      })
       .then(() => {
         fetchRepos();
         setSyncing(false);
@@ -76,6 +85,23 @@ export default function RepositoriesPage() {
           {syncing ? "Syncing…" : "Sync Repos"}
         </button>
       </motion.div>
+
+      {limitError && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 flex items-center gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[13px]"
+        >
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <span>{limitError}</span>
+          <a
+            href="/dashboard/billing"
+            className="ml-auto text-amber-900 font-medium underline hover:no-underline whitespace-nowrap"
+          >
+            Upgrade Plan
+          </a>
+        </motion.div>
+      )}
 
       {repos === null ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -4,6 +4,7 @@ const { logger } = require('../utils/logger');
 const { enqueueRepairJob, enqueueReviewJob, enqueueChatJob } = require('../queue/producer');
 const { query } = require('../models/database');
 const { captureOrgPreference, detectPreferenceFromPREdit } = require('../agents/intelligenceGrowth');
+const { PLANS } = require('./billing');
 const router = express.Router();
 
 function verifyGitHubSignature(req, res, next) {
@@ -122,12 +123,26 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
           // Auto-save repos from the installation payload
           if (payload.repositories && payload.repositories.length > 0) {
             const userResult = await query(
-              'SELECT id FROM users WHERE username = $1',
+              'SELECT id, plan FROM users WHERE username = $1',
               [inst.account.login]
             );
             const userId = userResult.rows[0]?.id || null;
+            const userPlan = userResult.rows[0]?.plan || 'free';
+            const maxRepos = PLANS[userPlan]?.max_repos ?? 1;
 
+            let saved = 0;
             for (const repo of payload.repositories) {
+              // Enforce max_repos limit
+              if (maxRepos !== -1 && userId) {
+                const curCount = await query(
+                  'SELECT COUNT(*) AS cnt FROM repositories WHERE user_id = $1',
+                  [userId]
+                );
+                if (parseInt(curCount.rows[0].cnt) >= maxRepos) {
+                  logger.info('Repo limit reached during install', { plan: userPlan, max: maxRepos, account: inst.account.login });
+                  break;
+                }
+              }
               await query(
                 `INSERT INTO repositories (github_id, full_name, owner, name, default_branch, installation_id, user_id)
                  VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -139,8 +154,9 @@ router.post('/github', verifyGitHubSignature, async (req, res) => {
                 [repo.id, repo.full_name, repo.full_name.split('/')[0], repo.name,
                  'main', String(inst.id), userId]
               );
+              saved++;
             }
-            logger.info('Saved repos from installation', { count: payload.repositories.length, account: inst.account.login });
+            logger.info('Saved repos from installation', { saved, total: payload.repositories.length, account: inst.account.login });
           }
         }
         break;
