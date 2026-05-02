@@ -333,6 +333,7 @@ router.patch('/promos/:id', requireAdmin, async (req, res) => {
   if (discount_value !== undefined) { updates.push(`discount_value = $${idx}`); params.push(discount_value); idx++; }
   if (max_redemptions !== undefined) { updates.push(`max_redemptions = $${idx}`); params.push(max_redemptions); idx++; }
   if (expires_at !== undefined) { updates.push(`expires_at = $${idx}`); params.push(expires_at); idx++; }
+  if (req.body.duration_days !== undefined) { updates.push(`duration_days = $${idx}`); params.push(req.body.duration_days); idx++; }
 
   if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
@@ -361,7 +362,7 @@ router.delete('/promos/:id', requireAdmin, async (req, res) => {
 
 // POST /admin/promos/bulk  — bulk generate promo codes
 router.post('/promos/bulk', requireAdmin, async (req, res) => {
-  const { count, prefix, description, discount_type, discount_value, plan_override, max_redemptions, expires_at } = req.body;
+  const { count, prefix, description, discount_type, discount_value, plan_override, max_redemptions, expires_at, duration_days } = req.body;
   const numCodes = Math.min(Math.max(parseInt(count) || 1, 1), 500);
 
   if (!prefix) return res.status(400).json({ error: 'Prefix is required for bulk generation' });
@@ -379,9 +380,9 @@ router.post('/promos/bulk', requireAdmin, async (req, res) => {
     for (const code of codes) {
       try {
         const result = await query(
-          `INSERT INTO promo_codes (code, description, discount_type, discount_value, plan_override, max_redemptions, expires_at, created_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-          [code, description || `Bulk generated: ${prefix}`, discount_type || 'percentage', discount_value || 0, plan_override || null, max_redemptions ? parseInt(max_redemptions) : null, expires_at || null, req.admin.id]
+          `INSERT INTO promo_codes (code, description, discount_type, discount_value, plan_override, max_redemptions, expires_at, duration_days, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+          [code, description || `Bulk generated: ${prefix}`, discount_type || 'percentage', discount_value || 0, plan_override || null, max_redemptions ? parseInt(max_redemptions) : null, expires_at || null, duration_days || null, req.admin.id]
         );
         inserted.push(result.rows[0]);
       } catch (err) {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAdmin } from "../layout";
-import { Plus, Trash2, X, ToggleLeft, ToggleRight, Layers, Users, ChevronDown, ChevronUp, Copy, Download } from "lucide-react";
+import { Plus, Trash2, X, ToggleLeft, ToggleRight, Layers, Users, ChevronDown, ChevronUp, Copy, Download, Pencil, Clock } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://api.warpfix.org";
 
@@ -16,6 +16,7 @@ interface Promo {
   max_redemptions: number | null;
   active: boolean;
   expires_at: string | null;
+  duration_days: number | null;
   times_redeemed: string;
   created_at: string;
 }
@@ -40,6 +41,8 @@ export default function PromosPage() {
   const [expandedPromo, setExpandedPromo] = useState<string | null>(null);
   const [redemptions, setRedemptions] = useState<Record<string, Redemption[]>>({});
   const [loadingRedemptions, setLoadingRedemptions] = useState<string | null>(null);
+  const [editingDuration, setEditingDuration] = useState<string | null>(null);
+  const [durationInput, setDurationInput] = useState("");
 
   const fetchPromos = useCallback(async () => {
     setLoading(true);
@@ -87,6 +90,18 @@ export default function PromosPage() {
     return result;
   }
 
+  async function updateDuration(promoId: string) {
+    const val = parseInt(durationInput);
+    await fetch(`${API}/admin/promos/${promoId}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ duration_days: val > 0 ? val : null }),
+    });
+    setEditingDuration(null);
+    setDurationInput("");
+    fetchPromos();
+  }
+
   async function fetchRedemptions(promoId: string) {
     if (expandedPromo === promoId) {
       setExpandedPromo(null);
@@ -130,6 +145,7 @@ export default function PromosPage() {
               <th className="px-4 py-3 text-left font-medium text-[var(--text-tertiary)]">Value</th>
               <th className="px-4 py-3 text-left font-medium text-[var(--text-tertiary)]">Plan Override</th>
               <th className="px-4 py-3 text-left font-medium text-[var(--text-tertiary)]">Redemptions</th>
+              <th className="px-4 py-3 text-left font-medium text-[var(--text-tertiary)]">Duration</th>
               <th className="px-4 py-3 text-left font-medium text-[var(--text-tertiary)]">Expires</th>
               <th className="px-4 py-3 text-left font-medium text-[var(--text-tertiary)]">Status</th>
               <th className="px-4 py-3 text-right font-medium text-[var(--text-tertiary)]">Actions</th>
@@ -139,13 +155,13 @@ export default function PromosPage() {
             {loading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <tr key={i} className="border-b border-[var(--border-default)]">
-                  {Array.from({ length: 9 }).map((_, j) => (
+                  {Array.from({ length: 10 }).map((_, j) => (
                     <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse w-16" /></td>
                   ))}
                 </tr>
               ))
             ) : promos.length === 0 ? (
-              <tr><td colSpan={9} className="px-4 py-8 text-center text-[var(--text-tertiary)]">No promo codes yet</td></tr>
+              <tr><td colSpan={10} className="px-4 py-8 text-center text-[var(--text-tertiary)]">No promo codes yet</td></tr>
             ) : (
               promos.map((promo) => (
                 <>
@@ -169,6 +185,39 @@ export default function PromosPage() {
                         {expandedPromo === promo.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                       </button>
                     </td>
+                    <td className="px-4 py-3">
+                      {editingDuration === promo.id ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            value={durationInput}
+                            onChange={(e) => setDurationInput(e.target.value)}
+                            className="w-16 px-1.5 py-0.5 border border-[var(--border-default)] rounded text-[12px]"
+                            placeholder="days"
+                            min="0"
+                            autoFocus
+                            onKeyDown={(e) => { if (e.key === "Enter") updateDuration(promo.id); if (e.key === "Escape") setEditingDuration(null); }}
+                          />
+                          <button onClick={() => updateDuration(promo.id)} className="text-green-600 text-[11px] font-medium">Save</button>
+                          <button onClick={() => setEditingDuration(null)} className="text-gray-400 text-[11px]">Cancel</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setEditingDuration(promo.id); setDurationInput(promo.duration_days?.toString() || ""); }}
+                          className="flex items-center gap-1 hover:text-[var(--brand)] transition-colors group"
+                        >
+                          {promo.duration_days ? (
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-[var(--text-tertiary)]" />
+                              <span className="text-[var(--text-secondary)]">{promo.duration_days}d</span>
+                            </span>
+                          ) : (
+                            <span className="text-[var(--text-tertiary)]">—</span>
+                          )}
+                          <Pencil className="w-3 h-3 text-[var(--text-tertiary)] opacity-0 group-hover:opacity-100" />
+                        </button>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-[var(--text-tertiary)]">
                       {promo.expires_at ? new Date(promo.expires_at).toLocaleDateString() : "Never"}
                     </td>
@@ -189,7 +238,7 @@ export default function PromosPage() {
                   </tr>
                   {expandedPromo === promo.id && (
                     <tr key={`${promo.id}-details`} className="border-b border-[var(--border-default)] bg-gray-50/50">
-                      <td colSpan={9} className="px-6 py-4">
+                      <td colSpan={10} className="px-6 py-4">
                         <RedemptionDetails
                           promoId={promo.id}
                           redemptions={redemptions[promo.id] || []}
@@ -268,6 +317,7 @@ function CreatePromoModal({ onClose, onSave }: { onClose: () => void; onSave: (d
   const [planOverride, setPlanOverride] = useState("");
   const [maxRedemptions, setMaxRedemptions] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [durationDays, setDurationDays] = useState("");
 
   function handleSave() {
     onSave({
@@ -278,6 +328,7 @@ function CreatePromoModal({ onClose, onSave }: { onClose: () => void; onSave: (d
       plan_override: planOverride || null,
       max_redemptions: maxRedemptions ? parseInt(maxRedemptions) : null,
       expires_at: expiresAt || null,
+      duration_days: durationDays ? parseInt(durationDays) : null,
     });
   }
 
@@ -318,6 +369,11 @@ function CreatePromoModal({ onClose, onSave }: { onClose: () => void; onSave: (d
               <option value="team">Upgrade to Team</option>
             </select>
           </div>
+          <div>
+            <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1">Duration (days)</label>
+            <input type="number" value={durationDays} onChange={(e) => setDurationDays(e.target.value)} placeholder="e.g. 30 for 1 month" min="1" className="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm" />
+            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">Plan auto-downgrades after this many days. Leave empty for permanent.</p>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1">Max Redemptions</label>
@@ -326,6 +382,7 @@ function CreatePromoModal({ onClose, onSave }: { onClose: () => void; onSave: (d
             <div>
               <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1">Expires At</label>
               <input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm" />
+              <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">When the promo code itself can no longer be redeemed.</p>
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
@@ -347,6 +404,7 @@ function BulkGenerateModal({ onClose, onGenerate }: { onClose: () => void; onGen
   const [planOverride, setPlanOverride] = useState("");
   const [maxRedemptions, setMaxRedemptions] = useState("1");
   const [expiresAt, setExpiresAt] = useState("");
+  const [durationDays, setDurationDays] = useState("");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<{ created: number; failed: number; promos: Promo[] } | null>(null);
 
@@ -362,6 +420,7 @@ function BulkGenerateModal({ onClose, onGenerate }: { onClose: () => void; onGen
         plan_override: planOverride || null,
         max_redemptions: maxRedemptions ? parseInt(maxRedemptions) : null,
         expires_at: expiresAt || null,
+        duration_days: durationDays ? parseInt(durationDays) : null,
       });
       setResult(res);
     } catch {
@@ -481,6 +540,11 @@ function BulkGenerateModal({ onClose, onGenerate }: { onClose: () => void; onGen
               <option value="pro">Upgrade to Pro</option>
               <option value="team">Upgrade to Team</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1">Duration (days)</label>
+            <input type="number" value={durationDays} onChange={(e) => setDurationDays(e.target.value)} placeholder="e.g. 30 for 1 month" min="1" className="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm" />
+            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">Plan auto-downgrades after this many days. Leave empty for permanent.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
