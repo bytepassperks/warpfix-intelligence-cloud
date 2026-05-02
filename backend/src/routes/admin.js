@@ -125,7 +125,7 @@ router.get('/users', requireAdmin, async (req, res) => {
     const total = parseInt(countResult.rows[0].count);
 
     const result = await query(
-      `SELECT id, github_id, username, email, avatar_url, plan, repairs_used_this_month, created_at, updated_at
+      `SELECT id, github_id, username, email, avatar_url, plan, plan_expires_at, repairs_used_this_month, created_at, updated_at
        FROM users ${whereClause} ORDER BY ${sortCol} ${sortOrder} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...params, limit, offset]
     );
@@ -596,6 +596,25 @@ router.post('/users/bulk-reset-usage', requireAdmin, async (req, res) => {
     res.json({ message: 'All usage counters reset', count: result.rowCount });
   } catch (err) {
     res.status(500).json({ error: 'Bulk reset failed' });
+  }
+});
+
+// POST /admin/cron/plan-downgrade — manually trigger expired plan downgrade
+router.post('/cron/plan-downgrade', requireAdmin, async (req, res) => {
+  try {
+    const result = await query(
+      `UPDATE users SET plan = 'free', plan_expires_at = NULL, updated_at = NOW()
+       WHERE plan_expires_at IS NOT NULL
+       AND plan_expires_at < NOW()
+       AND plan != 'free'
+       AND id NOT IN (SELECT user_id FROM subscriptions WHERE status = 'active')
+       RETURNING id, username, plan`
+    );
+    logger.info('Admin triggered plan downgrade cron', { admin: req.admin.email, downgraded: result.rows.length });
+    res.json({ downgraded: result.rows, count: result.rowCount });
+  } catch (err) {
+    logger.error('Manual plan downgrade error', { error: err.message });
+    res.status(500).json({ error: 'Plan downgrade failed' });
   }
 });
 
