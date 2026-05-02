@@ -333,6 +333,7 @@ router.patch('/promos/:id', requireAdmin, async (req, res) => {
   if (discount_value !== undefined) { updates.push(`discount_value = $${idx}`); params.push(discount_value); idx++; }
   if (max_redemptions !== undefined) { updates.push(`max_redemptions = $${idx}`); params.push(max_redemptions); idx++; }
   if (expires_at !== undefined) { updates.push(`expires_at = $${idx}`); params.push(expires_at); idx++; }
+  if (req.body.duration_days !== undefined) { updates.push(`duration_days = $${idx}`); params.push(req.body.duration_days); idx++; }
 
   if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
