@@ -60,7 +60,7 @@ export default function TechDebtPage() {
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>(TABS[0]);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/intelligence/tech-debt`)
+    fetch(`${API_URL}/api/intelligence/tech-debt`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : Promise.reject("API error")))
       .then(setData)
       .catch((e) => setError(String(e)))

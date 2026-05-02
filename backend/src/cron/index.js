@@ -51,6 +51,62 @@ async function telemetryAggregation() {
   }
 }
 
+async function expiredSubscriptionDowngrade() {
+  logger.info('Running expired subscription downgrade check');
+  try {
+    const result = await query(
+      `UPDATE users SET plan = 'free', updated_at = NOW()
+       WHERE id IN (
+         SELECT s.user_id FROM subscriptions s
+         WHERE s.status = 'active'
+         AND s.current_period_end IS NOT NULL
+         AND s.current_period_end < NOW()
+       )
+       AND plan != 'free'
+       RETURNING id, username, plan`
+    );
+    if (result.rows.length > 0) {
+      await query(
+        `UPDATE subscriptions SET status = 'expired', updated_at = NOW()
+         WHERE status = 'active' AND current_period_end IS NOT NULL AND current_period_end < NOW()`
+      );
+      logger.info('Expired subscription downgrades', { count: result.rows.length, users: result.rows.map(r => r.username) });
+    } else {
+      logger.info('No expired subscriptions found');
+    }
+  } catch (err) {
+    logger.error('Expired subscription downgrade failed', { error: err.message });
+  }
+}
+
+async function expiredPromoDowngrade() {
+  logger.info('Running expired promo downgrade check');
+  try {
+    const result = await query(
+      `UPDATE users SET plan = 'free', updated_at = NOW()
+       WHERE id IN (
+         SELECT pr.user_id FROM promo_redemptions pr
+         JOIN promo_codes pc ON pr.promo_id = pc.id
+         WHERE pc.plan_override IS NOT NULL
+         AND pc.expires_at IS NOT NULL
+         AND pc.expires_at < NOW()
+       )
+       AND plan != 'free'
+       AND id NOT IN (
+         SELECT user_id FROM subscriptions WHERE status = 'active'
+       )
+       RETURNING id, username`
+    );
+    if (result.rows.length > 0) {
+      logger.info('Expired promo downgrades', { count: result.rows.length, users: result.rows.map(r => r.username) });
+    } else {
+      logger.info('No expired promo downgrades needed');
+    }
+  } catch (err) {
+    logger.error('Expired promo downgrade failed', { error: err.message });
+  }
+}
+
 // Determine which cron to run based on args
 const cronType = process.argv[2] || 'all';
 
@@ -68,11 +124,17 @@ async function run() {
     case 'genome-stats':
       await aggregateMonthlyStats();
       break;
+    case 'plan-downgrade':
+      await expiredSubscriptionDowngrade();
+      await expiredPromoDowngrade();
+      break;
     case 'all':
     default:
       await telemetryAggregation();
       await dependencyRadarRefresh();
       await aggregateMonthlyStats();
+      await expiredSubscriptionDowngrade();
+      await expiredPromoDowngrade();
       break;
   }
   process.exit(0);

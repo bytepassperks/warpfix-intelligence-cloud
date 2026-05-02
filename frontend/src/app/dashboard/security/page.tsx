@@ -18,7 +18,7 @@ export default function SecurityPage() {
   const [data, setData] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/analytics/security`)
+    fetch(`${API_URL}/api/analytics/security`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then(setData)
       .catch(() => setData({}));

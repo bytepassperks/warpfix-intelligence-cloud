@@ -52,7 +52,7 @@ export default function TestCoveragePage() {
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>(TABS[0]);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/intelligence/test-coverage`)
+    fetch(`${API_URL}/api/intelligence/test-coverage`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : Promise.reject("API error")))
       .then(setData)
       .catch((e) => setError(String(e)))
