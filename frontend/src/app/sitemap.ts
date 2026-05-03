@@ -1,5 +1,11 @@
 import type { MetadataRoute } from "next";
 import { BLOG_POSTS } from "@/lib/blog-posts";
+import {
+  TOOL_SEO,
+  ERROR_FIX_SLUGS,
+  GUIDE_SLUGS,
+  COMPARE_SLUGS,
+} from "@/lib/tools-seo";
 
 const BASE_URL = "https://warpfix.org";
 
@@ -11,6 +17,38 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: new Date(post.isoDate),
     changeFrequency: "monthly" as const,
     priority: 0.7,
+  }));
+
+  const toolEntries: MetadataRoute.Sitemap = Object.values(TOOL_SEO).map(
+    (tool) => ({
+      url: `${BASE_URL}${tool.path}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
+    })
+  );
+
+  const errorFixEntries: MetadataRoute.Sitemap = ERROR_FIX_SLUGS.map(
+    (slug) => ({
+      url: `${BASE_URL}/tools/fix/${slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })
+  );
+
+  const guideEntries: MetadataRoute.Sitemap = GUIDE_SLUGS.map((slug) => ({
+    url: `${BASE_URL}/tools/guides/${slug}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+  }));
+
+  const compareEntries: MetadataRoute.Sitemap = COMPARE_SLUGS.map((slug) => ({
+    url: `${BASE_URL}/tools/compare/${slug}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
   }));
 
   return [
@@ -38,6 +76,34 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.7,
     },
+    {
+      url: `${BASE_URL}/tools`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.95,
+    },
+    {
+      url: `${BASE_URL}/tools/fix`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${BASE_URL}/tools/guides`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${BASE_URL}/tools/compare`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    ...toolEntries,
+    ...errorFixEntries,
+    ...guideEntries,
+    ...compareEntries,
     {
       url: `${BASE_URL}/dashboard`,
       lastModified: now,

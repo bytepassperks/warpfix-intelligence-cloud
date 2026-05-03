@@ -143,32 +143,33 @@ export default function ToolsHub() {
     <div className="min-h-screen bg-[var(--bg-primary)]">
       {/* Header */}
       <header className="border-b border-[var(--border-default)] bg-white sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/icons/icon-192.png" alt="WarpFix" width={28} height={28} />
-            <span className="font-semibold text-[15px]">WarpFix</span>
-            <span className="text-[var(--text-tertiary)] text-[13px]">/</span>
-            <span className="text-[var(--text-secondary)] text-[13px] font-medium">Free Tools</span>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-2">
+          <Link href="/" className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <Image src="/icons/icon-192.png" alt="WarpFix" width={28} height={28} className="shrink-0" />
+            <span className="font-semibold text-[14px] sm:text-[15px]">WarpFix</span>
+            <span className="text-[var(--text-tertiary)] text-[13px] hidden sm:inline">/</span>
+            <span className="text-[var(--text-secondary)] text-[13px] font-medium hidden sm:inline">Free Tools</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Link
               href="/tools"
-              className="text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              className="text-[12px] sm:text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors whitespace-nowrap hidden sm:inline"
             >
               All Tools
             </Link>
             <Link
               href="/docs"
-              className="text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              className="text-[12px] sm:text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             >
               Docs
             </Link>
             <Link
               href="https://api.warpfix.org/auth/github"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--brand)] text-white text-[13px] font-medium rounded-lg hover:bg-[var(--brand-hover)] transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[var(--brand)] text-white text-[12px] sm:text-[13px] font-medium rounded-lg hover:bg-[var(--brand-hover)] transition-colors whitespace-nowrap"
             >
-              <GitHubIcon className="w-3.5 h-3.5" />
-              Try WarpFix Free
+              <GitHubIcon className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline">Try WarpFix Free</span>
+              <span className="sm:hidden">Try Free</span>
             </Link>
           </div>
         </div>

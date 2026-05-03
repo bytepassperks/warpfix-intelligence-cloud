@@ -15,24 +15,26 @@ function GitHubIcon({ className }: { className?: string }) {
 export function ToolHeader() {
   return (
     <header className="border-b border-[var(--border-default)] bg-white sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/tools" className="flex items-center gap-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors text-[13px]">
-            <ArrowLeft className="w-3.5 h-3.5" />
-            All Tools
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Link href="/tools" className="flex items-center gap-1 sm:gap-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors text-[12px] sm:text-[13px] whitespace-nowrap">
+            <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden xs:inline">All Tools</span>
+            <span className="xs:hidden">Tools</span>
           </Link>
-          <span className="text-[var(--border-default)]">|</span>
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/icons/icon-192.png" alt="WarpFix" width={24} height={24} />
-            <span className="font-semibold text-[14px]">WarpFix</span>
+          <span className="text-[var(--border-default)] hidden sm:inline">|</span>
+          <Link href="/" className="flex items-center gap-1.5 sm:gap-2">
+            <Image src="/icons/icon-192.png" alt="WarpFix" width={24} height={24} className="shrink-0" />
+            <span className="font-semibold text-[13px] sm:text-[14px] hidden sm:inline">WarpFix</span>
           </Link>
         </div>
         <Link
           href="https://api.warpfix.org/auth/github"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--brand)] text-white text-[13px] font-medium rounded-lg hover:bg-[var(--brand-hover)] transition-colors"
+          className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[var(--brand)] text-white text-[12px] sm:text-[13px] font-medium rounded-lg hover:bg-[var(--brand-hover)] transition-colors shrink-0 whitespace-nowrap"
         >
-          <GitHubIcon className="w-3.5 h-3.5" />
-          Try WarpFix Free
+          <GitHubIcon className="w-3.5 h-3.5 shrink-0" />
+          <span className="hidden sm:inline">Try WarpFix Free</span>
+          <span className="sm:hidden">Try Free</span>
         </Link>
       </div>
     </header>
