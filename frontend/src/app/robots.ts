@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: ["/", "/llms.txt", "/llms-full.txt", "/humans.txt"],
-        disallow: ["/api/", "/dashboard/settings", "/_next/", "/auth-error"],
+        disallow: ["/api/", "/dashboard/", "/admin/", "/_next/", "/auth-error"],
       },
       // AI Search Engine Crawlers — explicitly allowed
       { userAgent: "GPTBot", allow: "/" },

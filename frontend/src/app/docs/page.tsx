@@ -5,6 +5,14 @@ import Image from "next/image";
 export const metadata: Metadata = {
   title: "Documentation",
   description: "WarpFix documentation — installation guides, CLI commands, configuration, API reference, and troubleshooting.",
+  alternates: { canonical: "https://warpfix.org/docs" },
+  openGraph: {
+    title: "Documentation | WarpFix",
+    description: "WarpFix documentation — installation guides, CLI commands, configuration, API reference, and troubleshooting.",
+    url: "https://warpfix.org/docs",
+    siteName: "WarpFix",
+    type: "website",
+  },
 };
 
 const SECTIONS = [
