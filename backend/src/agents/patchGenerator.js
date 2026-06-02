@@ -3,23 +3,30 @@ const { callLLM } = require('../services/llm');
 
 const PATCH_SAFETY_RULES = {
   maxDiffLines: 200,
+  // Genuinely dangerous content. These are intentionally narrow: reading config
+  // via process.env, or having a variable/comment that merely contains the word
+  // "secret"/"env", is normal in real source files and must NOT be blocked —
+  // otherwise every legitimate repair is rejected. We only block destructive
+  // shell/SQL and hardcoded credential LITERALS.
   forbiddenPatterns: [
-    /rm\s+-rf/i,
-    /DROP\s+TABLE/i,
-    /process\.env\.\w+\s*=/i,
-    /\.env/,
-    /credentials/i,
-    /secret/i,
+    /\brm\s+-rf\b/i,
+    /\bDROP\s+(?:TABLE|DATABASE)\b/i,
+    /\bTRUNCATE\s+TABLE\b/i,
+    // A real secret hardcoded as a quoted literal assigned to a secret-named key
+    // (e.g. apiKey = "AKIA....."). Does not match process.env.X reads.
+    /\b(?:password|passwd|secret|api[_-]?key|access[_-]?token|client[_-]?secret|private[_-]?key)\s*[:=]\s*['"][^'"\s]{12,}['"]/i,
   ],
+  // Paths the repair must never write. Matched against file paths only.
   forbiddenFileChanges: [
     'package-lock.json',
     'yarn.lock',
     'pnpm-lock.yaml',
-    '.env',
-    '.env.local',
-    '.env.production',
   ],
 };
+
+// Path-based rules: env files, CI workflow files, and test files are off-limits.
+const FORBIDDEN_PATH = /(^|\/)\.env(\.|$)|(^|\/)\.github\/workflows\//i;
+const TEST_PATH = /(^|\/)(tests?|__tests__|__mocks__|spec)\/|\.(test|spec)\.\w+$|(^|\/)test\.\w+$/i;
 
 async function generatePatch({ logData, classification, repository, context, installation_id }) {
   logger.info('Generating patch', { type: classification.type, repo: repository?.full_name });
@@ -74,7 +81,11 @@ Rules:
   const safetyCheck = validatePatchSafety(patch);
   if (!safetyCheck.safe) {
     logger.warn('Patch failed safety check', { reasons: safetyCheck.reasons });
-    throw new Error(`Patch safety violation: ${safetyCheck.reasons.join(', ')}`);
+    // Non-retryable: regenerating won't make an unsafe patch safe, so the worker
+    // skips this job instead of retrying (which would waste LLM tokens).
+    const err = new Error(`Patch safety violation: ${safetyCheck.reasons.join(', ')}`);
+    err.code = 'PATCH_UNSAFE';
+    throw err;
   }
 
   return patch;
@@ -232,7 +243,8 @@ function validatePatchSafety(patch) {
     reasons.push(`Diff too large: ${changedLines} lines (max ${PATCH_SAFETY_RULES.maxDiffLines})`);
   }
 
-  // Check forbidden patterns against all content (both diff and file_blocks format)
+  // Check forbidden patterns against the changed/added content (for diffs, only
+  // added lines; for whole-file blocks, the full content).
   const contentToCheck = filePaths.length
     ? patchToCheck
     : lines.filter(l => l.startsWith('+')).join('\n');
@@ -243,18 +255,26 @@ function validatePatchSafety(patch) {
     }
   }
 
-  // Check forbidden file changes
-  const allPaths = filePaths.length > 0 ? filePaths : [];
+  // Collect the set of paths the patch touches (file_blocks paths + diff headers).
+  const allPaths = [...filePaths];
+  for (const l of lines) {
+    const m = l.match(/^[+-]{3}\s+[ab]\/(.+)$/);
+    if (m) allPaths.push(m[1].trim());
+  }
+
+  // Exact-name forbidden files (lockfiles).
   for (const file of PATCH_SAFETY_RULES.forbiddenFileChanges) {
     if (allPaths.some(p => p === file || p.endsWith(`/${file}`))) {
       reasons.push(`Forbidden file change: ${file}`);
     }
-    if (patchToCheck.includes(`+++ b/${file}`) || patchToCheck.includes(`--- a/${file}`)) {
-      reasons.push(`Forbidden file change: ${file}`);
-    }
+  }
+  // Pattern-based forbidden paths (.env*, CI workflows) and test files.
+  for (const p of allPaths) {
+    if (FORBIDDEN_PATH.test(p)) reasons.push(`Forbidden file change: ${p}`);
+    else if (TEST_PATH.test(p)) reasons.push(`Refusing to modify test file: ${p}`);
   }
 
-  return { safe: reasons.length === 0, reasons };
+  return { safe: reasons.length === 0, reasons: [...new Set(reasons)] };
 }
 
 module.exports = { generatePatch, validatePatchSafety };

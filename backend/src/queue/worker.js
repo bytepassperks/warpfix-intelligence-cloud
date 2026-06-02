@@ -71,13 +71,26 @@ async function processRepairJob(job) {
       // Step 5: Generate patch via LLM (also covers the case where a cached patch
       // was a placeholder or targeted a different repo's files).
       job.updateProgress(50);
-      patch = await generatePatch({
-        logData,
-        classification,
-        repository,
-        context,
-        installation_id,
-      });
+      try {
+        patch = await generatePatch({
+          logData,
+          classification,
+          repository,
+          context,
+          installation_id,
+        });
+      } catch (genErr) {
+        // A patch that fails the safety check (e.g. would touch .env / a test
+        // file) is non-retryable — regenerating won't help. Skip cleanly instead
+        // of throwing, which would burn the remaining BullMQ attempts (LLM calls).
+        if (genErr.code === 'PATCH_UNSAFE') {
+          logger.warn('Skipping repair: generated patch failed safety check', {
+            jobId, repo: repository?.full_name, reason: genErr.message,
+          });
+          return { status: 'skipped', reason: 'unsafe_patch', pr_url: null };
+        }
+        throw genErr;
+      }
     }
 
     // Guard: never ship a placeholder/empty patch (the prompt-example echo).
