@@ -93,11 +93,21 @@ async function fetchRepoSourceTree(repository, installationId) {
       recursive: '1',
     });
     
-    // Return source files (not test files, not config files, not node_modules)
+    // Return source files repo-wide (not just src/) so repos that keep code at
+    // the root or in lib/, app/, etc. are still repairable. Exclude tests,
+    // vendored/build output, and non-source paths.
+    const EXCLUDE = /(^|\/)(node_modules|dist|build|out|coverage|vendor|\.next|\.github|\.git)\//;
+    const TESTISH = /(^|\/)(tests?|__tests__|__mocks__|spec)\/|\.(test|spec)\.\w+$|(^|\/)test\.\w+$/i;
+    const SRC_EXT = /\.(js|jsx|ts|tsx|py|rb|go|rs|java|php|c|cpp|cs)$/;
     return tree.data.tree
-      .filter(f => f.type === 'blob' && f.path.startsWith('src/') && /\.(js|ts|jsx|tsx|py|rb|go|rs)$/.test(f.path))
+      .filter(f => f.type === 'blob'
+        && SRC_EXT.test(f.path)
+        && !EXCLUDE.test(f.path)
+        && !TESTISH.test(f.path))
+      // Prefer shallower paths (more likely to be the entrypoint with the bug).
+      .sort((a, b) => a.path.split('/').length - b.path.split('/').length)
       .map(f => f.path)
-      .slice(0, 10);
+      .slice(0, 15);
   } catch (err) {
     logger.error('Failed to fetch repo tree', { error: err.message });
     return [];
