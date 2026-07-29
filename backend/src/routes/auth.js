@@ -2,7 +2,7 @@ const express = require('express');
 const passport = require('passport');
 const { logger } = require('../utils/logger');
 const { query, getPool } = require('../models/database');
-const { githubOAuthConfigured, githubCallbackURL } = require('../middleware/passport');
+const { githubStrategyRegistered, githubCallbackURL } = require('../middleware/passport');
 const { resolveUserIdForInstallation, syncInstallationRepos } = require('../services/installations');
 const router = express.Router();
 
@@ -11,7 +11,7 @@ const authErrorRedirect = (error) => (
 );
 
 router.get('/github', (req, res, next) => {
-  if (!githubOAuthConfigured) {
+  if (!githubStrategyRegistered) {
     logger.error('GitHub OAuth entrypoint unavailable: OAuth not configured');
     return res.redirect(authErrorRedirect('oauth_not_configured'));
   }
@@ -34,7 +34,7 @@ router.get('/status', async (_req, res) => {
   }
 
   res.json({
-    githubOAuthConfigured,
+    githubOAuthConfigured: githubStrategyRegistered,
     callbackURL: githubCallbackURL,
     appBaseURLConfigured: Boolean(process.env.APP_BASE_URL),
     apiBaseURLConfigured: Boolean(process.env.API_BASE_URL),

@@ -18,7 +18,12 @@ passport.deserializeUser(async (id, done) => {
     const result = await query('SELECT * FROM users WHERE id = $1', [id]);
     done(null, result.rows[0] || null);
   } catch (err) {
-    done(err, null);
+    logger.warn('Failed to deserialize user; treating request as unauthenticated', {
+      userId: id,
+      error: err.message,
+      stack: err.stack,
+    });
+    done(null, false);
   }
 });
 
@@ -61,4 +66,4 @@ if (githubStrategyRegistered) {
   logger.error('GitHub OAuth not configured', { missing });
 }
 
-module.exports = { githubOAuthConfigured, githubStrategyRegistered, githubCallbackURL };
+module.exports = { githubStrategyRegistered, githubCallbackURL };

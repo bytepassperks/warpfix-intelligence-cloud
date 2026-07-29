@@ -66,7 +66,11 @@ const sessionOptions = {
   store: new pgSession({
     pool: getPool(),
     tableName: 'user_sessions',
-    createTableIfMissing: true,
+    createTableIfMissing: process.env.NODE_ENV !== 'production',
+    errorLog: (message, err) => logger.error(message, {
+      error: err?.message,
+      stack: err?.stack,
+    }),
   }),
   secret: process.env.SESSION_SECRET || 'warpfix-dev-secret',
   resave: false,
