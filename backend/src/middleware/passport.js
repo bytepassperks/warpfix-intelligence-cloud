@@ -3,6 +3,11 @@ const GitHubStrategy = require('passport-github2').Strategy;
 const { query } = require('../models/database');
 const { logger } = require('../utils/logger');
 
+const githubCallbackURL = `${process.env.API_BASE_URL || 'http://localhost:4000'}/auth/github/callback`;
+const githubStrategyRegistered = Boolean(
+  process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+);
+
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
@@ -12,16 +17,21 @@ passport.deserializeUser(async (id, done) => {
     const result = await query('SELECT * FROM users WHERE id = $1', [id]);
     done(null, result.rows[0] || null);
   } catch (err) {
-    done(err, null);
+    logger.warn('Failed to deserialize user; treating request as unauthenticated', {
+      userId: id,
+      error: err.message,
+      stack: err.stack,
+    });
+    done(null, false);
   }
 });
 
-if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+if (githubStrategyRegistered) {
   passport.use(new GitHubStrategy(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: `${process.env.API_BASE_URL || 'http://localhost:4000'}/auth/github/callback`,
+      callbackURL: githubCallbackURL,
       scope: ['repo'],
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -49,5 +59,10 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
     }
   ));
 } else {
-  logger.warn('GitHub OAuth not configured — GITHUB_CLIENT_ID/SECRET missing');
+  const missing = [];
+  if (!process.env.GITHUB_CLIENT_ID) missing.push('GITHUB_CLIENT_ID');
+  if (!process.env.GITHUB_CLIENT_SECRET) missing.push('GITHUB_CLIENT_SECRET');
+  logger.error('GitHub OAuth not configured', { missing });
 }
+
+module.exports = { githubStrategyRegistered, githubCallbackURL };

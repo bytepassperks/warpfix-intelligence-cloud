@@ -62,11 +62,15 @@ app.use((req, res, next) => {
 app.use(express.urlencoded({ extended: true }));
 
 // Session with PostgreSQL store for persistence across restarts
-app.use(session({
+const sessionOptions = {
   store: new pgSession({
     pool: getPool(),
     tableName: 'user_sessions',
-    createTableIfMissing: true,
+    createTableIfMissing: process.env.NODE_ENV !== 'production',
+    errorLog: (message, err) => logger.error(message, {
+      error: err?.message,
+      stack: err?.stack,
+    }),
   }),
   secret: process.env.SESSION_SECRET || 'warpfix-dev-secret',
   resave: false,
@@ -78,7 +82,28 @@ app.use(session({
     domain: process.env.NODE_ENV === 'production' ? '.warpfix.org' : undefined,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   },
-}));
+};
+const sessionMiddleware = session(sessionOptions);
+const fallbackSessionMiddleware = session({
+  ...sessionOptions,
+  store: undefined,
+});
+app.use((req, res, next) => {
+  sessionMiddleware(req, res, (err) => {
+    if (!err) return next();
+
+    logger.error('Session store error; using non-persistent session for request', {
+      error: err.message,
+      stack: err.stack,
+      method: req.method,
+      path: req.path,
+    });
+    return fallbackSessionMiddleware(req, res, (fallbackErr) => {
+      if (fallbackErr) return next(fallbackErr);
+      return next();
+    });
+  });
+});
 
 // Passport
 require('./middleware/passport');
@@ -103,7 +128,13 @@ app.use('/webhooks/marketplace', marketplaceRoutes);
 
 // Error handler
 app.use((err, req, res, _next) => {
-  logger.error('Unhandled error', { error: err.message, stack: err.stack });
+  logger.error('Unhandled error', {
+    error: err.message,
+    stack: err.stack,
+    method: req.method,
+    path: req.path,
+    requestId: req.id || req.requestId,
+  });
   res.status(500).json({ error: 'Internal server error' });
 });
 
