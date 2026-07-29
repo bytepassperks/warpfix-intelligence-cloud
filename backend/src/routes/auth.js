@@ -1,11 +1,46 @@
 const express = require('express');
 const passport = require('passport');
 const { logger } = require('../utils/logger');
-const { query } = require('../models/database');
+const { query, getPool } = require('../models/database');
+const { githubOAuthConfigured, githubCallbackURL } = require('../middleware/passport');
 const { resolveUserIdForInstallation, syncInstallationRepos } = require('../services/installations');
 const router = express.Router();
 
-router.get('/github', passport.authenticate('github', { scope: ['repo'] }));
+const authErrorRedirect = (error) => (
+  `${process.env.APP_BASE_URL || 'http://localhost:3000'}/auth-error?error=${error}`
+);
+
+router.get('/github', (req, res, next) => {
+  if (!githubOAuthConfigured) {
+    logger.error('GitHub OAuth entrypoint unavailable: OAuth not configured');
+    return res.redirect(authErrorRedirect('oauth_not_configured'));
+  }
+
+  try {
+    return passport.authenticate('github', { scope: ['repo'] })(req, res, next);
+  } catch (err) {
+    logger.error('GitHub OAuth entrypoint error', { error: err.message, stack: err.stack });
+    return res.redirect(authErrorRedirect('oauth_not_configured'));
+  }
+});
+
+router.get('/status', async (_req, res) => {
+  let sessionStoreReachable = false;
+  try {
+    await getPool().query('SELECT 1 FROM user_sessions LIMIT 1');
+    sessionStoreReachable = true;
+  } catch (err) {
+    logger.warn('Auth status: session store unreachable', { error: err.message });
+  }
+
+  res.json({
+    githubOAuthConfigured,
+    callbackURL: githubCallbackURL,
+    appBaseURLConfigured: Boolean(process.env.APP_BASE_URL),
+    apiBaseURLConfigured: Boolean(process.env.API_BASE_URL),
+    sessionStoreReachable,
+  });
+});
 
 router.get('/github/callback', (req, res, next) => {
   passport.authenticate('github', (err, user, info) => {
