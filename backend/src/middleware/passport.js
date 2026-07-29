@@ -7,7 +7,6 @@ const githubCallbackURL = `${process.env.API_BASE_URL || 'http://localhost:4000'
 const githubStrategyRegistered = Boolean(
   process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
 );
-const githubOAuthConfigured = githubStrategyRegistered;
 
 passport.serializeUser((user, done) => {
   done(null, user.id);
