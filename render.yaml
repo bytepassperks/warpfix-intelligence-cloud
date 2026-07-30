@@ -14,7 +14,7 @@ services:
       - key: DATABASE_URL
         fromDatabase:
           name: warpfix-db
-          property: connectionString
+          property: connectionPoolString
       - key: REDIS_URL
         fromService:
           type: keyvalue
@@ -100,7 +100,7 @@ services:
       - key: DATABASE_URL
         fromDatabase:
           name: warpfix-db
-          property: connectionString
+          property: connectionPoolString
       - key: REDIS_URL
         fromService:
           type: keyvalue
@@ -151,7 +151,7 @@ services:
       - key: DATABASE_URL
         fromDatabase:
           name: warpfix-db
-          property: connectionString
+          property: connectionPoolString
 
   # Cron - Daily telemetry aggregation
   - type: cron
@@ -164,7 +164,7 @@ services:
       - key: DATABASE_URL
         fromDatabase:
           name: warpfix-db
-          property: connectionString
+          property: connectionPoolString
 
   # Cron - Weekly dependency radar
   - type: cron
@@ -177,11 +177,12 @@ services:
       - key: DATABASE_URL
         fromDatabase:
           name: warpfix-db
-          property: connectionString
+          property: connectionPoolString
 
 databases:
   - name: warpfix-db
     plan: basic-256mb
+    connectionPool: pgbouncer
     databaseName: warpfix
     user: warpfix
 
