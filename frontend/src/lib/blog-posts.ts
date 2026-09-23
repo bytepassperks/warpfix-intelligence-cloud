@@ -15,6 +15,150 @@ export interface BlogPost {
 
 export const BLOG_POSTS: BlogPost[] = [
   {
+    slug: "ci-pipeline-best-practices",
+    title: "CI Pipeline Best Practices: 10 Rules for Reliable, Fast Builds",
+    excerpt:
+      "Ten field-tested CI pipeline best practices — fail fast, cache aggressively, keep pipelines under 10 minutes, and make failures self-healing — with the config patterns that implement each rule.",
+    date: "September 23, 2026",
+    isoDate: "2026-09-23",
+    readTime: "9 min read",
+    category: "Engineering",
+    categoryColor: "bg-blue-50 text-blue-700",
+    author: "WarpFix Engineering",
+    authorRole: "Core Infrastructure Team",
+    keywords: [
+      "ci pipeline best practices",
+      "CI/CD pipeline optimization",
+      "GitHub Actions best practices",
+      "reduce CI build time",
+      "CI pipeline reliability",
+      "flaky test handling",
+    ],
+    content: `
+## Why Most CI Pipelines Get Slow and Flaky
+
+A CI pipeline rarely starts out broken. It degrades: one 4-minute install becomes 11, one flaky test becomes a retry ritual, one skipped type check becomes a production incident. The fixes are known — they just lose to urgency every sprint.
+
+This post distills the patterns we see across thousands of repaired pipelines into ten rules. Each rule includes the config that implements it, because advice without a diff is just a suggestion.
+
+## The 10 Rules
+
+### 1. Fail fast: order steps cheapest-first
+
+Run lint and typecheck before build and tests. A type error caught in 20 seconds should never wait behind a 9-minute test suite.
+
+\`\`\`yaml
+steps:
+  - run: npm run lint        # seconds
+  - run: npx tsc --noEmit    # seconds
+  - run: npm run build       # minutes
+  - run: npm test            # minutes
+\`\`\`
+
+### 2. Cache dependencies — and verify the cache key
+
+\`\`\`yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: 20
+    cache: npm
+\`\`\`
+
+Caching cuts install time 30–60%. The classic failure: lockfile changes that never invalidate the cache because the key hashes the wrong file. Pin cache keys to the lockfile.
+
+### 3. Keep pipelines under 10 minutes
+
+Latency compounds: a slow pipeline gets batched, batched commits fail together, big red builds get ignored. If you cannot get under 10 minutes, split jobs and run them in parallel — not sequentially.
+
+### 4. One workflow per intent
+
+A single YAML that builds, tests, deploys, and publishes means every docs typo runs your deploy logic. Separate CI (PRs and pushes), release (tags), and scheduled jobs (nightly).
+
+### 5. Pin versions and set minimal permissions
+
+\`\`\`yaml
+permissions:
+  contents: read
+\`\`\`
+
+Pin actions to full SHA, use minimal \`permissions\` blocks, and never let a PR from a fork reach secrets. Most supply-chain risk in CI is a default that nobody changed.
+
+### 6. Concurrency: cancel superseded runs
+
+\`\`\`yaml
+concurrency:
+  group: ci-\${{ github.ref }}
+  cancel-in-progress: true
+\`\`\`
+
+Push three commits in five minutes and you want one relevant run, not three racing runs competing for runners and confusing developers about which result is current.
+
+### 7. Quarantine flaky tests — never retry them silently
+
+A flaky test hidden behind \`retries: 3\` is a time bomb with a snooze button. Retry policies mask real intermittency (race conditions, order dependence, leaked state). Track flakiness explicitly, quarantine the test, and fix the cause. Silent retries are how "sometimes red" becomes "nobody trusts the build".
+
+### 8. Make the pipeline the only path to merge
+
+Branch protection with required checks. If people can merge around a red build "just this once", the build's authority is gone, and with it the reason to keep it green.
+
+### 9. Failures must be diagnosable in under a minute
+
+When a build fails, the developer should know **which step, which error, which commit** without scrolling 2,000 lines. Keep logs structured, upload failure artifacts, and make the summary line point at the real error.
+
+### 10. Make failure repair automatic — or at least cheap
+
+The best-practice ladder, in ascending order of investment:
+
+| Level | Practice | Cost per failure |
+|---|---|---|
+| 1 | Clear logs and failure artifacts | Minutes of triage |
+| 2 | Runbooks for known failures | Minutes to tens of minutes |
+| 3 | Fingerprint known failures and apply validated fixes | Seconds, near-zero |
+
+Level 3 is the point of diminishing manual effort: most CI failures are not novel. Fingerprint-based repair recognizes the pattern, applies the fix that worked last time, and validates it in a sandbox — reserving LLM calls for genuinely new failures.
+
+## The Anti-Patterns We See Most
+
+- **Retry as a strategy** — \`continue-on-error\` sprinkled over a red pipeline
+- **Cache everything** — including flaky, environment-dependent state
+- **The 40-minute mega-workflow** — one YAML, every concern, nobody dares touch it
+- **Secrets in env vars at the workflow level** — visible to every step, every fork
+- **No timeouts** — a hung test burns the full 6-hour runner limit
+
+## A Minimal Hardened Starter
+
+\`\`\`yaml
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request:
+concurrency:
+  group: ci-\${{ github.ref }}
+  cancel-in-progress: true
+permissions: { contents: read }
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm test -- --ci
+      - run: npm run build
+\`\`\`
+
+## Where Repair Fits
+
+Best practices reduce the number of failures; they do not reduce them to zero. Dependency updates, upstream changes, and config drift guarantee a floor of breakage. The teams that ship fastest treat pipeline failure as a solved problem: detect, fingerprint, repair, validate, merge — automatically, with humans reviewing the result rather than performing the triage.
+
+That is exactly what WarpFix does: it watches your pipeline, fingerprints known failures, generates safe patches, validates them in sandboxes, and opens the pull request.
+`,
+  },
+  {
     slug: "fingerprint-based-ci-repair",
     title: "How Fingerprint-Based CI Repair Works",
     excerpt:
