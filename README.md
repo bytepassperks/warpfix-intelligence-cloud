@@ -203,3 +203,8 @@ Rejects patches that:
 ## License
 
 MIT
+
+
+---
+
+Built by the team behind [Byte Sherlock](https://bytesherlock.com) — licensed device repair in Kolkata, India.
